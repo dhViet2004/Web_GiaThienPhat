@@ -82,7 +82,7 @@ export default function ProjectsFeed() {
       setIsExiting(true);
       // Đưa các card về trạng thái cân bằng trước khi animation kết thúc
       gsap.to('.velocity-card', { scale: 1, y: 0, duration: 0.4, ease: 'power2.out' });
-      
+
       // Trì hoãn kích hoạt lại GSAP cho đến khi animation thu nhỏ hoàn tất (khoảng 1.5s)
       setTimeout(() => {
         ScrollTrigger.getAll().forEach(st => st.enable());
@@ -195,8 +195,8 @@ export default function ProjectsFeed() {
 
       <div
         className="projects-scaler origin-top will-change-transform"
-        style={{ 
-          transformOrigin: '50% 0%', 
+        style={{
+          transformOrigin: '50% 0%',
           transform: 'translateZ(0)',
           pointerEvents: (selectedProject || isExiting) ? 'none' : 'auto',
           opacity: selectedProject ? 0 : 1,
@@ -262,7 +262,7 @@ export default function ProjectsFeed() {
                       >
                         <div className="relative w-full h-full transform-gpu block">
                           <Image
-                            src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
+                            src={project.general?.coverImage}
                             alt={project.general?.title || 'Preview'}
                             fill
                             priority={index < 4}
@@ -297,9 +297,9 @@ export default function ProjectsFeed() {
       {/* --- EXPANDED OVERLAY --- */}
       <AnimatePresence>
         {selectedProject && (
-          <ProjectDetailOverlay 
-            project={selectedProject} 
-            onClose={() => handleSelectProject(null)} 
+          <ProjectDetailOverlay
+            project={selectedProject}
+            onClose={() => handleSelectProject(null)}
           />
         )}
       </AnimatePresence>
