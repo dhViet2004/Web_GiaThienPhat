@@ -91,11 +91,11 @@ export default function BigHomepage() {
             ))}
           </nav>
 
-          {/* 3. Search Bar (Right) - ĐÃ FIX LỀ ĐỐI XỨNG */}
-          <div className="absolute top-[22px] lg:top-[24px] right-0 px-[20px] lg:pr-[35px] z-30 flex items-center">
+          {/* 3. Search Bar (Right) */}
+          <div className="absolute top-[22px] lg:top-[24px] right-0 px-[20px] lg:pr-[35px] z-50 flex items-center">
             <div className="relative flex items-center bg-white">
-              {/* Search Icon (SVG Circle + Line) */}
-              <div className="px-2 cursor-pointer peer">
+              {/* Search Icon */}
+              <div className="px-2 cursor-pointer">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="square">
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -112,7 +112,15 @@ export default function BigHomepage() {
               />
 
               {/* Suggestion Box (Slide-in) */}
-              <div className={`absolute top-[40px] right-0 bg-white border-t border-gray-100 min-w-[200px] py-4 px-6 transition-transform duration-300 transform ${searchFocused ? 'translate-x-0 shadow-lg' : 'translate-x-full pointer-events-none'}`}>
+              <div 
+                className={`absolute top-[40px] right-0 bg-white border-t border-gray-100 min-w-[220px] py-4 px-6 transition-all duration-300 ${
+                  searchFocused 
+                    ? 'opacity-100 translate-y-0 pointer-events-auto shadow-lg' 
+                    : 'opacity-0 -translate-y-2 pointer-events-none'
+                }`}
+                onMouseEnter={() => setSearchFocused(true)}
+                onMouseLeave={() => setSearchFocused(false)}
+              >
                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-4">Suggestions</p>
                  <div className="flex flex-col gap-3">
                    {['All Projects', 'By Scale', 'By Typology', 'Search Map'].map(s => (
