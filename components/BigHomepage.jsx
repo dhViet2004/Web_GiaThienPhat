@@ -8,45 +8,16 @@ import ProjectsFeed from './ProjectsFeed';
 import SidebarMenu from './SidebarMenu';
 
 // Sample Data Structure
-const projects = [
-  {
-    id: 'p1',
-    title: 'The Drop',
-    location: 'Istanbul, Turkey',
-    imageURL: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop',
-    icon: Building2,
-  },
-  {
-    id: 'p2',
-    title: 'Copenhill',
-    location: 'Copenhagen, Denmark',
-    imageURL: 'https://images.unsplash.com/photo-1449844908441-8829872d2607?q=80&w=2070&auto=format&fit=crop',
-    icon: Trees,
-  },
-  {
-    id: 'p3',
-    title: 'Via 57 West',
-    location: 'New York, USA',
-    imageURL: 'https://images.unsplash.com/photo-1541888053675-a0f5d475ceea?q=80&w=2069&auto=format&fit=crop',
-    icon: Building2,
-  },
-  {
-    id: 'p4',
-    title: 'Noma',
-    location: 'Copenhagen, Denmark',
-    imageURL: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop',
-    icon: Sofa,
-  },
-];
+const projects = [];
 
 export default function BigHomepage() {
-  const [navVisible, setNavVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navVisible, setNavVisible] = useState(false);
 
   useEffect(() => {
     const handleIntroComplete = () => setNavVisible(true);
     window.addEventListener("introAnimationComplete", handleIntroComplete);
-    // Fallback if intro isn't run or is already complete (for hot reloads)
+    // Fallback if intro isn't run or is already complete
     const fallbackTimer = setTimeout(() => setNavVisible(true), 3500); 
 
     return () => {
