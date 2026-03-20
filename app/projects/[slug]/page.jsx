@@ -23,12 +23,15 @@ export default function ProjectDetail({ params }) {
   const [nextId, setNextId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
+  
+  // Quản lý trạng thái chuyển đổi dự án
   const [swapping, setSwapping] = useState(false);
+  const [navDirection, setNavDirection] = useState(null); // 'prev' (trượt từ trên xuống) | 'next' (trượt từ dưới lên)
 
   const resolvedParams = React.use(params);
   const projectId = resolvedParams.slug;
 
-  // Fetch project + prev/next context
+  // Lấy dữ liệu dự án + prev/next
   useEffect(() => {
     if (!projectId) return;
     setLoading(true);
@@ -39,7 +42,7 @@ export default function ProjectDetail({ params }) {
           setLoading(false);
           return;
         }
-        setProjectData(data.project);
+        setProjectData(data.project || data); // Tương thích cả cấu trúc cũ và mới
         setPrevId(data.previousProjectId);
         setNextId(data.nextProjectId);
         setLoading(false);
@@ -50,7 +53,7 @@ export default function ProjectDetail({ params }) {
       });
   }, [projectId]);
 
-  // Smooth horizontal scroll + vertical scroll navigation (project swapping)
+  // Logic Cuộn ngang + Chuyển dự án dọc
   useEffect(() => {
     const container = containerRef.current;
     if (!container || loading || !projectData) return;
@@ -59,29 +62,33 @@ export default function ProjectDetail({ params }) {
     let isNavigating = false;
 
     const handleWheel = (e) => {
-      // Trackpad / touchpad: let browser handle natively
+      // Cho phép trackpad lướt ngang tự nhiên
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
         targetScroll = container.scrollLeft;
         return;
       }
 
-      // --- PROJECT SWAPPING ---
-      const atStart = container.scrollLeft === 0;
-      const atEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 1;
+      // --- LOGIC HOÁN ĐỔI DỰ ÁN (PROJECT SWAPPING) ---
+      const atStart = container.scrollLeft <= 0;
+      // Cộng thêm 2px sai số làm tròn của trình duyệt
+      const atEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 2; 
+      
       const scrollingUp = e.deltaY < 0;
       const scrollingDown = e.deltaY > 0;
 
       if (!isNavigating) {
+        // Nếu ở đầu trang và cuộn lên -> Load dự án trước (Trượt từ trên xuống)
         if (atStart && scrollingUp && prevId) {
           isNavigating = true;
+          setNavDirection('prev');
           setSwapping(true);
-          window.location.href = `/projects/${prevId}`;
           return;
         }
+        // Nếu ở cuối trang và cuộn xuống -> Load dự án sau (Trượt từ dưới lên)
         if (atEnd && scrollingDown && nextId) {
           isNavigating = true;
+          setNavDirection('next');
           setSwapping(true);
-          window.location.href = `/projects/${nextId}`;
           return;
         }
       }
@@ -110,7 +117,7 @@ export default function ProjectDetail({ params }) {
   if (loading) {
     return (
       <div className="w-full h-screen bg-white flex items-center justify-center font-sans">
-        <div className="text-xs uppercase tracking-[0.2em] font-bold animate-pulse text-gray-400">Loading Configuration...</div>
+        <div className="text-xs uppercase tracking-[0.2em] font-bold animate-pulse text-gray-400">Loading Project...</div>
       </div>
     );
   }
@@ -122,30 +129,45 @@ export default function ProjectDetail({ params }) {
   const credits = project.credits || project.blocks?.filter(b => b.type === 'credits').flatMap(b => b.roles || []) || [];
 
   return (
-    <div className={`relative font-sans text-black bg-white min-h-screen ${swapping ? 'pointer-events-none' : ''}`}>
+    <div className={`relative font-sans text-black bg-white min-h-screen overflow-hidden ${swapping ? 'pointer-events-none' : ''}`}>
 
-      {/* Close button */}
+      {/* --- CÁC MÀN HÌNH CHUYỂN DỰ ÁN (VERTICAL SLIDING PANELS) --- */}
+      <AnimatePresence>
+        {swapping && navDirection === 'prev' && (
+          <motion.div
+            initial={{ y: '-100%' }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            onAnimationComplete={() => window.location.href = `/projects/${prevId}`}
+            className="fixed inset-0 z-[999] bg-white flex flex-col items-center justify-center"
+          >
+            <div className="size-[50px] bg-black text-white flex items-center justify-center mb-6">
+              <Building2 size={24} strokeWidth={1.5} />
+            </div>
+            <h2 className="text-2xl uppercase tracking-[0.2em] font-bold text-black animate-pulse">Loading Previous...</h2>
+          </motion.div>
+        )}
+        
+        {swapping && navDirection === 'next' && (
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            onAnimationComplete={() => window.location.href = `/projects/${nextId}`}
+            className="fixed inset-0 z-[999] bg-black flex flex-col items-center justify-center"
+          >
+            <div className="size-[50px] bg-white text-black flex items-center justify-center mb-6">
+              <Building2 size={24} strokeWidth={1.5} />
+            </div>
+            <h2 className="text-2xl uppercase tracking-[0.2em] font-bold text-white animate-pulse">Loading Next...</h2>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Nút Đóng */}
       <Link href="/" className="fixed top-8 right-8 z-[200] cursor-pointer text-black hover:opacity-50 transition-opacity p-2">
         <X size={32} strokeWidth={1} />
       </Link>
-
-      {/* Navigation arrows (Previous / Next project) */}
-      <div className="fixed top-0 left-0 w-full h-screen pointer-events-none z-[90]">
-        {/* Previous project indicator — top-left corner */}
-        {prevId && (
-          <Link href={`/projects/${prevId}`} className="pointer-events-auto absolute left-6 lg:left-10 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 group">
-            <span className="text-[9px] lg:text-[10px] uppercase tracking-[0.3em] text-[#797979] group-hover:text-black transition-colors font-medium">Prev</span>
-            <span className="w-px h-12 bg-[#797979] group-hover:bg-black transition-colors" />
-          </Link>
-        )}
-        {/* Next project indicator — top-right corner */}
-        {nextId && (
-          <Link href={`/projects/${nextId}`} className="pointer-events-auto absolute right-6 lg:right-10 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 group">
-            <span className="text-[9px] lg:text-[10px] uppercase tracking-[0.3em] text-[#797979] group-hover:text-black transition-colors font-medium">Next</span>
-            <span className="w-px h-12 bg-[#797979] group-hover:bg-black transition-colors" />
-          </Link>
-        )}
-      </div>
 
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -153,19 +175,18 @@ export default function ProjectDetail({ params }) {
         .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
       `}} />
 
-      {/* MAIN HORIZONTAL TRACK */}
+      {/* DẢI CUỘN NGANG CHÍNH */}
       <div
         ref={containerRef}
-        className="h-screen w-screen overflow-x-auto overflow-y-hidden flex flex-nowrap items-center gap-[5vw] lg:gap-16 px-[10vw] scrollbar-hidden overscroll-none"
+        className="h-screen w-screen overflow-x-auto overflow-y-hidden flex flex-nowrap items-center gap-[24px] lg:gap-8 scrollbar-hidden overscroll-none"
       >
 
-        {/* ===================== PHANTOM SPACER (BIG technique) ===================== */}
-        {/* This invisible div uses CSS calc to push the cover image to appear "centered"
-            relative to the sticky info on the left.
-            Formula: negative space compensates for the info panel width + padding + gap */}
+        {/* Spacer: đẩy khối ảnh vào chính giữa viewport (text trái sát ảnh) */}
+        <div className="shrink-0 h-px w-[8vw] lg:hidden" aria-hidden />
         <div
-          className="relative z-50 hidden h-px flex-[0_0_auto] lg:block shrink-0"
-          style={{ width: 'calc(-64px - 49.39vh + 50vw)' }}
+          className="shrink-0 h-px hidden lg:block"
+          style={{ width: 'max(0px, calc(50vw - 324px - 57vh))' }}
+          aria-hidden
         />
 
         {/* =========================================
@@ -173,8 +194,8 @@ export default function ProjectDetail({ params }) {
         =========================================== */}
         <div className="relative h-full flex flex-col justify-center flex-[0_0_auto] shrink-0 pt-12 pb-12 lg:pt-[12vh] lg:pb-[12vh]">
 
-          {/* Sticky Info Box — positioned to the LEFT of the image */}
-          <div className="absolute top-0 right-full mr-[30px] lg:mr-[44px] w-[300px] flex flex-col items-end text-right z-20 pt-[12vh]">
+          {/* Sticky Info Box — sát cạnh trái ảnh */}
+          <div className="absolute top-0 right-full mr-[20px] lg:mr-[24px] w-[300px] flex flex-col items-end text-right z-20 pt-[12vh]">
             <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center shadow-md mb-4 lg:mb-6">
               <ProjectIcon size={24} strokeWidth={1.5} />
             </div>
@@ -184,7 +205,7 @@ export default function ProjectDetail({ params }) {
             <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-widest font-medium mb-6">
               {project.general?.location}
             </p>
-            {/* Metadata columns */}
+            {/* Metadata */}
             <div className="hidden lg:flex flex-col items-end w-full">
               <h4 className="text-[10px] text-[#797979] uppercase">Client</h4>
               <p className="text-[12px] text-black uppercase mb-3">{project.general?.client || 'N/A'}</p>
@@ -195,7 +216,7 @@ export default function ProjectDetail({ params }) {
             </div>
           </div>
 
-          {/* Cover Image — the visual anchor */}
+          {/* Cover Image */}
           <motion.div
             layoutId={`project-image-${project._id}`}
             className="w-auto h-full max-h-[76vh] relative z-10 shadow-sm"
@@ -244,13 +265,6 @@ export default function ProjectDetail({ params }) {
                     sizes="76vh"
                     className="object-cover grayscale hover:grayscale-0 transition-all duration-700"
                   />
-                  {project.sliderCaption && idx === activeSlide && (
-                    <div className="absolute bottom-4 right-0 left-0 text-center px-8 z-50">
-                      <p className="text-[10px] md:text-[11px] text-black bg-white/70 inline-block px-3 py-1 uppercase tracking-wider">
-                        {project.sliderCaption}
-                      </p>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -279,7 +293,7 @@ export default function ProjectDetail({ params }) {
         ))}
 
         {/* =========================================
-            BLOCK 5: PROJECT CREDITS (FLEX WRAP)
+            BLOCK 5: PROJECT CREDITS
         =========================================== */}
         {credits.length > 0 && (
           <div className="flex h-[76vh] max-h-[76vh] flex-col flex-wrap gap-x-12 lg:gap-x-16 lg:py-[6vh] shrink-0 content-start self-center">
@@ -295,9 +309,7 @@ export default function ProjectDetail({ params }) {
           </div>
         )}
 
-        {/* =========================================
-            END SPACER
-        =========================================== */}
+        {/* END SPACER */}
         <div className="h-px w-[70vw] shrink-0 flex-[0_0_auto]" />
 
       </div>

@@ -82,11 +82,23 @@ export default function ProjectDetailOverlay({ project, onClose }) {
           drag="x"
           dragConstraints={dragConstraints}
           dragElastic={0.2}
-          className="h-full flex flex-nowrap items-start gap-[5vw] px-[10vw] cursor-grab active:cursor-grabbing will-change-transform perspective-1000"
+          className="h-screen w-screen overflow-x-auto overflow-y-hidden flex flex-nowrap items-center gap-[5vw] lg:gap-16 scrollbar-hidden overscroll-none cursor-grab active:cursor-grabbing will-change-transform perspective-1000"
         >
-          {/* BLOCK 1: COVER IMAGE & TITLE */}
+          {/* Smart Spacer to center the image.
+              Formula: 50vw (center of screen) - half of image width (57vh) - gap (64px)
+              Assuming image aspect ratio is 3432/2288 (1.5) and height is 76vh.
+              1.5 * 76vh = 114vh (Full Width). Half width = 57vh.
+          */}
+          <div 
+            className="relative z-50 hidden lg:block h-px shrink-0 flex-[0_0_auto]" 
+            style={{ width: 'calc(50vw - 57vh - 64px)' }} 
+          />
+
+          {/* Mobile spacer fallback */}
+          <div className="shrink-0 w-[5vw] lg:hidden block" />
+          {/* BLOCK 1: COVER IMAGE & TITLE — text trái sát cạnh trái ảnh */}
           <div className="relative h-full flex flex-col justify-center flex-[0_0_auto] shrink-0 pt-[12vh] pb-[12vh] pointer-events-none select-none">
-            {/* Title & Location (Left of Image) */}
+            {/* Title & Location — sát cạnh trái ảnh */}
             <div className="absolute top-0 right-full mr-[30px] lg:mr-[44px] w-[300px] flex flex-col items-end text-right z-20 pt-[12vh]">
               <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
                 <ProjectIcon size={24} strokeWidth={1.5} />
@@ -113,7 +125,8 @@ export default function ProjectDetailOverlay({ project, onClose }) {
             {/* Main Cover Image */}
             <motion.div
               layoutId={`project-image-${project._id}`}
-              className="relative h-full aspect-[3/2] shrink-0 shadow-sm will-change-transform"
+              className="relative h-[76vh] shrink-0 shadow-sm will-change-transform"
+              style={{ aspectRatio: '3432 / 2288' }}
               transition={{ 
                 duration: 0.8, 
                 ease: [0.16, 1, 0.3, 1] 
@@ -195,7 +208,7 @@ export default function ProjectDetailOverlay({ project, onClose }) {
           </div>
 
           {/* End Spacer */}
-          <div className="h-px w-[20vw] shrink-0 flex-[0_0_auto]"></div>
+          <div className="h-px w-[50vw] shrink-0 flex-[0_0_auto]"></div>
         </motion.div>
       </motion.div>
 
