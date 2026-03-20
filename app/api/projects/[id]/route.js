@@ -6,7 +6,6 @@ export async function GET(req, { params }) {
   try {
     await dbConnect();
 
-    // FIX TẠI ĐÂY: Mở khóa params bằng await trước khi sử dụng
     const { id } = await params;
 
     const project = await Project.findById(id);
@@ -15,7 +14,19 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    return NextResponse.json(project);
+    // Build context: get prev/next project relative to this one (sorted newest first)
+    const allProjects = await Project.find({}, '_id createdAt').sort({ createdAt: -1 });
+    const ids = allProjects.map(p => p._id.toString());
+
+    const currentIdx = ids.indexOf(id);
+    const previousProjectId = currentIdx > 0 ? ids[currentIdx - 1] : null;
+    const nextProjectId = currentIdx < ids.length - 1 ? ids[currentIdx + 1] : null;
+
+    return NextResponse.json({
+      project,
+      previousProjectId,
+      nextProjectId
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
