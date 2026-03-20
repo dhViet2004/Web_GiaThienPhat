@@ -5,8 +5,8 @@ import { SmoothScroll } from '../components/SmoothScroll';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Gia Thinh Phat',
-  description: 'Gia Thinh Phat Architecture',
+  title: 'Gia Thien Phat',
+  description: 'Gia Thien Phat Architecture',
 };
 
 export default function RootLayout({ children }) {

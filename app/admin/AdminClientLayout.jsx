@@ -63,7 +63,7 @@ export default function AdminClientLayout({ children }) {
           </nav>
 
           <div className="auto p-8 border-t border-gray-200 text-gray-400 font-light text-xs">
-            © {new Date().getFullYear()} GIA THINH PHAT
+            © {new Date().getFullYear()} GIA THIEN PHAT
           </div>
         </aside>
 

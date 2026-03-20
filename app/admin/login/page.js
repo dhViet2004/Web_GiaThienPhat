@@ -31,7 +31,7 @@ export default function AdminLogin() {
       <div className="hidden lg:flex w-1/2 bg-black relative items-center justify-center overflow-hidden">
         <img 
           src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2075&auto=format&fit=crop" 
-          alt="Gia Thinh Phat Architecture" 
+          alt="Gia Thien Phat Architecture" 
           className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay filter grayscale-[50%]"
         />
         <div className="relative z-10 text-white text-center p-12 max-w-lg">

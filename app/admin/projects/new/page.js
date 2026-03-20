@@ -265,7 +265,7 @@ export default function CreateNewProjectPage() {
                       name="client"
                       value={project.general.client}
                       onChange={handleGeneralChange}
-                      placeholder="Gia Thinh Phat Group"
+                      placeholder="Gia Thien Phat Group"
                       className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
                     />
                   </div>

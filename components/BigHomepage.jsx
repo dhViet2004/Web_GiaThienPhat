@@ -41,7 +41,7 @@ export default function BigHomepage() {
       <header className={`fixed top-0 left-0 w-full z-[900] bg-white transition-opacity duration-[1500ms] ${navVisible ? 'opacity-100' : 'opacity-0'}`}>
         <div className="relative flex justify-between items-start px-[20px] lg:px-[35px] pt-[22px] lg:pt-[24px] pb-4">
           
-          {/* Logo acting as Hamburger Menu trigger on Mobile, Home Link on Desktop */}
+          {/* 1. Logo acting as Hamburger Menu trigger on Mobile, Home Link on Desktop */}
           <div className="w-1/4 flex items-start">
             <div className="md:hidden">
               <button 
@@ -59,8 +59,8 @@ export default function BigHomepage() {
             </div>
           </div>
 
-          {/* Navigation (Desktop Only) */}
-          <nav className="hidden md:flex flex-row justify-center lg:w-[650px] xl:w-[788px] mx-auto gap-0 mt-1">
+          {/* 2. Navigation (Desktop Only) - ĐÃ FIX CĂN GIỮA TUYỆT ĐỐI */}
+          <nav className="hidden md:flex absolute top-[22px] lg:top-[24px] left-1/2 -translate-x-1/2 flex-row justify-center w-max gap-0 z-20">
             {navigation.map((cat) => (
               <div 
                 key={cat.title}
@@ -70,7 +70,7 @@ export default function BigHomepage() {
               >
                 <Link 
                   href={`#${cat.title.toLowerCase()}`} 
-                  className={`text-[11px] lg:text-[14.5px] font-medium tracking-widest uppercase transition-colors duration-200 ${hoveredCategory === cat.title ? 'text-black' : 'text-[#6b6b6b]'}`}
+                  className={`text-[11px] lg:text-[14.5px] font-medium tracking-widest uppercase transition-colors duration-200 ${hoveredCategory === cat.title ? 'text-black' : 'text-[#6b6b6b] hover:text-black'}`}
                 >
                   {cat.title}
                 </Link>
@@ -91,8 +91,8 @@ export default function BigHomepage() {
             ))}
           </nav>
 
-          {/* Search Bar (BIG Style) */}
-          <div className="absolute top-[22px] lg:top-[24px] right-0 lg:pr-[10px] z-30 flex items-center">
+          {/* 3. Search Bar (Right) - ĐÃ FIX LỀ ĐỐI XỨNG */}
+          <div className="absolute top-[22px] lg:top-[24px] right-0 px-[20px] lg:pr-[35px] z-30 flex items-center">
             <div className="relative flex items-center bg-white">
               {/* Search Icon (SVG Circle + Line) */}
               <div className="px-2 cursor-pointer peer">
@@ -108,7 +108,7 @@ export default function BigHomepage() {
                 placeholder="SEARCH"
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
-                className="w-[110px] xl:w-[200px] text-[11px] lg:text-[13px] text-black uppercase tracking-widest placeholder:text-[#9e9e9e] placeholder:uppercase focus:outline-none bg-transparent mr-4"
+                className="w-[110px] xl:w-[200px] text-[11px] lg:text-[13px] text-black uppercase tracking-widest placeholder:text-[#9e9e9e] placeholder:uppercase focus:outline-none bg-transparent mr-4 transition-all"
               />
 
               {/* Suggestion Box (Slide-in) */}
@@ -122,6 +122,7 @@ export default function BigHomepage() {
               </div>
             </div>
           </div>
+
         </div>
       </header>
 

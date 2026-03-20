@@ -74,32 +74,27 @@ export default function ProjectsFeed() {
     if (project) {
       window.history.pushState(null, '', `/projects/${project._id}`);
       
-      // 1. Dừng ngay lập tức mọi hoạt ảnh GSAP đang chạy dở trên thẻ này
+      // Dừng hoạt ảnh GSAP đang chạy và đưa về trạng thái tĩnh
       gsap.killTweensOf('.velocity-card');
       gsap.killTweensOf('.projects-scaler');
-      
-      // 2. Đưa các card về trạng thái tĩnh hoàn toàn (không scale, không dịch chuyển)
       gsap.set('.velocity-card', { scale: 1, y: 0 });
       
-      // 3. Tạm thời tắt ScrollTrigger để tránh việc cuộn chuột làm nhiễu
-      ScrollTrigger.getAll().forEach(st => st.disable());
+      // Khóa cuộn trang web để tránh nhiễu
+      document.body.style.overflow = 'hidden';
       
       setSelectedProject(project);
     } else {
       window.history.pushState(null, '', '/');
       setIsExiting(true);
       
-      // Khi đóng, cũng đảm bảo card đang ở trạng thái chuẩn
       gsap.set('.velocity-card', { scale: 1, y: 0 });
-      
       setSelectedProject(null);
 
-      // Đợi animation của Framer Motion hoàn tất (khoảng 800ms) rồi mới bật lại GSAP
+      // Mở khóa cuộn trang web sau khi animation hoàn tất
       setTimeout(() => {
-        ScrollTrigger.getAll().forEach(st => st.enable());
-        ScrollTrigger.refresh();
+        document.body.style.overflow = 'auto';
         setIsExiting(false);
-      }, 900);
+      }, 800);
     }
   };
 
@@ -260,8 +255,7 @@ export default function ProjectsFeed() {
 
                   {/* --- ẢNH CHÍNH --- */}
                   <div
-                    className="shrink-0 project-image overflow-hidden w-[90vw] sm:w-[350px] lg:w-[64vh]"
-                    style={{ aspectRatio: '3432 / 2288' }} // ĐỒNG BỘ ASPECT RATIO (đổi từ 2974/2288 thành 3432/2288 để khớp với Overlay)
+                    className="shrink-0 project-image overflow-hidden w-[90vw] sm:w-[350px] lg:w-[64vh] aspect-[3/2]"
                   >
                     {/* Bỏ các class transform-gpu/origin-center của Tailwind có thể gây xung đột transform với Framer Motion */}
                     <div className="relative w-full h-full">
@@ -269,8 +263,10 @@ export default function ProjectsFeed() {
                         layoutId={`project-image-${project._id}`}
                         onClick={() => handleSelectProject(project)}
                         className="relative w-full h-full cursor-pointer group"
-                        // Thêm thuộc tính này để ép Framer Motion tính toán bounding box chính xác hơn
-                        layout="position" 
+                        whileHover="hover"
+                        initial="rest"
+                        // THÊM DÒNG NÀY ĐỂ ĐỒNG BỘ ANIMATION MƯỢT MÀ
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                       >
                         <div className="relative w-full h-full block">
                           <Image
