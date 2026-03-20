@@ -67,9 +67,9 @@ export default function AdminDashboard() {
 
                 {/* Overlay actions */}
                 <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="p-3 bg-white text-black hover:bg-black hover:text-white transition-colors border border-black/10">
+                  <Link href={`/admin/projects/${project._id}`} className="p-3 bg-white text-black hover:bg-black hover:text-white transition-colors border border-black/10">
                     <Edit2 size={16} strokeWidth={2.5} />
-                  </button>
+                  </Link>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(project._id); }}
                     className="p-3 bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors border border-black/10"

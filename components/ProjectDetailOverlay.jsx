@@ -133,10 +133,11 @@ export default function ProjectDetailOverlay({ project, onClose }) {
               }}
             >
               <Image
-                src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
+                src={project.general?.coverImage}
                 alt="Cover"
                 fill
                 priority
+                sizes="90vw"
                 draggable={false}
                 className="object-cover select-none pointer-events-none"
               />
@@ -146,7 +147,7 @@ export default function ProjectDetailOverlay({ project, onClose }) {
           {/* BLOCK 2: DESCRIPTION */}
           <div className="h-full flex flex-col shrink-0 lg:pt-[12vh] lg:pb-[12vh] justify-start pt-[20vh] pointer-events-none select-none">
              <div className="w-[290px] text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
-               <p className="whitespace-pre-wrap">{project.description || "Project description following the minimalist architectural aesthetic."}</p>
+               <p className="whitespace-pre-wrap">{project.description || ""}</p>
              </div>
           </div>
 
@@ -170,6 +171,7 @@ export default function ProjectDetailOverlay({ project, onClose }) {
                     src={slides[activeSlide]}
                     alt={`Slide ${activeSlide}`}
                     fill
+                    sizes="90vw"
                     draggable={false}
                     className="object-cover select-none"
                   />
@@ -189,6 +191,7 @@ export default function ProjectDetailOverlay({ project, onClose }) {
                 src={block.url}
                 alt={`Extra ${idx}`}
                 fill
+                sizes="90vw"
                 draggable={false}
                 className="object-cover"
               />

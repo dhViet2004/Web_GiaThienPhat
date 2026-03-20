@@ -1,15 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Building2, Plus, Trash2, ArrowUp, ArrowDown, 
-  Image as ImageIcon, Type, LayoutTemplate, Video, Users, Check
+  Image as ImageIcon, Type, LayoutTemplate, Video, Users, Check, Loader2
 } from 'lucide-react';
 
-export default function CreateNewProjectPage() {
+export default function EditProjectPage({ params }) {
+  const { id: projectId } = use(params);
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   
   // Complex State Management
   const [project, setProject] = useState({
@@ -24,6 +27,42 @@ export default function CreateNewProjectPage() {
     },
     blocks: []
   });
+
+  // Load existing project data
+  useEffect(() => {
+    if (!projectId) return;
+    
+    setLoading(true);
+    fetch(`/api/projects/${projectId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          alert('Không tìm thấy dự án!');
+          router.push('/admin');
+          return;
+        }
+        // Transform data to match form structure
+        const projectData = data.project || data;
+        setProject({
+          general: {
+            title: projectData.general?.title || '',
+            location: projectData.general?.location || '',
+            client: projectData.general?.client || '',
+            typology: projectData.general?.typology || '',
+            status: projectData.general?.status || '',
+            coverImage: projectData.general?.coverImage || '',
+            icon: projectData.general?.icon || 'Building2'
+          },
+          blocks: projectData.blocks || []
+        });
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Lỗi khi tải dữ liệu dự án');
+        setLoading(false);
+      });
+  }, [projectId, router]);
 
   // --- Handlers: General Info ---
   const handleGeneralChange = (e) => {
@@ -173,25 +212,45 @@ export default function CreateNewProjectPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!project.general.title.trim()) {
+      alert('Vui lòng nhập tên dự án!');
+      return;
+    }
+    
+    setSaving(true);
     try {
-      const res = await fetch('/api/projects', {
-        method: 'POST',
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(project)
       });
       if (res.ok) {
-        alert('Đã lưu Dự Án thành công vào hệ thống MongoDB!');
-        router.push('/admin'); // Trở về trang quản trị
-        router.refresh(); // Cập nhật lại UI
+        alert('Đã cập nhật Dự Án thành công!');
+        router.push('/admin');
+        router.refresh();
       } else {
         const data = await res.json();
-        alert('Error: ' + data.error);
+        alert('Lỗi: ' + (data.error || 'Không thể cập nhật'));
       }
     } catch (err) {
       console.error(err);
-      alert('Network Error saving project.');
+      alert('Lỗi mạng khi lưu dự án.');
+    } finally {
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 size={32} className="animate-spin text-black" />
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-black font-sans">
@@ -205,16 +264,31 @@ export default function CreateNewProjectPage() {
           >
             <ArrowLeft size={18} strokeWidth={1.5} />
           </Link>
-          <h1 className="text-3xl font-black uppercase tracking-tighter m-0 leading-none">
-            THÊM DỰ ÁN MỚI
-          </h1>
+          <div>
+            <h1 className="text-3xl font-black uppercase tracking-tighter m-0 leading-none">
+              CHỈNH SỬA DỰ ÁN
+            </h1>
+            <p className="text-xs text-gray-400 uppercase tracking-[0.15em] mt-1">
+              ID: {projectId}
+            </p>
+          </div>
         </div>
         <button 
           onClick={handleSubmit}
-          className="bg-black text-white px-6 py-3 text-[11px] font-bold tracking-[0.2em] uppercase hover:bg-gray-800 transition-colors flex items-center gap-2"
+          disabled={saving}
+          className="bg-black text-white px-6 py-3 text-[11px] font-bold tracking-[0.2em] uppercase hover:bg-gray-800 transition-colors flex items-center gap-2 disabled:opacity-50"
         >
-          <span>Lưu Dự Án Thật</span>
-          <Check size={14} strokeWidth={3} />
+          {saving ? (
+            <>
+              <Loader2 size={14} className="animate-spin" />
+              <span>ĐANG LƯU...</span>
+            </>
+          ) : (
+            <>
+              <span>LƯU THAY ĐỔI</span>
+              <Check size={14} strokeWidth={3} />
+            </>
+          )}
         </button>
       </div>
 
@@ -373,7 +447,7 @@ export default function CreateNewProjectPage() {
 
                     {block.type === 'slider' && (
                       <div className="flex flex-col gap-4">
-                        {block.slides.map((slide, sIdx) => (
+                        {block.slides && block.slides.map((slide, sIdx) => (
                           <div key={sIdx} className="flex gap-4 items-start pb-4 border-b border-gray-100 last:border-0 last:pb-0">
                             <span className="text-[10px] font-bold mt-3 text-gray-400 w-4">{sIdx + 1}.</span>
                             <div className="flex-1 flex flex-col gap-2">
@@ -419,7 +493,7 @@ export default function CreateNewProjectPage() {
 
                     {block.type === 'credits' && (
                       <div className="flex flex-col gap-3">
-                        {block.roles.map((role, rIdx) => (
+                        {block.roles && block.roles.map((role, rIdx) => (
                           <div key={rIdx} className="flex gap-4 items-end">
                             <div className="flex-1">
                               <label className="text-[9px] text-gray-400 uppercase tracking-[0.1em] mb-1 block">Vai Trò Đảm Lĩnh</label>
@@ -506,14 +580,13 @@ export default function CreateNewProjectPage() {
             <div className="w-full bg-white border border-gray-200 shadow-sm relative overflow-hidden">
               <div 
                 className="flex flex-nowrap items-start gap-4 p-4 h-[450px] overflow-x-auto overflow-y-hidden"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }} // Hide scrollbar specifically for the preview
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {/* Custom CSS to hide webkit scrollbar for this specific container */}
                 <style dangerouslySetInnerHTML={{__html: `
                   .flex-nowrap::-webkit-scrollbar { display: none; }
                 `}} />
 
-                {/* 1. The Cover Block (Always exists based on General Info) */}
+                {/* 1. The Cover Block */}
                 <div className="shrink-0 h-full w-[280px] flex flex-col border border-gray-100 bg-white relative group">
                   <div className="relative w-full aspect-[3/2] bg-gray-100">
                     {project.general.coverImage ? (
@@ -531,7 +604,7 @@ export default function CreateNewProjectPage() {
                   </div>
                 </div>
 
-                {/* 2. Fact Sheet (Auto generated from General Info) */}
+                {/* 2. Fact Sheet */}
                 <div className="shrink-0 h-full w-[200px] p-6 bg-white border border-gray-100 flex flex-col justify-center">
                   <div className="flex flex-col gap-4">
                     <div>
@@ -579,7 +652,7 @@ export default function CreateNewProjectPage() {
                     case 'slider':
                       return (
                         <div key={block.id} className="shrink-0 h-full flex items-center bg-gray-50 border border-gray-100 px-4 min-w-[200px] border-l-4 border-l-black">
-                          {block.slides.length === 0 ? (
+                          {(!block.slides || block.slides.length === 0) ? (
                             <div className="w-[150px] text-center flex flex-col items-center gap-2 text-gray-300"><LayoutTemplate size={24} /><span className="text-[8px] uppercase tracking-widest">Trình Chiếu Đang Rỗng</span></div>
                           ) : (
                             <div className="flex gap-2 h-[80%] items-center">
@@ -615,7 +688,7 @@ export default function CreateNewProjectPage() {
                         <div key={block.id} className="shrink-0 h-full w-[300px] p-6 bg-white border border-gray-100 overflow-y-auto">
                           <h4 className="text-[10px] uppercase font-black tracking-[0.2em] mb-6 border-b border-black pb-2">Tín Dụng Nguồn Trích Dẫn</h4>
                           <div className="flex flex-col gap-4">
-                            {block.roles.length === 0 ? (
+                            {(!block.roles || block.roles.length === 0) ? (
                               <span className="text-[9px] text-gray-400 uppercase tracking-widest">Chưa có thông tin được nhập vào</span>
                             ) : (
                               block.roles.map((r, i) => (
@@ -634,7 +707,7 @@ export default function CreateNewProjectPage() {
                   }
                 })}
 
-                {/* Cap end to allow scrolling past last item */}
+                {/* Cap end */}
                 <div className="shrink-0 w-[40px]"></div>
 
               </div>

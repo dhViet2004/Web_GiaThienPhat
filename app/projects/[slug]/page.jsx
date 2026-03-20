@@ -127,6 +127,8 @@ export default function ProjectDetail({ params }) {
   const slides = (project.sliderGallery || (project.blocks?.filter(b => b.type === 'image').map(b => b.url)) || []).filter(s => !!s);
   const extraImages = project.extraImages || project.blocks?.filter(b => b.type === 'image').map(b => ({ url: b.url, caption: b.caption })) || [];
   const credits = project.credits || project.blocks?.filter(b => b.type === 'credits').flatMap(b => b.roles || []) || [];
+  const textBlocks = project.blocks?.filter(b => b.type === 'text') || [];
+  const videoBlocks = project.blocks?.filter(b => b.type === 'video') || [];
 
   return (
     <div className={`relative font-sans text-black bg-white min-h-screen overflow-hidden ${swapping ? 'pointer-events-none' : ''}`}>
@@ -239,7 +241,7 @@ export default function ProjectDetail({ params }) {
         =========================================== */}
         <div className="relative h-auto flex flex-col shrink-0 self-stretch lg:h-full lg:self-end lg:pb-[12vh]">
           <div className="min-w-[290px] w-[290px] text-[13px] leading-[18px] lg:text-sm lg:leading-[20px] text-black flex flex-col pt-12 lg:pt-[12vh]">
-            <p className="whitespace-pre-wrap">{project.description || project.general?.description || "Project description following the minimalist architectural aesthetic."}</p>
+            <p className="whitespace-pre-wrap">{project.description || project.general?.description}</p>
           </div>
         </div>
 
@@ -289,6 +291,34 @@ export default function ProjectDetail({ params }) {
               sizes="76vh"
               className="object-cover grayscale hover:grayscale-0 transition-all duration-700"
             />
+          </div>
+        ))}
+
+        {/* =========================================
+            BLOCK 4.5: TEXT BLOCKS
+        =========================================== */}
+        {textBlocks.map((block, idx) => (
+          <div key={`text-${block.id || idx}`} className="relative h-auto flex flex-col shrink-0 self-stretch lg:h-full lg:self-end lg:pb-[12vh]">
+            <div className="min-w-[290px] w-[290px] lg:w-[340px] text-[13px] leading-[18px] lg:text-sm lg:leading-[20px] text-black flex flex-col pt-12 lg:pt-[12vh]">
+              <p className="whitespace-pre-wrap">{block.content}</p>
+            </div>
+          </div>
+        ))}
+
+        {/* =========================================
+            BLOCK 4.6: VIDEO BLOCKS
+        =========================================== */}
+        {videoBlocks.map((block, idx) => (
+          <div key={`video-${block.id || idx}`} className="relative h-[56vh] lg:h-[76vh] flex-[0_0_auto] shrink-0 self-center">
+            {block.iframeUrl && (
+              <iframe
+                src={block.iframeUrl}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title={`Video ${idx + 1}`}
+              />
+            )}
           </div>
         ))}
 
