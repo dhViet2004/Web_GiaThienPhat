@@ -113,14 +113,15 @@ export default function ProjectDetailOverlay({ project, onClose }) {
             {/* Main Cover Image */}
             <motion.div
               layoutId={`project-image-${project._id}`}
-              className="relative h-full aspect-[3/2] shrink-0 shadow-sm will-change-transform"
+              className="relative h-full shrink-0 shadow-sm"
+              // ĐỒNG BỘ ASPECT RATIO: Gắn cứng style aspect ratio thay vì dùng class Tailwind (aspect-[3/2]) để tránh sai số tính toán
+              style={{ aspectRatio: '3432 / 2288' }}
+              // Đồng bộ thông số transition với thao tác vuốt tay
               transition={{ 
-                type: "spring",
-                stiffness: 150,
-                damping: 24,
-                mass: 1.2,
-                restDelta: 0.001
+                duration: 0.8, 
+                ease: [0.16, 1, 0.3, 1] 
               }}
+              layout="position"
             >
               <Image
                 src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
@@ -128,7 +129,7 @@ export default function ProjectDetailOverlay({ project, onClose }) {
                 fill
                 priority
                 draggable={false}
-                className="object-cover select-none pointer-events-none transform-gpu"
+                className="object-cover select-none pointer-events-none"
               />
             </motion.div>
           </div>

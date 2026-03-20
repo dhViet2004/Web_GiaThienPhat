@@ -73,24 +73,34 @@ export default function ProjectsFeed() {
   const handleSelectProject = (project) => {
     if (project) {
       window.history.pushState(null, '', `/projects/${project._id}`);
-      // Tạm dừng GSAP để mượt hơn
+      
+      // 1. Dừng ngay lập tức mọi hoạt ảnh GSAP đang chạy dở trên thẻ này
+      gsap.killTweensOf('.velocity-card');
+      gsap.killTweensOf('.projects-scaler');
+      
+      // 2. Đưa các card về trạng thái tĩnh hoàn toàn (không scale, không dịch chuyển)
+      gsap.set('.velocity-card', { scale: 1, y: 0 });
+      
+      // 3. Tạm thời tắt ScrollTrigger để tránh việc cuộn chuột làm nhiễu
       ScrollTrigger.getAll().forEach(st => st.disable());
-      // Reset nhanh transform quán tính để landing spot chuẩn
-      gsap.to('.velocity-card', { scale: 1, y: 0, duration: 0.4, ease: 'power2.out' });
+      
+      setSelectedProject(project);
     } else {
       window.history.pushState(null, '', '/');
       setIsExiting(true);
-      // Đưa các card về trạng thái cân bằng trước khi animation kết thúc
-      gsap.to('.velocity-card', { scale: 1, y: 0, duration: 0.4, ease: 'power2.out' });
+      
+      // Khi đóng, cũng đảm bảo card đang ở trạng thái chuẩn
+      gsap.set('.velocity-card', { scale: 1, y: 0 });
+      
+      setSelectedProject(null);
 
-      // Trì hoãn kích hoạt lại GSAP cho đến khi animation thu nhỏ hoàn tất (khoảng 1.5s)
+      // Đợi animation của Framer Motion hoàn tất (khoảng 800ms) rồi mới bật lại GSAP
       setTimeout(() => {
         ScrollTrigger.getAll().forEach(st => st.enable());
         ScrollTrigger.refresh();
         setIsExiting(false);
-      }, 1500);
+      }, 900);
     }
-    setSelectedProject(project);
   };
 
   useEffect(() => {
@@ -250,19 +260,21 @@ export default function ProjectsFeed() {
 
                   {/* --- ẢNH CHÍNH --- */}
                   <div
-                    className="shrink-0 project-image overflow-hidden transform-gpu w-[90vw] sm:w-[350px] lg:w-[64vh] aspect-[3/2]"
+                    className="shrink-0 project-image overflow-hidden w-[90vw] sm:w-[350px] lg:w-[64vh]"
+                    style={{ aspectRatio: '3432 / 2288' }} // ĐỒNG BỘ ASPECT RATIO (đổi từ 2974/2288 thành 3432/2288 để khớp với Overlay)
                   >
-                    <div className="relative w-full h-full transform-gpu origin-center will-change-transform">
+                    {/* Bỏ các class transform-gpu/origin-center của Tailwind có thể gây xung đột transform với Framer Motion */}
+                    <div className="relative w-full h-full">
                       <motion.div
                         layoutId={`project-image-${project._id}`}
                         onClick={() => handleSelectProject(project)}
                         className="relative w-full h-full cursor-pointer group"
-                        whileHover="hover"
-                        initial="rest"
+                        // Thêm thuộc tính này để ép Framer Motion tính toán bounding box chính xác hơn
+                        layout="position" 
                       >
-                        <div className="relative w-full h-full transform-gpu block">
+                        <div className="relative w-full h-full block">
                           <Image
-                            src={project.general?.coverImage}
+                            src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
                             alt={project.general?.title || 'Preview'}
                             fill
                             priority={index < 4}
