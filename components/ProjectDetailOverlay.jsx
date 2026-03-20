@@ -58,7 +58,7 @@ export default function ProjectDetailOverlay({ project, onClose }) {
   };
 
   const ProjectIcon = IconMap[project.general?.icon] || Building2;
-  const slides = project.sliderGallery || (project.blocks?.filter(b => b.type === 'image').map(b => b.url)) || [];
+  const slides = (project.sliderGallery || (project.blocks?.filter(b => b.type === 'image').map(b => b.url)) || []).filter(s => !!s);
 
   return (
     <motion.div 
@@ -80,7 +80,7 @@ export default function ProjectDetailOverlay({ project, onClose }) {
           drag="x"
           dragConstraints={dragConstraints}
           dragElastic={0.2}
-          className="h-full flex flex-nowrap items-start gap-[5vw] px-[10vw] cursor-grab active:cursor-grabbing will-change-transform"
+          className="h-full flex flex-nowrap items-start gap-[5vw] px-[10vw] cursor-grab active:cursor-grabbing will-change-transform perspective-1000"
         >
           {/* BLOCK 1: COVER IMAGE & TITLE */}
           <div className="relative h-full flex flex-col justify-center flex-[0_0_auto] shrink-0 pt-[12vh] pb-[12vh] pointer-events-none select-none">
@@ -111,8 +111,14 @@ export default function ProjectDetailOverlay({ project, onClose }) {
             {/* Main Cover Image */}
             <motion.div
               layoutId={`project-image-${project._id}`}
-              className="relative h-full aspect-[3/2] shrink-0 shadow-sm"
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="relative h-full aspect-[3/2] shrink-0 shadow-sm will-change-transform"
+              transition={{ 
+                type: "spring",
+                stiffness: 260,
+                damping: 26,
+                mass: 0.8,
+                restDelta: 0.001
+              }}
             >
               <Image
                 src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
@@ -120,7 +126,7 @@ export default function ProjectDetailOverlay({ project, onClose }) {
                 fill
                 priority
                 draggable={false}
-                className="object-cover select-none pointer-events-none"
+                className="object-cover select-none pointer-events-none transform-gpu"
               />
             </motion.div>
           </div>

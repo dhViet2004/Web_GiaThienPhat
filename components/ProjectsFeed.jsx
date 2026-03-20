@@ -72,8 +72,13 @@ export default function ProjectsFeed() {
   const handleSelectProject = (project) => {
     if (project) {
       window.history.pushState(null, '', `/projects/${project._id}`);
+      // Tạm dừng GSAP để mượt hơn
+      ScrollTrigger.getAll().forEach(st => st.disable());
     } else {
       window.history.pushState(null, '', '/');
+      // Kích hoạt lại GSAP
+      ScrollTrigger.getAll().forEach(st => st.enable());
+      ScrollTrigger.refresh();
     }
     setSelectedProject(project);
   };
