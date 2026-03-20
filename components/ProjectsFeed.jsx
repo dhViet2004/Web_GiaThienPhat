@@ -7,8 +7,10 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CustomEase } from 'gsap/CustomEase';
 import { useGSAP } from '@gsap/react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon } from 'lucide-react';
+import ProjectDetailOverlay from './ProjectDetailOverlay';
+import { useRouter, usePathname } from 'next/navigation';
 
 gsap.registerPlugin(ScrollTrigger, CustomEase);
 
@@ -29,13 +31,23 @@ export default function ProjectsFeed() {
   const containerRef = useRef(null);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState(null);
   const [introFinished, setIntroFinished] = useState(false);
+
+  const pathname = usePathname();
 
   useEffect(() => {
     fetch('/api/projects')
       .then(res => res.json())
       .then(data => {
-        if (!data.error) setProjects(data);
+        if (!data.error) {
+          setProjects(data);
+          // Kiểm tra URL ban đầu để mở project
+          const pathParts = window.location.pathname.split('/');
+          const projectUrlId = pathParts[pathParts.length - 1];
+          const found = data.find(p => p._id === projectUrlId);
+          if (found) setSelectedProject(found);
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -43,6 +55,28 @@ export default function ProjectsFeed() {
         setLoading(false);
       });
   }, []);
+
+  // Đồng bộ với nút Back của trình duyệt
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathParts = window.location.pathname.split('/');
+      const projectUrlId = pathParts[pathParts.length - 1];
+      const found = projects.find(p => p._id === projectUrlId);
+      setSelectedProject(found || null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [projects]);
+
+  const handleSelectProject = (project) => {
+    if (project) {
+      window.history.pushState(null, '', `/projects/${project._id}`);
+    } else {
+      window.history.pushState(null, '', '/');
+    }
+    setSelectedProject(project);
+  };
 
   useEffect(() => {
     const handleIntroComplete = () => {
@@ -200,11 +234,13 @@ export default function ProjectsFeed() {
                   >
                     <div className="relative w-full h-full transform-gpu origin-center will-change-transform">
                       <motion.div
+                        layoutId={`project-image-${project._id}`}
+                        onClick={() => handleSelectProject(project)}
                         className="relative w-full h-full cursor-pointer group"
                         whileHover="hover"
                         initial="rest"
                       >
-                        <Link href={linkHref} className="relative w-full h-full transform-gpu block">
+                        <div className="relative w-full h-full transform-gpu block">
                           <Image
                             src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
                             alt={project.general?.title || 'Preview'}
@@ -213,7 +249,7 @@ export default function ProjectsFeed() {
                             sizes="(max-width: 768px) 90vw, 64vh"
                             className="object-cover"
                           />
-                        </Link>
+                        </div>
                         <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                       </motion.div>
                     </div>
@@ -238,6 +274,15 @@ export default function ProjectsFeed() {
           })}
         </div>
       </div>
+      {/* --- EXPANDED OVERLAY --- */}
+      <AnimatePresence>
+        {selectedProject && (
+          <ProjectDetailOverlay 
+            project={selectedProject} 
+            onClose={() => handleSelectProject(null)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
