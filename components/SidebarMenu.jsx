@@ -24,22 +24,21 @@ export default function SidebarMenu({ isOpen, onClose }) {
         }`}
       />
 
-      {/* Sidebar Navigation */}
+      {/* Sidebar Navigation (BIG Style Right Drawer) */}
       <nav
-        className={`md:hidden fixed top-0 bottom-0 left-0 z-50 flex flex-col gap-0.5 bg-white pt-[60px] md:pt-[80px] pr-12 pl-[5vw] md:pl-[35px] transition-all duration-300 ease-in-out ${
-          isOpen 
-            ? 'translate-x-0 opacity-100 pointer-events-auto shadow-2xl' 
-            : '-translate-x-full opacity-0 pointer-events-none'
+        className={`fixed top-0 bottom-0 right-0 z-50 w-[210px] bg-white flex flex-col pt-[80px] px-[25px] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'
         }`}
       >
-        <div className="mt-8 flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           {links.map((link) => (
             <Link
               key={link.label}
               href={link.href}
               onClick={onClose}
-              className="text-[13px] font-semibold uppercase opacity-50 transition-opacity hover:opacity-100 text-black py-1.5 pr-8 w-fit tracking-widest"
+              className="group flex items-center text-[13px] font-semibold uppercase text-[#6b6b6b] hover:text-black py-1.5 tracking-widest transition-colors"
             >
+              <span className="mr-2 block w-[10px] -translate-y-[0.5px] opacity-40 group-hover:opacity-100">+</span>
               {link.label}
             </Link>
           ))}

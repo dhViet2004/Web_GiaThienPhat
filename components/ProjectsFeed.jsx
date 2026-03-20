@@ -33,6 +33,7 @@ export default function ProjectsFeed() {
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState(null);
   const [introFinished, setIntroFinished] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
   const pathname = usePathname();
 
@@ -74,11 +75,20 @@ export default function ProjectsFeed() {
       window.history.pushState(null, '', `/projects/${project._id}`);
       // Tạm dừng GSAP để mượt hơn
       ScrollTrigger.getAll().forEach(st => st.disable());
+      // Reset nhanh transform quán tính để landing spot chuẩn
+      gsap.to('.velocity-card', { scale: 1, y: 0, duration: 0.4, ease: 'power2.out' });
     } else {
       window.history.pushState(null, '', '/');
-      // Kích hoạt lại GSAP
-      ScrollTrigger.getAll().forEach(st => st.enable());
-      ScrollTrigger.refresh();
+      setIsExiting(true);
+      // Đưa các card về trạng thái cân bằng trước khi animation kết thúc
+      gsap.to('.velocity-card', { scale: 1, y: 0, duration: 0.4, ease: 'power2.out' });
+      
+      // Trì hoãn kích hoạt lại GSAP cho đến khi animation thu nhỏ hoàn tất (khoảng 1.5s)
+      setTimeout(() => {
+        ScrollTrigger.getAll().forEach(st => st.enable());
+        ScrollTrigger.refresh();
+        setIsExiting(false);
+      }, 1500);
     }
     setSelectedProject(project);
   };
@@ -185,7 +195,13 @@ export default function ProjectsFeed() {
 
       <div
         className="projects-scaler origin-top will-change-transform"
-        style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}
+        style={{ 
+          transformOrigin: '50% 0%', 
+          transform: 'translateZ(0)',
+          pointerEvents: (selectedProject || isExiting) ? 'none' : 'auto',
+          opacity: selectedProject ? 0 : 1,
+          transition: 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
+        }}
       >
         <div className="flex flex-col items-center gap-[5vh] lg:gap-[4vh] w-full px-6 md:px-0">
           {projects.map((project, index) => {
@@ -234,8 +250,7 @@ export default function ProjectsFeed() {
 
                   {/* --- ẢNH CHÍNH --- */}
                   <div
-                    className="shrink-0 project-image overflow-hidden transform-gpu w-[90vw] sm:w-[350px] lg:w-[64vh]"
-                    style={{ aspectRatio: '2974 / 2288' }}
+                    className="shrink-0 project-image overflow-hidden transform-gpu w-[90vw] sm:w-[350px] lg:w-[64vh] aspect-[3/2]"
                   >
                     <div className="relative w-full h-full transform-gpu origin-center will-change-transform">
                       <motion.div

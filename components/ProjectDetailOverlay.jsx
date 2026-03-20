@@ -42,12 +42,14 @@ export default function ProjectDetailOverlay({ project, onClose }) {
   // Cuộn chuột chỉ dùng để thoát
   useEffect(() => {
     const handleWheel = (e) => {
-      if (Math.abs(e.deltaY) > 10) {
+      if (Math.abs(e.deltaY) > 1) {
+        e.preventDefault();
+        e.stopPropagation();
         onClose();
       }
     };
 
-    window.addEventListener('wheel', handleWheel, { passive: true });
+    window.addEventListener('wheel', handleWheel, { passive: false });
     return () => window.removeEventListener('wheel', handleWheel);
   }, [onClose]);
 
@@ -114,9 +116,9 @@ export default function ProjectDetailOverlay({ project, onClose }) {
               className="relative h-full aspect-[3/2] shrink-0 shadow-sm will-change-transform"
               transition={{ 
                 type: "spring",
-                stiffness: 260,
-                damping: 26,
-                mass: 0.8,
+                stiffness: 150,
+                damping: 24,
+                mass: 1.2,
                 restDelta: 0.001
               }}
             >
