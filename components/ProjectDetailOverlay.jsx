@@ -99,6 +99,14 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
     return true;
   });
 
+  /** 首段描述 + 首张图合并为同一横向滑块时，避免重复渲染第一张图 */
+  const descPairedWithFirstImage = Boolean(description && imageBlocks[0]);
+  const galleryImageBlocks = descPairedWithFirstImage ? imageBlocks.slice(1) : imageBlocks;
+  const firstGalleryBlock = imageBlocks[0];
+
+  const normalizeDescriptionText = (text) =>
+    String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
+
   // Stop inertia animation
   const stopInertia = useCallback(() => {
     if (animationRef.current) {
@@ -387,12 +395,41 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
             </div>
           </div>
 
-          {/* BLOCK 2: DESCRIPTION */}
-          {description && (
+          {/* BLOCK 2: DESCRIPTION — 单独文本；或与首张图片合并为同一列（见下方） */}
+          {description && !descPairedWithFirstImage && (
             <div className="h-full flex flex-col shrink-0 lg:pt-[12vh] lg:pb-[12vh] justify-start pt-[20vh] pointer-events-none select-none">
-               <div className="w-[290px] text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
-                 <p className="whitespace-pre-wrap">{description}</p>
+               <div className="w-[290px] min-w-0 max-w-[min(290px,85vw)] text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
+                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
+                 <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
                </div>
+            </div>
+          )}
+
+          {/* 描述 + 首张图：内部 gap-x 须与上方轨道 gap 一致，否则「封面→文字」与「文字→图」视觉间距不对称 */}
+          {descPairedWithFirstImage && firstGalleryBlock && (
+            <div className="h-full flex flex-row flex-nowrap gap-x-[5vw] lg:gap-x-16 shrink-0 flex-[0_0_auto] items-center lg:pt-[12vh] lg:pb-[12vh] pt-[20vh] pointer-events-none select-none self-center isolate">
+              {/* min-w-0 + break-all：避免长路径/无空格字符串溢出盖住右侧图片 */}
+              <div className="w-[290px] min-w-0 max-w-[min(290px,42vw)] shrink-0 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80 pr-1">
+                <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
+              </div>
+              <div className="relative z-0 h-[76vh] aspect-[3/2] w-auto max-w-[min(90vw,960px)] shrink-0 shadow-sm overflow-hidden">
+                {firstGalleryBlock.url && (
+                  <Image
+                    src={firstGalleryBlock.url}
+                    alt={firstGalleryBlock.caption || 'Gallery 1'}
+                    fill
+                    sizes="90vw"
+                    draggable={false}
+                    className="object-cover"
+                  />
+                )}
+                {firstGalleryBlock.caption && (
+                  <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">
+                    {firstGalleryBlock.caption}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -429,8 +466,8 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           )}
 
           {/* BLOCK 4: GALLERY IMAGES */}
-          {imageBlocks.map((block, idx) => (
-            <div key={`gallery-${idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center shadow-sm pointer-events-none select-none">
+          {galleryImageBlocks.map((block, idx) => (
+            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center shadow-sm pointer-events-none select-none">
               {block.url && (
                 <Image
                   src={block.url}

@@ -129,6 +129,13 @@ export default function ProjectDetailPage({ params }) {
     return true;
   });
 
+  const descPairedWithFirstImage = Boolean(description && imageBlocks[0]);
+  const galleryImageBlocks = descPairedWithFirstImage ? imageBlocks.slice(1) : imageBlocks;
+  const firstGalleryBlock = imageBlocks[0];
+
+  const normalizeDescriptionText = (text) =>
+    String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
+
   // Stop inertia animation
   const stopInertia = useCallback(() => {
     if (animationRef.current) {
@@ -449,13 +456,42 @@ export default function ProjectDetailPage({ params }) {
           </div>
 
           {/* BLOCK 2: DESCRIPTION */}
-          {description && (
+          {description && !descPairedWithFirstImage && (
             <div className="h-full flex flex-col shrink-0 lg:pt-[12vh] lg:pb-[12vh] justify-start pt-[20vh] pointer-events-none select-none">
-               <div className="w-[320px] p-8 bg-white/50 backdrop-blur-sm">
-                 <p className="text-[14px] leading-[1.8] text-black uppercase tracking-wide opacity-90 whitespace-pre-wrap font-medium">
-                   {description}
+               <div className="w-[320px] min-w-0 max-w-[min(320px,85vw)] p-8 bg-white/50 backdrop-blur-sm">
+                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-4">DESCRIPTION</h3>
+                 <p className="text-[14px] leading-[1.8] text-black uppercase tracking-wide opacity-90 whitespace-pre-wrap font-medium break-words [overflow-wrap:anywhere] break-all">
+                   {normalizeDescriptionText(description)}
                  </p>
                </div>
+            </div>
+          )}
+
+          {descPairedWithFirstImage && firstGalleryBlock && (
+            <div className="h-full flex flex-row flex-nowrap gap-x-[10vw] lg:gap-x-32 shrink-0 flex-[0_0_auto] items-center lg:pt-[12vh] lg:pb-[12vh] pt-[20vh] pointer-events-none select-none self-center isolate">
+              <div className="w-[320px] min-w-0 max-w-[min(320px,45vw)] p-8 bg-white/50 backdrop-blur-sm shrink-0">
+                <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-4">DESCRIPTION</h3>
+                <p className="text-[14px] leading-[1.8] text-black uppercase tracking-wide opacity-90 whitespace-pre-wrap font-medium break-words [overflow-wrap:anywhere] break-all">
+                  {normalizeDescriptionText(description)}
+                </p>
+              </div>
+              <div className="relative z-0 h-[76vh] aspect-[3/2] w-auto max-w-[min(90vw,960px)] shrink-0 overflow-hidden shadow-lg">
+                {firstGalleryBlock.url && (
+                  <Image
+                    src={firstGalleryBlock.url}
+                    alt={firstGalleryBlock.caption || 'Gallery 1'}
+                    fill
+                    sizes="90vw"
+                    draggable={false}
+                    className="object-cover"
+                  />
+                )}
+                {firstGalleryBlock.caption && (
+                  <div className="absolute bottom-6 left-6 bg-black/80 text-white text-[11px] px-4 py-2 uppercase tracking-wider backdrop-blur-sm">
+                    {firstGalleryBlock.caption}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -492,8 +528,8 @@ export default function ProjectDetailPage({ params }) {
           )}
 
           {/* BLOCK 4: GALLERY IMAGES */}
-          {imageBlocks.map((block, idx) => (
-            <div key={`gallery-${idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center overflow-hidden shadow-lg pointer-events-none select-none">
+          {galleryImageBlocks.map((block, idx) => (
+            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center overflow-hidden shadow-lg pointer-events-none select-none">
               {block.url && (
                 <Image
                   src={block.url}
