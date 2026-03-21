@@ -230,8 +230,14 @@ export default function ProjectDetailPage({ params }) {
     setIsDragging(false);
     
     if (isVerticalSwipe) {
-      if (prevProject?._id) {
+      const deltaY = dragState.current.startY - (dragState.current.lastY || dragState.current.startY);
+      // Navigate or close based on swipe
+      if (deltaY < -50 && prevProject?._id) {
         router.push(`/projects/${prevProject._id}`);
+      } else if (deltaY > 50 && nextProject?._id) {
+        router.push(`/projects/${nextProject._id}`);
+      } else if (Math.abs(deltaY) > 80) {
+        router.push('/');
       }
     } else {
       if (Math.abs(dragState.current.velocity) > 1) {
@@ -240,7 +246,7 @@ export default function ProjectDetailPage({ params }) {
     }
     
     setIsVerticalSwipe(false);
-  }, [isDragging, isVerticalSwipe, prevProject, router, applyInertia]);
+  }, [isDragging, isVerticalSwipe, prevProject, nextProject, router, applyInertia]);
 
   // Mouse leave handler
   const handleMouseLeave = useCallback(() => {
@@ -326,11 +332,11 @@ export default function ProjectDetailPage({ params }) {
       
       // Navigate to prev/next project based on scroll direction
       if (!isDragging) {
-        if (atEnd && e.deltaY < 0 && nextProject?._id) {
+        if (atEnd && e.deltaY > 0 && nextProject?._id) {
           router.push(`/projects/${nextProject._id}`);
           return;
         }
-        if (atStart && e.deltaY > 0 && prevProject?._id) {
+        if (atStart && e.deltaY < 0 && prevProject?._id) {
           router.push(`/projects/${prevProject._id}`);
           return;
         }
@@ -367,7 +373,7 @@ export default function ProjectDetailPage({ params }) {
   const ProjectIcon = IconMap[projectData.general?.icon] || Building2;
 
   return (
-    <div className="relative font-sans text-black bg-white min-h-screen overflow-hidden">
+    <div className="fixed inset-0 z-[100] bg-white text-black overflow-hidden font-sans">
       
       {/* Close button */}
       <Link href="/" className="fixed top-8 right-8 z-[200] cursor-pointer text-black hover:opacity-50 transition-opacity p-2">
@@ -394,26 +400,13 @@ export default function ProjectDetailPage({ params }) {
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <div className="h-full flex flex-nowrap items-center gap-[10vw] lg:gap-32 pl-[8vw] pr-[8vw] lg:pr-[calc(50vw-57vh)]">
+        <div className="h-full flex flex-nowrap items-center gap-[5vw] lg:gap-16 pl-[5vw] pr-[5vw] lg:pr-[calc(50vw-57vh)]">
           
-          {/* Smart Spacer */}
+          {/* Smart Spacer (QUAN TRỌNG: CÔNG THỨC CANH GIỮA ẢNH BÌA) */}
           <div 
             className="relative z-50 hidden lg:block h-px shrink-0 flex-[0_0_auto]" 
             style={{ width: 'calc(50vw - 57vh - 64px)' }} 
           />
-
-          {/* TIER 0: Previous Project Peek */}
-          {prevProject?.general?.coverImage && (
-            <div className="h-[76vh] aspect-[3432/2288] shrink-0 mb-[8vh] opacity-30 pointer-events-none relative grayscale">
-              <Image
-                src={prevProject.general.coverImage}
-                alt="Previous project"
-                fill
-                sizes="50vw"
-                className="object-cover"
-              />
-            </div>
-          )}
 
           {/* BLOCK 1: COVER IMAGE & TITLE */}
           <div className="relative h-full flex flex-col justify-center flex-[0_0_auto] shrink-0 pt-[12vh] pb-[12vh] pointer-events-none select-none">
@@ -455,27 +448,24 @@ export default function ProjectDetailPage({ params }) {
             </div>
           </div>
 
-          {/* BLOCK 2: DESCRIPTION */}
+          {/* BLOCK 2: DESCRIPTION — Đã cập nhật y hệt Overlay */}
           {description && !descPairedWithFirstImage && (
             <div className="h-full flex flex-col shrink-0 lg:pt-[12vh] lg:pb-[12vh] justify-start pt-[20vh] pointer-events-none select-none">
-               <div className="w-[320px] min-w-0 max-w-[min(320px,85vw)] p-8 bg-white/50 backdrop-blur-sm">
-                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-4">DESCRIPTION</h3>
-                 <p className="text-[14px] leading-[1.8] text-black uppercase tracking-wide opacity-90 whitespace-pre-wrap font-medium break-words [overflow-wrap:anywhere] break-all">
-                   {normalizeDescriptionText(description)}
-                 </p>
+               <div className="w-[290px] min-w-0 max-w-[min(290px,85vw)] text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
+                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
+                 <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
                </div>
             </div>
           )}
 
+          {/* DESC + Hình ảnh nối liền */}
           {descPairedWithFirstImage && firstGalleryBlock && (
-            <div className="h-full flex flex-row flex-nowrap gap-x-[10vw] lg:gap-x-32 shrink-0 flex-[0_0_auto] items-center lg:pt-[12vh] lg:pb-[12vh] pt-[20vh] pointer-events-none select-none self-center isolate">
-              <div className="w-[320px] min-w-0 max-w-[min(320px,45vw)] p-8 bg-white/50 backdrop-blur-sm shrink-0">
-                <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-4">DESCRIPTION</h3>
-                <p className="text-[14px] leading-[1.8] text-black uppercase tracking-wide opacity-90 whitespace-pre-wrap font-medium break-words [overflow-wrap:anywhere] break-all">
-                  {normalizeDescriptionText(description)}
-                </p>
+            <div className="h-full flex flex-row flex-nowrap gap-x-[5vw] lg:gap-x-16 shrink-0 flex-[0_0_auto] items-center lg:pt-[12vh] lg:pb-[12vh] pt-[20vh] pointer-events-none select-none self-center isolate">
+              <div className="w-[290px] min-w-0 max-w-[min(290px,42vw)] shrink-0 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80 pr-1">
+                <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
               </div>
-              <div className="relative z-0 h-[76vh] aspect-[3/2] w-auto max-w-[min(90vw,960px)] shrink-0 overflow-hidden shadow-lg">
+              <div className="relative z-0 h-[76vh] aspect-[3/2] w-auto max-w-[min(90vw,960px)] shrink-0 shadow-sm overflow-hidden">
                 {firstGalleryBlock.url && (
                   <Image
                     src={firstGalleryBlock.url}
@@ -487,7 +477,7 @@ export default function ProjectDetailPage({ params }) {
                   />
                 )}
                 {firstGalleryBlock.caption && (
-                  <div className="absolute bottom-6 left-6 bg-black/80 text-white text-[11px] px-4 py-2 uppercase tracking-wider backdrop-blur-sm">
+                  <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">
                     {firstGalleryBlock.caption}
                   </div>
                 )}
@@ -498,7 +488,7 @@ export default function ProjectDetailPage({ params }) {
           {/* BLOCK 3: SLIDER */}
           {sliderImages.length > 0 && (
             <div 
-              className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center overflow-hidden shadow-lg bg-gray-50 pointer-events-auto"
+              className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center overflow-hidden shadow-sm bg-gray-50 pointer-events-auto"
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <AnimatePresence mode="wait">
@@ -521,7 +511,7 @@ export default function ProjectDetailPage({ params }) {
                 </motion.div>
               </AnimatePresence>
               
-              <div className="absolute bottom-8 right-8 text-[11px] font-bold tracking-widest bg-white px-4 py-2 uppercase shadow-sm">
+              <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase">
                 {activeSlide + 1} / {sliderImages.length}
               </div>
             </div>
@@ -529,7 +519,7 @@ export default function ProjectDetailPage({ params }) {
 
           {/* BLOCK 4: GALLERY IMAGES */}
           {galleryImageBlocks.map((block, idx) => (
-            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center overflow-hidden shadow-lg pointer-events-none select-none">
+            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center shadow-sm pointer-events-none select-none">
               {block.url && (
                 <Image
                   src={block.url}
@@ -541,7 +531,7 @@ export default function ProjectDetailPage({ params }) {
                 />
               )}
               {block.caption && (
-                <div className="absolute bottom-6 left-6 bg-black/80 text-white text-[11px] px-4 py-2 uppercase tracking-wider backdrop-blur-sm">
+                <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">
                   {block.caption}
                 </div>
               )}
@@ -549,7 +539,7 @@ export default function ProjectDetailPage({ params }) {
           ))}
 
           {/* Credits Block */}
-          <div className="h-[76vh] self-center flex flex-col flex-wrap gap-x-16 gap-y-8 pt-12 pointer-events-none select-none shrink-0">
+          <div className="h-[76vh] self-center flex flex-col flex-wrap gap-x-12 gap-y-6 pt-12 pointer-events-none select-none shrink-0">
             <div className="w-[200px]">
               <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Status</h4>
               <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectData.general?.status || 'Completed'}</p>
@@ -560,30 +550,17 @@ export default function ProjectDetailPage({ params }) {
             </div>
           </div>
 
-          {/* TIER 0: Next Project Peek */}
-          {nextProject?.general?.coverImage && (
-            <div className="h-[76vh] aspect-[3432/2288] shrink-0 mt-[8vh] opacity-30 pointer-events-none relative grayscale">
-              <Image
-                src={nextProject.general.coverImage}
-                alt="Next project"
-                fill
-                sizes="50vw"
-                className="object-cover"
-              />
-            </div>
-          )}
-
           {/* End spacer */}
           <div className="shrink-0 w-[5vw]" />
         </div>
       </div>
 
       {/* Drag indicator */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-50">
-        <div className="flex flex-col items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-black">
-          <span className="w-12 h-px bg-black"></span>
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-40">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-black">
+          <span className="w-8 h-px bg-black"></span>
           <span>Kéo ngang để xem</span>
-          <span className="w-12 h-px bg-black"></span>
+          <span className="w-8 h-px bg-black"></span>
         </div>
       </div>
 
