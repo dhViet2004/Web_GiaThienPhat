@@ -60,7 +60,47 @@ export default function ProjectDetail({ params }) {
 
     let targetScroll = container.scrollLeft;
     let isNavigating = false;
+    let isDragging = false;
+    let startX = 0;
+    let startScrollLeft = 0;
 
+    // --- MOUSE DRAG HANDLING ---
+    const handleMouseDown = (e) => {
+      // Chỉ xử lý khi click chuột trái
+      if (e.button !== 0) return;
+      isDragging = true;
+      startX = e.pageX;
+      startScrollLeft = container.scrollLeft;
+      container.style.cursor = 'grabbing';
+      container.style.userSelect = 'none';
+      e.preventDefault();
+    };
+
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const x = e.pageX;
+      const walk = (startX - x) * 1.5; // sensitivity
+      targetScroll = Math.max(0, startScrollLeft + walk);
+      container.scrollLeft = targetScroll;
+    };
+
+    const handleMouseUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      container.style.cursor = '';
+      container.style.userSelect = '';
+    };
+
+    const handleMouseLeave = () => {
+      if (isDragging) {
+        isDragging = false;
+        container.style.cursor = '';
+        container.style.userSelect = '';
+      }
+    };
+
+    // --- WHEEL HANDLING ---
     const handleWheel = (e) => {
       // Cho phép trackpad lướt ngang tự nhiên
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
@@ -107,8 +147,20 @@ export default function ProjectDetail({ params }) {
       });
     };
 
+    // Prevent default drag behavior on the container
+    container.addEventListener('dragstart', (e) => e.preventDefault());
+    
+    container.addEventListener('mousedown', handleMouseDown);
+    container.addEventListener('mousemove', handleMouseMove);
+    container.addEventListener('mouseup', handleMouseUp);
+    container.addEventListener('mouseleave', handleMouseLeave);
     container.addEventListener('wheel', handleWheel, { passive: false });
+
     return () => {
+      container.removeEventListener('mousedown', handleMouseDown);
+      container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mouseup', handleMouseUp);
+      container.removeEventListener('mouseleave', handleMouseLeave);
       container.removeEventListener('wheel', handleWheel);
       gsap.killTweensOf(container);
     };
@@ -175,12 +227,26 @@ export default function ProjectDetail({ params }) {
         __html: `
         .scrollbar-hidden::-webkit-scrollbar { display: none; }
         .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+        .drag-container {
+          cursor: grab;
+          user-select: none;
+          -webkit-user-select: none;
+        }
+        .drag-container:active {
+          cursor: grabbing;
+        }
+        .drag-container img {
+          pointer-events: none;
+          -webkit-user-drag: none;
+          user-select: none;
+          -webkit-user-select: none;
+        }
       `}} />
 
       {/* DẢI CUỘN NGANG CHÍNH */}
       <div
         ref={containerRef}
-        className="h-screen w-screen overflow-x-auto overflow-y-hidden flex flex-nowrap items-center gap-[24px] lg:gap-8 scrollbar-hidden overscroll-none"
+        className="drag-container h-screen w-screen overflow-x-auto overflow-y-hidden flex flex-nowrap items-center gap-[24px] lg:gap-8 scrollbar-hidden overscroll-none"
       >
 
         {/* Spacer: đẩy khối ảnh vào chính giữa viewport (text trái sát ảnh) */}

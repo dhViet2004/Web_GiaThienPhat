@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon } from 'lucide-react';
+import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon, Loader2 } from 'lucide-react';
 
 const IconMap = {
   Building2: Building2,
@@ -14,13 +14,46 @@ const IconMap = {
   Image: ImageIcon
 };
 
-export default function ProjectDetailOverlay({ project, onClose }) {
+// Helper to get text blocks
+function getTextBlock(project) {
+  const textBlock = project.blocks?.find(b => b.type === 'text');
+  return textBlock?.content || '';
+}
+
+// Helper to get slider images from slider blocks
+function getSliderImages(project) {
+  const sliderBlocks = project.blocks?.filter(b => b.type === 'slider');
+  const images = [];
+  sliderBlocks.forEach(block => {
+    if (block.slides && block.slides.length > 0) {
+      block.slides.forEach(slide => {
+        if (slide.url) images.push(slide.url);
+      });
+    }
+  });
+  return images;
+}
+
+// Helper to get year from general or createdAt
+function getProjectYear(project) {
+  if (project.general?.year) return project.general.year;
+  if (project.createdAt) {
+    return new Date(project.createdAt).getFullYear().toString();
+  }
+  return '2024';
+}
+
+export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
   const containerRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
-
   const [dragConstraints, setDragConstraints] = useState({ left: 0, right: 0 });
 
-  // Cập nhật vùng kéo dựa trên kích thước thực tế
+  // Get data from blocks array
+  const description = getTextBlock(project);
+  const sliderImages = getSliderImages(project);
+  const projectYear = getProjectYear(project);
+
+  // Update constraints when container changes
   useEffect(() => {
     const updateConstraints = () => {
       if (containerRef.current) {
@@ -29,9 +62,8 @@ export default function ProjectDetailOverlay({ project, onClose }) {
         setDragConstraints({ left: -(scrollWidth - clientWidth), right: 0 });
       }
     };
-    
-    // Đợi ảnh load xong để có kích thước chuẩn
-    const timer = setTimeout(updateConstraints, 500);
+
+    const timer = setTimeout(updateConstraints, 1000);
     window.addEventListener('resize', updateConstraints);
     return () => {
       clearTimeout(timer);
@@ -39,7 +71,13 @@ export default function ProjectDetailOverlay({ project, onClose }) {
     };
   }, [project]);
 
-  // Cuộn chuột chỉ dùng để thoát
+  const handleDragEnd = (_, info) => {
+    if (Math.abs(info.offset.y) > 100 || Math.abs(info.velocity.y) > 500) {
+      onClose();
+    }
+  };
+
+  // Cuộn chuột để thoát overlay
   useEffect(() => {
     const handleWheel = (e) => {
       if (Math.abs(e.deltaY) > 1) {
@@ -53,22 +91,28 @@ export default function ProjectDetailOverlay({ project, onClose }) {
     return () => window.removeEventListener('wheel', handleWheel);
   }, [onClose]);
 
-  const handleDragEnd = (_, info) => {
-    if (Math.abs(info.offset.y) > 100 || Math.abs(info.velocity.y) > 500) {
-      onClose();
-    }
-  };
-
   const ProjectIcon = IconMap[project.general?.icon] || Building2;
-  const slides = (project.sliderGallery || (project.blocks?.filter(b => b.type === 'image').map(b => b.url)) || []).filter(s => !!s);
+
+  // Get all blocks to display (excluding the first image block which is cover)
+  const imageBlocks = project.blocks?.filter(b => b.type === 'image') || [];
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] bg-white text-black overflow-hidden font-sans"
     >
+      {/* Loading overlay when fetching full project data */}
+      {isLoading && (
+        <div className="absolute inset-0 z-[200] bg-white/90 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-black" />
+            <span className="text-xs uppercase tracking-[0.2em] text-gray-500">Loading project details...</span>
+          </div>
+        </div>
+      )}
+
       <motion.div 
         drag="y"
         dragConstraints={{ top: 0, bottom: 0 }}
@@ -84,11 +128,7 @@ export default function ProjectDetailOverlay({ project, onClose }) {
           dragElastic={0.2}
           className="h-screen w-screen overflow-x-auto overflow-y-hidden flex flex-nowrap items-center gap-[5vw] lg:gap-16 scrollbar-hidden overscroll-none cursor-grab active:cursor-grabbing will-change-transform perspective-1000"
         >
-          {/* Smart Spacer to center the image.
-              Formula: 50vw (center of screen) - half of image width (57vh) - gap (64px)
-              Assuming image aspect ratio is 3432/2288 (1.5) and height is 76vh.
-              1.5 * 76vh = 114vh (Full Width). Half width = 57vh.
-          */}
+          {/* Smart Spacer to center the image. */}
           <div 
             className="relative z-50 hidden lg:block h-px shrink-0 flex-[0_0_auto]" 
             style={{ width: 'calc(50vw - 57vh - 64px)' }} 
@@ -96,18 +136,19 @@ export default function ProjectDetailOverlay({ project, onClose }) {
 
           {/* Mobile spacer fallback */}
           <div className="shrink-0 w-[5vw] lg:hidden block" />
-          {/* BLOCK 1: COVER IMAGE & TITLE — text trái sát cạnh trái ảnh */}
+
+          {/* BLOCK 1: COVER IMAGE & TITLE */}
           <div className="relative h-full flex flex-col justify-center flex-[0_0_auto] shrink-0 pt-[12vh] pb-[12vh] pointer-events-none select-none">
-            {/* Title & Location — sát cạnh trái ảnh */}
+            {/* Title & Location */}
             <div className="absolute top-0 right-full mr-[30px] lg:mr-[44px] w-[300px] flex flex-col items-end text-right z-20 pt-[12vh]">
               <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
                 <ProjectIcon size={24} strokeWidth={1.5} />
               </div>
               <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none m-0 p-0 break-words w-full">
-                {project.general?.title}
+                {project.general?.title || 'Untitled Project'}
               </h1>
               <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12">
-                {project.general?.location}
+                {project.general?.location || ''}
               </p>
 
               <div className="hidden lg:flex flex-col items-end w-full space-y-4">
@@ -133,7 +174,7 @@ export default function ProjectDetailOverlay({ project, onClose }) {
               }}
             >
               <Image
-                src={project.general?.coverImage}
+                src={project.general?.coverImage || '/placeholder.jpg'}
                 alt="Cover"
                 fill
                 priority
@@ -144,19 +185,21 @@ export default function ProjectDetailOverlay({ project, onClose }) {
             </motion.div>
           </div>
 
-          {/* BLOCK 2: DESCRIPTION */}
-          <div className="h-full flex flex-col shrink-0 lg:pt-[12vh] lg:pb-[12vh] justify-start pt-[20vh] pointer-events-none select-none">
-             <div className="w-[290px] text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
-               <p className="whitespace-pre-wrap">{project.description || ""}</p>
-             </div>
-          </div>
+          {/* BLOCK 2: DESCRIPTION - Get from blocks type='text' */}
+          {description && (
+            <div className="h-full flex flex-col shrink-0 lg:pt-[12vh] lg:pb-[12vh] justify-start pt-[20vh] pointer-events-none select-none">
+               <div className="w-[290px] text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
+                 <p className="whitespace-pre-wrap">{description}</p>
+               </div>
+            </div>
+          )}
 
-          {/* BLOCK 3: CROSSFADE SLIDER */}
-          {slides.length > 0 && (
+          {/* BLOCK 3: SLIDER - Get from blocks type='slider' */}
+          {sliderImages.length > 0 && (
             <div 
               className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center cursor-pointer overflow-hidden group shadow-sm bg-gray-50 pointer-events-auto"
-              onPointerDown={(e) => e.stopPropagation()} // Đảm bảo click chuyển slide không trigger drag
-              onClick={() => setActiveSlide((prev) => (prev + 1) % slides.length)}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <AnimatePresence mode="wait">
                 <motion.div
@@ -168,8 +211,8 @@ export default function ProjectDetailOverlay({ project, onClose }) {
                   className="absolute inset-0"
                 >
                   <Image
-                    src={slides[activeSlide]}
-                    alt={`Slide ${activeSlide}`}
+                    src={sliderImages[activeSlide]}
+                    alt={`Slide ${activeSlide + 1}`}
                     fill
                     sizes="90vw"
                     draggable={false}
@@ -179,22 +222,29 @@ export default function ProjectDetailOverlay({ project, onClose }) {
               </AnimatePresence>
               
               <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase">
-                {activeSlide + 1} / {slides.length}
+                {activeSlide + 1} / {sliderImages.length}
               </div>
             </div>
           )}
 
-          {/* BLOCK 4: ADDITIONAL GALLERY & CREDITS */}
-          {project.blocks?.filter(b => b.type === 'image').slice(2).map((block, idx) => (
-            <div key={idx} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center shadow-sm pointer-events-none select-none">
-              <Image
-                src={block.url}
-                alt={`Extra ${idx}`}
-                fill
-                sizes="90vw"
-                draggable={false}
-                className="object-cover"
-              />
+          {/* BLOCK 4: ADDITIONAL GALLERY - Get from blocks type='image' */}
+          {imageBlocks.map((block, idx) => (
+            <div key={`gallery-${idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center shadow-sm pointer-events-none select-none">
+              {block.url && (
+                <Image
+                  src={block.url}
+                  alt={block.caption || `Gallery ${idx + 1}`}
+                  fill
+                  sizes="90vw"
+                  draggable={false}
+                  className="object-cover"
+                />
+              )}
+              {block.caption && (
+                <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">
+                  {block.caption}
+                </div>
+              )}
             </div>
           ))}
 
@@ -206,7 +256,7 @@ export default function ProjectDetailOverlay({ project, onClose }) {
             </div>
             <div className="w-[200px]">
               <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Year</h4>
-              <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.year || '2024'}</p>
+              <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
             </div>
           </div>
 

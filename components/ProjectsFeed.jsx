@@ -10,14 +10,11 @@ import { useGSAP } from '@gsap/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon } from 'lucide-react';
 import ProjectDetailOverlay from './ProjectDetailOverlay';
-import { useRouter, usePathname } from 'next/navigation';
 
 gsap.registerPlugin(ScrollTrigger, CustomEase);
 
-// Đường cong chuyển động mượt mà chuẩn kiến trúc
 CustomEase.create('customBIG', 'M0,0 C0.45,0 0.55,1 1,1');
 
-// Icon Mapper để biến chuỗi String từ DB thành React Component
 const IconMap = {
   Building2: Building2,
   Trees: Trees,
@@ -32,10 +29,9 @@ export default function ProjectsFeed() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [introFinished, setIntroFinished] = useState(false);
+  const [selectedProjectFull, setSelectedProjectFull] = useState(null);
   const [isExiting, setIsExiting] = useState(false);
-
-  const pathname = usePathname();
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   useEffect(() => {
     fetch('/api/projects')
@@ -43,7 +39,6 @@ export default function ProjectsFeed() {
       .then(data => {
         if (!data.error) {
           setProjects(data);
-          // Kiểm tra URL ban đầu để mở project
           const pathParts = window.location.pathname.split('/');
           const projectUrlId = pathParts[pathParts.length - 1];
           const found = data.find(p => p._id === projectUrlId);
@@ -57,7 +52,6 @@ export default function ProjectsFeed() {
       });
   }, []);
 
-  // Đồng bộ với nút Back của trình duyệt
   useEffect(() => {
     const handlePopState = () => {
       const pathParts = window.location.pathname.split('/');
@@ -73,24 +67,38 @@ export default function ProjectsFeed() {
   const handleSelectProject = (project) => {
     if (project) {
       window.history.pushState(null, '', `/projects/${project._id}`);
-      
-      // Dừng hoạt ảnh GSAP đang chạy và đưa về trạng thái tĩnh
       gsap.killTweensOf('.velocity-card');
       gsap.killTweensOf('.projects-scaler');
       gsap.set('.velocity-card', { scale: 1, y: 0 });
-      
-      // Khóa cuộn trang web để tránh nhiễu
       document.body.style.overflow = 'hidden';
-      
       setSelectedProject(project);
+      setSelectedProjectFull(null);
+      setIsLoadingDetail(true);
+
+      // Fetch full project data including sliderGallery and blocks
+      fetch(`/api/projects/${project._id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error && data.project) {
+            setSelectedProjectFull(data.project);
+          } else {
+            // Fallback to basic project data if API fails
+            setSelectedProjectFull(project);
+          }
+          setIsLoadingDetail(false);
+        })
+        .catch(err => {
+          console.error('Error fetching project detail:', err);
+          setSelectedProjectFull(project);
+          setIsLoadingDetail(false);
+        });
     } else {
       window.history.pushState(null, '', '/');
       setIsExiting(true);
-      
       gsap.set('.velocity-card', { scale: 1, y: 0 });
       setSelectedProject(null);
-
-      // Mở khóa cuộn trang web sau khi animation hoàn tất
+      setSelectedProjectFull(null);
+      setIsLoadingDetail(false);
       setTimeout(() => {
         document.body.style.overflow = 'auto';
         setIsExiting(false);
@@ -100,19 +108,14 @@ export default function ProjectsFeed() {
 
   useEffect(() => {
     const handleIntroComplete = () => {
-      setIntroFinished(true);
       setTimeout(() => ScrollTrigger.refresh(), 100);
     };
-    window.addEventListener("introAnimationComplete", handleIntroComplete);
-
-    // Fallback in case the event is missed
+    window.addEventListener('introAnimationComplete', handleIntroComplete);
     const fallback = setTimeout(() => {
-      setIntroFinished(true);
       ScrollTrigger.refresh();
     }, 3500);
-
     return () => {
-      window.removeEventListener("introAnimationComplete", handleIntroComplete);
+      window.removeEventListener('introAnimationComplete', handleIntroComplete);
       clearTimeout(fallback);
     };
   }, []);
@@ -120,7 +123,6 @@ export default function ProjectsFeed() {
   useGSAP(() => {
     if (loading || projects.length === 0) return;
 
-    // 1. Scale và Quán tính Toàn cục
     gsap.to('.projects-scaler', {
       scale: 0.95,
       y: '4vh',
@@ -129,13 +131,10 @@ export default function ProjectsFeed() {
         trigger: containerRef.current,
         start: 'top top',
         end: 'bottom bottom',
-        // ĐIỀU CHỈNH 1: Đổi scrub: true thành số (1.2 giây) 
-        // Khi dừng cuộn, trang web sẽ vẫn tiếp tục thu nhỏ/trượt thêm 1.2s nữa
         scrub: 1.2,
       }
     });
 
-    // 2. Velocity Scale & Momentum Shift (Quán tính kéo giãn)
     ScrollTrigger.create({
       trigger: containerRef.current,
       start: 'top bottom',
@@ -143,26 +142,19 @@ export default function ProjectsFeed() {
       onUpdate: (self) => {
         const rawVelocity = typeof self.getVelocity === 'function' ? self.getVelocity() : 0;
         const velocity = Math.abs(rawVelocity);
-
-        // Scale
         const targetCardScale = Math.max(0.97, 1 - velocity / 8000);
-
-        // ĐIỀU CHỈNH 2: TÍNH TOÁN QUÁN TÍNH DỌC (Momentum Y)
-        // Khi cuộn xuống (rawVelocity > 0), khối sẽ bị kéo xuống dưới (y dương) như bị vướng gió.
-        // Dùng utils.clamp để giới hạn độ văng tối đa là 80px để tránh vỡ giao diện.
         const momentumY = gsap.utils.clamp(-80, 80, rawVelocity / 25);
 
         gsap.to('.velocity-card', {
           scale: targetCardScale,
-          y: momentumY, // Áp dụng lực cản
-          duration: 0.8, // Mất 0.8s để khối đàn hồi nảy ngược về vị trí cũ sau khi ngừng cuộn
+          y: momentumY,
+          duration: 0.8,
           ease: 'power3.out',
           overwrite: 'auto',
         });
       }
     });
 
-    // 3. Hiệu ứng Parallax Reveal ban đầu cho từng item
     const items = gsap.utils.toArray('.project-row');
     items.forEach((item) => {
       const imageBlock = item.querySelector('.project-image');
@@ -197,117 +189,107 @@ export default function ProjectsFeed() {
 
   return (
     <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
+      <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
+        <div
+          className="projects-scaler origin-top will-change-transform"
+          style={{
+            transformOrigin: '50% 0%',
+            transform: 'translateZ(0)',
+            pointerEvents: (selectedProject || isExiting) ? 'none' : 'auto',
+            opacity: selectedProject ? 0 : 1,
+            transition: 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
+        >
+          <div className="flex flex-col items-center gap-[5vh] lg:gap-[4vh] w-full">
+            {projects.map((project, index) => {
+              const ProjectIcon = IconMap[project.general?.icon] || Building2;
+              const linkHref = `/projects/${project._id}`;
 
-      <div
-        className="projects-scaler origin-top will-change-transform"
-        style={{
-          transformOrigin: '50% 0%',
-          transform: 'translateZ(0)',
-          pointerEvents: (selectedProject || isExiting) ? 'none' : 'auto',
-          opacity: selectedProject ? 0 : 1,
-          transition: 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
-        }}
-      >
-        <div className="flex flex-col items-center gap-[5vh] lg:gap-[4vh] w-full px-6 md:px-0">
-          {projects.map((project, index) => {
-            const ProjectIcon = IconMap[project.general?.icon] || Building2;
-            const linkHref = `/projects/${project._id}`;
+              return (
+                <section
+                  key={project._id || index}
+                  className="project-row relative flex w-full max-w-[1600px] justify-center items-start"
+                >
+                  <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-start will-change-transform">
+                    <div className="hidden md:flex absolute top-0 right-full mr-[30px] lg:mr-[44px] w-[324px] project-info justify-end z-20">
+                      <div className="relative w-full text-right flex flex-col items-end origin-right">
+                        <div className="absolute top-0 right-0 size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center">
+                          <ProjectIcon size={22} strokeWidth={1.5} />
+                        </div>
 
-            return (
-              <section
-                key={project._id || index}
-                className="project-row relative flex w-full justify-center items-start"
-              >
-
-                {/* Khối này sẽ nhận quán tính (Momentum Shift) và đàn hồi mượt mà */}
-                <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-start will-change-transform transform-gpu">
-
-                  {/* --- CHỮ TRÊN DESKTOP --- */}
-                  <div className="hidden md:flex absolute top-0 right-full mr-[30px] lg:mr-[44px] w-[324px] project-info transform-gpu justify-end z-20">
-                    <div className="relative w-full text-right flex flex-col items-end transform-gpu origin-right">
-
-                      {/* Icon vuông đen */}
-                      <div className="absolute top-0 right-0 size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center">
-                        <ProjectIcon size={22} strokeWidth={1.5} />
+                        <Link href={linkHref} className="mt-[18px] lg:mt-[24px] group cursor-pointer flex flex-col items-end">
+                          <motion.div
+                            className="relative pr-14 lg:pr-20"
+                            whileHover="hover"
+                            initial="rest"
+                          >
+                            <h2 className="text-[14px] lg:text-[18px] font-normal uppercase text-black m-0 p-0 leading-tight whitespace-nowrap">
+                              {project.general?.title}
+                            </h2>
+                            <motion.span
+                              className="absolute -bottom-1 right-14 lg:right-20 h-px bg-black"
+                              variants={{ rest: { width: 0 }, hover: { width: '100%' } }}
+                              transition={{ duration: 0.4, ease: [0.45, 0, 0.55, 1] }}
+                            />
+                          </motion.div>
+                          <p className="text-[#797979] text-[11px] lg:text-[12px] uppercase mt-[4px] lg:mt-[6px] pr-14 lg:pr-20">
+                            {project.general?.location}
+                          </p>
+                        </Link>
                       </div>
+                    </div>
 
-                      <Link href={linkHref} className="mt-[18px] lg:mt-[24px] group cursor-pointer flex flex-col items-end block">
+                    <div className="shrink-0 project-image overflow-hidden w-[90vw] sm:w-[350px] lg:w-[64vh] aspect-3/2">
+                      <div className="relative w-full h-full">
                         <motion.div
-                          className="relative block transform-gpu pr-14 lg:pr-20"
+                          layoutId={`project-image-${project._id}`}
+                          onClick={() => handleSelectProject(project)}
+                          className="relative w-full h-full cursor-pointer group"
                           whileHover="hover"
                           initial="rest"
+                          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                         >
-                          <h2 className="text-[14px] lg:text-[18px] font-normal uppercase text-black m-0 p-0 leading-tight whitespace-nowrap">
-                            {project.general?.title}
-                          </h2>
-                          <motion.span
-                            className="absolute -bottom-1 right-14 lg:right-20 h-[1px] bg-black"
-                            variants={{ rest: { width: 0 }, hover: { width: '100%' } }}
-                            transition={{ duration: 0.4, ease: [0.45, 0, 0.55, 1] }}
-                          />
+                          <div className="relative w-full h-full">
+                            <Image
+                              src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
+                              alt={project.general?.title || 'Preview'}
+                              fill
+                              priority={index < 4}
+                              sizes="(max-width: 768px) 90vw, 64vh"
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                         </motion.div>
-                        <p className="text-[#797979] text-[11px] lg:text-[12px] uppercase mt-[4px] lg:mt-[6px] pr-14 lg:pr-20">
-                          {project.general?.location}
-                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex md:hidden flex-col w-full mt-4 project-info px-2">
+                      <Link href={linkHref} className="flex items-start gap-4">
+                        <div className="size-[30px] bg-black text-white shrink-0 flex items-center justify-center">
+                          <ProjectIcon size={16} strokeWidth={1.5} />
+                        </div>
+                        <div>
+                          <h2 className="text-[15px] font-normal uppercase text-black leading-none">{project.general?.title}</h2>
+                          <p className="text-[#797979] text-[11px] uppercase mt-1">{project.general?.location}</p>
+                        </div>
                       </Link>
                     </div>
                   </div>
-
-                  {/* --- ẢNH CHÍNH --- */}
-                  <div
-                    className="shrink-0 project-image overflow-hidden w-[90vw] sm:w-[350px] lg:w-[64vh] aspect-[3/2]"
-                  >
-                    {/* Bỏ các class transform-gpu/origin-center của Tailwind có thể gây xung đột transform với Framer Motion */}
-                    <div className="relative w-full h-full">
-                      <motion.div
-                        layoutId={`project-image-${project._id}`}
-                        onClick={() => handleSelectProject(project)}
-                        className="relative w-full h-full cursor-pointer group"
-                        whileHover="hover"
-                        initial="rest"
-                        // THÊM DÒNG NÀY ĐỂ ĐỒNG BỘ ANIMATION MƯỢT MÀ
-                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                      >
-                        <div className="relative w-full h-full block">
-                          <Image
-                            src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
-                            alt={project.general?.title || 'Preview'}
-                            fill
-                            priority={index < 4}
-                            sizes="(max-width: 768px) 90vw, 64vh"
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                      </motion.div>
-                    </div>
-                  </div>
-
-                  {/* --- CHỮ TRÊN MOBILE --- */}
-                  <div className="flex md:hidden flex-col w-full mt-4 project-info px-2">
-                    <Link href={linkHref} className="flex items-start gap-4 block">
-                      <div className="size-[30px] bg-black text-white shrink-0 flex items-center justify-center">
-                        <ProjectIcon size={16} strokeWidth={1.5} />
-                      </div>
-                      <div>
-                        <h2 className="text-[15px] font-normal uppercase text-black leading-none">{project.general?.title}</h2>
-                        <p className="text-[#797979] text-[11px] uppercase mt-1">{project.general?.location}</p>
-                      </div>
-                    </Link>
-                  </div>
-
-                </div>
-              </section>
-            );
-          })}
+                </section>
+              );
+            })}
+          </div>
         </div>
       </div>
-      {/* --- EXPANDED OVERLAY --- */}
+
       <AnimatePresence>
-        {selectedProject && (
+        {selectedProject && selectedProject.general && (
           <ProjectDetailOverlay
-            project={selectedProject}
+            key={selectedProject._id}
+            project={selectedProjectFull || selectedProject}
             onClose={() => handleSelectProject(null)}
+            isLoading={isLoadingDetail}
           />
         )}
       </AnimatePresence>
