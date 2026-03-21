@@ -286,7 +286,8 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
   // Wheel handler for vertical scroll to close
   useEffect(() => {
     const handleWheel = (e) => {
-      if (Math.abs(e.deltaY) > 50 && !isDragging) {
+      // Chỉ cần cuộn nhẹ là đóng overlay
+      if (Math.abs(e.deltaY) > 3 && !isDragging) {
         onClose();
       }
     };
