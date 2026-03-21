@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import gsap from 'gsap';
@@ -27,31 +27,128 @@ const IconMap = {
 
 export default function ProjectsFeed() {
   const containerRef = useRef(null);
+  
+  // Basic projects list (for feed display)
   const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Full project data cache - prefetched during intro
+  const [projectsCache, setProjectsCache] = useState({});
+  
+  // Overlay state
   const [selectedProject, setSelectedProject] = useState(null);
-  const [selectedProjectFull, setSelectedProjectFull] = useState(null);
   const [isExiting, setIsExiting] = useState(false);
-  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
+  // Track if we're in intro phase (prefetching data)
+  const [isIntroPhase, setIsIntroPhase] = useState(true);
+
+  // Prefetch all project details
+  const prefetchAllProjects = useCallback(async (projectsList) => {
+    if (!projectsList || projectsList.length === 0) return;
+    
+    const cache = {};
+    
+    // Fetch all project details in parallel (but limit concurrency)
+    const batchSize = 5;
+    for (let i = 0; i < projectsList.length; i += batchSize) {
+      const batch = projectsList.slice(i, i + batchSize);
+      const promises = batch.map(project => 
+        apiGet(`/api/projects/${project._id}`)
+          .then(data => {
+            if (!data.error && (data.project || data)) {
+              cache[project._id] = data.project || data;
+            }
+          })
+          .catch(err => {
+            console.warn(`Failed to prefetch project ${project._id}:`, err);
+            // Cache the basic data as fallback
+            cache[project._id] = project;
+          })
+      );
+      await Promise.all(promises);
+    }
+    
+    setProjectsCache(cache);
+  }, []);
+
+  // Initialize: fetch projects list, then prefetch all details
   useEffect(() => {
-    apiGet('/api/projects')
-      .then(data => {
+    let mounted = true;
+    
+    const init = async () => {
+      try {
+        const data = await apiGet('/api/projects');
+        if (!mounted) return;
+        
         if (!data.error && Array.isArray(data)) {
           setProjects(data);
+          
+          // Check if URL has a project ID (direct link)
           const pathParts = window.location.pathname.split('/');
           const projectUrlId = pathParts[pathParts.length - 1];
           const found = data.find(p => p._id === projectUrlId);
-          if (found) setSelectedProject(found);
+          if (found) {
+            setSelectedProject(found);
+          }
         }
-        setLoading(false);
-      })
-      .catch(err => {
+        
+        setIsInitialized(true);
+        
+        // Wait for intro to start or finish, then prefetch
+        const startPrefetch = () => {
+          setIsIntroPhase(true);
+          prefetchAllProjects(data);
+          // After prefetch, mark intro phase as done
+          setTimeout(() => setIsIntroPhase(false), 100);
+        };
+        
+        // Listen for intro start or fallback
+        window.addEventListener('introStarted', startPrefetch, { once: true });
+        
+        // If intro already started (unlikely), or as fallback
+        const fallback = setTimeout(startPrefetch, 100);
+        
+        return () => {
+          window.removeEventListener('introStarted', startPrefetch);
+          clearTimeout(fallback);
+        };
+      } catch (err) {
         console.error('Error fetching projects:', err);
-        setLoading(false);
-      });
-  }, []);
+        setIsInitialized(true);
+      }
+    };
+    
+    init();
+    
+    return () => {
+      mounted = false;
+    };
+  }, [prefetchAllProjects]);
 
+  // Listen for intro complete to trigger prefetch if not started
+  useEffect(() => {
+    const handleIntroComplete = () => {
+      if (projects.length > 0 && Object.keys(projectsCache).length === 0) {
+        prefetchAllProjects(projects);
+      }
+    };
+    
+    window.addEventListener('introAnimationComplete', handleIntroComplete);
+    
+    // Fallback: if intro takes too long, prefetch anyway
+    const fallback = setTimeout(() => {
+      if (projects.length > 0 && Object.keys(projectsCache).length === 0) {
+        prefetchAllProjects(projects);
+      }
+    }, 4000);
+    
+    return () => {
+      window.removeEventListener('introAnimationComplete', handleIntroComplete);
+      clearTimeout(fallback);
+    };
+  }, [projects, projectsCache, prefetchAllProjects]);
+
+  // Handle browser back/forward
   useEffect(() => {
     const handlePopState = () => {
       const pathParts = window.location.pathname.split('/');
@@ -64,7 +161,7 @@ export default function ProjectsFeed() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [projects]);
 
-  const handleSelectProject = (project) => {
+  const handleSelectProject = useCallback((project) => {
     if (project) {
       window.history.pushState(null, '', `/projects/${project._id}`);
       gsap.killTweensOf('.velocity-card');
@@ -72,39 +169,25 @@ export default function ProjectsFeed() {
       gsap.set('.velocity-card', { scale: 1, y: 0 });
       document.body.style.overflow = 'hidden';
       setSelectedProject(project);
-      setSelectedProjectFull(null);
-      setIsLoadingDetail(true);
-
-      // Fetch full project data including sliderGallery and blocks
-      apiGet(`/api/projects/${project._id}`)
-        .then(data => {
-          if (!data.error && data.project) {
-            setSelectedProjectFull(data.project);
-          } else {
-            // Fallback to basic project data if API fails
-            setSelectedProjectFull(project);
-          }
-          setIsLoadingDetail(false);
-        })
-        .catch(err => {
-          console.error('Error fetching project detail:', err);
-          setSelectedProjectFull(project);
-          setIsLoadingDetail(false);
-        });
+      // No loading state - use cached data immediately
     } else {
       window.history.pushState(null, '', '/');
       setIsExiting(true);
       gsap.set('.velocity-card', { scale: 1, y: 0 });
       setSelectedProject(null);
-      setSelectedProjectFull(null);
-      setIsLoadingDetail(false);
       setTimeout(() => {
         document.body.style.overflow = 'auto';
         setIsExiting(false);
       }, 800);
     }
-  };
+  }, []);
 
+  // Get full project data from cache (with fallback to basic data)
+  const getProjectData = useCallback((projectId) => {
+    return projectsCache[projectId] || projects.find(p => p._id === projectId) || null;
+  }, [projectsCache, projects]);
+
+  // GSAP animations
   useEffect(() => {
     const handleIntroComplete = () => {
       setTimeout(() => ScrollTrigger.refresh(), 100);
@@ -112,7 +195,7 @@ export default function ProjectsFeed() {
     window.addEventListener('introAnimationComplete', handleIntroComplete);
     const fallback = setTimeout(() => {
       ScrollTrigger.refresh();
-    }, 3500);
+    }, 4500);
     return () => {
       window.removeEventListener('introAnimationComplete', handleIntroComplete);
       clearTimeout(fallback);
@@ -120,7 +203,7 @@ export default function ProjectsFeed() {
   }, []);
 
   useGSAP(() => {
-    if (loading || projects.length === 0) return;
+    if (!isInitialized || projects.length === 0) return;
 
     gsap.to('.projects-scaler', {
       scale: 0.95,
@@ -176,13 +259,12 @@ export default function ProjectsFeed() {
       );
     });
 
-  }, { scope: containerRef, dependencies: [loading, projects.length] });
+  }, { scope: containerRef, dependencies: [isInitialized, projects.length] });
 
-  if (loading) {
+  // Don't show loading - render projects immediately (empty list if not loaded yet)
+  if (!isInitialized) {
     return (
-      <div className="w-full h-screen bg-white flex items-center justify-center font-sans">
-        <div className="text-xs uppercase tracking-[0.2em] font-bold animate-pulse text-gray-400">Loading Projects...</div>
-      </div>
+      <div className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10" />
     );
   }
 
@@ -246,6 +328,7 @@ export default function ProjectsFeed() {
                           className="relative w-full h-full cursor-pointer group"
                           whileHover="hover"
                           initial="rest"
+                          style={{ aspectRatio: '3 / 2', height: '100%' }}
                           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                         >
                           <div className="relative w-full h-full">
@@ -286,9 +369,9 @@ export default function ProjectsFeed() {
         {selectedProject && selectedProject.general && (
           <ProjectDetailOverlay
             key={selectedProject._id}
-            project={selectedProjectFull || selectedProject}
+            project={getProjectData(selectedProject._id)}
             onClose={() => handleSelectProject(null)}
-            isLoading={isLoadingDetail}
+            isLoading={false}
           />
         )}
       </AnimatePresence>

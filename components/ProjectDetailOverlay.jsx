@@ -311,6 +311,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
     };
   }, [stopInertia]);
 
+  const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
   const ProjectIcon = IconMap[project.general?.icon] || Building2;
 
   return (
@@ -318,11 +319,12 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
       className="fixed inset-0 z-[100] bg-white text-black overflow-hidden font-sans"
     >
       {/* Loading overlay */}
       {isLoading && (
-        <div className="absolute inset-0 z-[200] bg-white/90 flex items-center justify-center">
+        <div className="absolute inset-0 z-[200] bg-white flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-black" />
             <span className="text-xs uppercase tracking-[0.2em] text-gray-500">Loading project details...</span>
@@ -381,10 +383,15 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
               </div>
             </div>
 
-            {/* Main Cover Image */}
-            <div className="relative h-[76vh] shrink-0 shadow-sm will-change-transform" style={{ aspectRatio: '3432 / 2288' }}>
+            {/* Main Cover Image with shared-element transition */}
+            <motion.div
+              layoutId={`project-image-${project._id}`}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="relative shrink-0 shadow-sm will-change-transform"
+              style={{ aspectRatio: '3 / 2', height: '76vh', width: 'auto' }}
+            >
               <Image
-                src={project.general?.coverImage || '/placeholder.jpg'}
+                src={coverImageUrl}
                 alt="Cover"
                 fill
                 priority
@@ -392,7 +399,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
                 draggable={false}
                 className="object-cover select-none pointer-events-none"
               />
-            </div>
+            </motion.div>
           </div>
 
           {/* BLOCK 2: DESCRIPTION — 单独文本；或与首张图片合并为同一列（见下方） */}

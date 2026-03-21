@@ -94,6 +94,9 @@ export default function IntroAnimation() {
       window.dispatchEvent(new Event("introAnimationComplete"));
     });
 
+    // Dispatch introStarted event immediately when intro begins
+    window.dispatchEvent(new CustomEvent("introStarted"));
+
     return () => {
       window.removeEventListener("wheel", preventScroll, { passive: false });
       window.removeEventListener("touchmove", preventScroll, { passive: false });
