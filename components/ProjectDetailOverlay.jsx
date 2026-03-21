@@ -52,6 +52,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
   const description = getTextBlock(project);
   const sliderImages = getSliderImages(project);
   const projectYear = getProjectYear(project);
+  const imageBlocks = project.blocks?.filter(b => b.type === 'image') || [];
 
   // Update constraints when container changes
   useEffect(() => {
@@ -63,13 +64,13 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
       }
     };
 
-    const timer = setTimeout(updateConstraints, 1000);
+    const timer = setTimeout(updateConstraints, 100);
     window.addEventListener('resize', updateConstraints);
     return () => {
       clearTimeout(timer);
       window.removeEventListener('resize', updateConstraints);
     };
-  }, [project]);
+  }, [project, imageBlocks.length, sliderImages.length]);
 
   const handleDragEnd = (_, info) => {
     if (Math.abs(info.offset.y) > 100 || Math.abs(info.velocity.y) > 500) {
@@ -92,9 +93,6 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
   }, [onClose]);
 
   const ProjectIcon = IconMap[project.general?.icon] || Building2;
-
-  // Get all blocks to display (excluding the first image block which is cover)
-  const imageBlocks = project.blocks?.filter(b => b.type === 'image') || [];
 
   return (
     <motion.div
@@ -259,9 +257,6 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
               <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
             </div>
           </div>
-
-          {/* End Spacer */}
-          <div className="h-px w-[50vw] shrink-0 flex-[0_0_auto]"></div>
         </motion.div>
       </motion.div>
 
