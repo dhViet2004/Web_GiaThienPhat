@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon } from 'lucide-react';
 import gsap from 'gsap';
+import { apiGet } from '@/lib/api';
 
 const IconMap = {
   Building2: Building2,
@@ -35,8 +36,7 @@ export default function ProjectDetail({ params }) {
   useEffect(() => {
     if (!projectId) return;
     setLoading(true);
-    fetch(`/api/projects/${projectId}`)
-      .then(res => res.json())
+    apiGet(`/api/projects/${projectId}`)
       .then(data => {
         if (data.error) {
           setLoading(false);
@@ -48,7 +48,7 @@ export default function ProjectDetail({ params }) {
         setLoading(false);
       })
       .catch(err => {
-        console.error(err);
+        console.error('Error fetching project:', err);
         setLoading(false);
       });
   }, [projectId]);

@@ -10,6 +10,7 @@ import { useGSAP } from '@gsap/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon } from 'lucide-react';
 import ProjectDetailOverlay from './ProjectDetailOverlay';
+import { apiGet } from '@/lib/api';
 
 gsap.registerPlugin(ScrollTrigger, CustomEase);
 
@@ -34,10 +35,9 @@ export default function ProjectsFeed() {
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   useEffect(() => {
-    fetch('/api/projects')
-      .then(res => res.json())
+    apiGet('/api/projects')
       .then(data => {
-        if (!data.error) {
+        if (!data.error && Array.isArray(data)) {
           setProjects(data);
           const pathParts = window.location.pathname.split('/');
           const projectUrlId = pathParts[pathParts.length - 1];
@@ -47,7 +47,7 @@ export default function ProjectsFeed() {
         setLoading(false);
       })
       .catch(err => {
-        console.error(err);
+        console.error('Error fetching projects:', err);
         setLoading(false);
       });
   }, []);
@@ -76,8 +76,7 @@ export default function ProjectsFeed() {
       setIsLoadingDetail(true);
 
       // Fetch full project data including sliderGallery and blocks
-      fetch(`/api/projects/${project._id}`)
-        .then(res => res.json())
+      apiGet(`/api/projects/${project._id}`)
         .then(data => {
           if (!data.error && data.project) {
             setSelectedProjectFull(data.project);

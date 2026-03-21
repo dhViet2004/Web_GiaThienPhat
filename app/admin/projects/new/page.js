@@ -7,6 +7,7 @@ import {
   ArrowLeft, Building2, Plus, Trash2, ArrowUp, ArrowDown, 
   Image as ImageIcon, Type, LayoutTemplate, Video, Users, Check
 } from 'lucide-react';
+import { apiPost } from '@/lib/api';
 
 export default function CreateNewProjectPage() {
   const router = useRouter();
@@ -174,22 +175,13 @@ export default function CreateNewProjectPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(project)
-      });
-      if (res.ok) {
-        alert('Đã lưu Dự Án thành công vào hệ thống MongoDB!');
-        router.push('/admin'); // Trở về trang quản trị
-        router.refresh(); // Cập nhật lại UI
-      } else {
-        const data = await res.json();
-        alert('Error: ' + data.error);
-      }
+      await apiPost('/api/projects', project);
+      alert('Đã lưu Dự Án thành công vào hệ thống MongoDB!');
+      router.push('/admin');
+      router.refresh();
     } catch (err) {
-      console.error(err);
-      alert('Network Error saving project.');
+      console.error('Error creating project:', err);
+      alert('Lỗi: ' + (err.message || 'Không thể lưu dự án'));
     }
   };
 

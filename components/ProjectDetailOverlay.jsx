@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon, Loader2 } from 'lucide-react';
@@ -24,10 +24,14 @@ function getTextBlock(project) {
 function getSliderImages(project) {
   const sliderBlocks = project.blocks?.filter(b => b.type === 'slider');
   const images = [];
+  const seenUrls = new Set();
   sliderBlocks.forEach(block => {
     if (block.slides && block.slides.length > 0) {
       block.slides.forEach(slide => {
-        if (slide.url) images.push(slide.url);
+        if (slide.url && !seenUrls.has(slide.url)) {
+          seenUrls.add(slide.url);
+          images.push(slide.url);
+        }
       });
     }
   });
@@ -45,52 +49,258 @@ function getProjectYear(project) {
 
 export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
   const containerRef = useRef(null);
+  const scrollRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
-  const [dragConstraints, setDragConstraints] = useState({ left: 0, right: 0 });
+  
+  // Mouse drag state
+  const [isDragging, setIsDragging] = useState(false);
+  const [isVerticalSwipe, setIsVerticalSwipe] = useState(false);
+  const dragState = useRef({
+    startX: 0,
+    startY: 0,
+    scrollLeft: 0,
+    velocity: 0,
+    lastX: 0,
+    lastTime: 0,
+    movedX: false
+  });
+  
+  // Inertia animation
+  const animationRef = useRef(null);
 
   // Get data from blocks array
   const description = getTextBlock(project);
   const sliderImages = getSliderImages(project);
   const projectYear = getProjectYear(project);
-  const imageBlocks = project.blocks?.filter(b => b.type === 'image') || [];
-
-  // Update constraints when container changes
-  useEffect(() => {
-    const updateConstraints = () => {
-      if (containerRef.current) {
-        const scrollWidth = containerRef.current.scrollWidth;
-        const clientWidth = containerRef.current.clientWidth;
-        setDragConstraints({ left: -(scrollWidth - clientWidth), right: 0 });
+  
+  // Get all image blocks
+  let allImageUrls = [];
+  
+  if (project.blocks && Array.isArray(project.blocks)) {
+    project.blocks.forEach(block => {
+      if (block.type === 'image' && block.url) {
+        allImageUrls.push({ url: block.url, caption: block.caption });
       }
-    };
+    });
+  }
+  
+  if (project.sliderGallery && Array.isArray(project.sliderGallery)) {
+    project.sliderGallery.forEach(url => {
+      if (url) {
+        allImageUrls.push({ url: url, caption: '' });
+      }
+    });
+  }
+  
+  const seenUrls = new Set();
+  const imageBlocks = allImageUrls.filter(img => {
+    if (seenUrls.has(img.url)) return false;
+    seenUrls.add(img.url);
+    return true;
+  });
 
-    const timer = setTimeout(updateConstraints, 100);
-    window.addEventListener('resize', updateConstraints);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', updateConstraints);
-    };
-  }, [project, imageBlocks.length, sliderImages.length]);
-
-  const handleDragEnd = (_, info) => {
-    if (Math.abs(info.offset.y) > 100 || Math.abs(info.velocity.y) > 500) {
-      onClose();
+  // Stop inertia animation
+  const stopInertia = useCallback(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
     }
-  };
+  }, []);
 
-  // Cuộn chuột để thoát overlay
+  // Apply inertia/momentum scroll
+  const applyInertia = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container || Math.abs(dragState.current.velocity) < 0.5) {
+      dragState.current.velocity = 0;
+      return;
+    }
+
+    container.scrollLeft -= dragState.current.velocity;
+    dragState.current.velocity *= 0.95; // Friction
+
+    animationRef.current = requestAnimationFrame(applyInertia);
+  }, []);
+
+  // Mouse down handler
+  const handleMouseDown = useCallback((e) => {
+    if (e.button !== 0) return; // Only left mouse button
+    
+    const container = scrollRef.current;
+    if (!container) return;
+
+    stopInertia();
+    
+    setIsDragging(true);
+    setIsVerticalSwipe(false);
+    dragState.current = {
+      startX: e.pageX,
+      startY: e.pageY,
+      scrollLeft: container.scrollLeft,
+      velocity: 0,
+      lastX: e.pageX,
+      lastTime: Date.now(),
+      movedX: false
+    };
+
+    container.style.cursor = 'grabbing';
+    container.style.userSelect = 'none';
+  }, [stopInertia]);
+
+  // Mouse move handler
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const deltaX = e.pageX - dragState.current.startX;
+    const deltaY = e.pageY - dragState.current.startY;
+    
+    // Check if this is a horizontal or vertical swipe
+    if (!dragState.current.movedX) {
+      if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+        dragState.current.movedX = Math.abs(deltaX) > Math.abs(deltaY);
+        if (!dragState.current.movedX) {
+          setIsVerticalSwipe(true);
+        }
+      }
+    }
+    
+    // Only handle horizontal scroll if not a vertical swipe
+    if (!isVerticalSwipe && dragState.current.movedX) {
+      const x = e.pageX - container.offsetLeft;
+      const walk = (e.pageX - dragState.current.startX) * 1.2;
+      container.scrollLeft = dragState.current.scrollLeft - walk;
+
+      // Calculate velocity
+      const now = Date.now();
+      const dt = now - dragState.current.lastTime;
+      if (dt > 0) {
+        const dx = e.pageX - dragState.current.lastX;
+        dragState.current.velocity = dx / dt * 16;
+      }
+      dragState.current.lastX = e.pageX;
+      dragState.current.lastTime = now;
+    }
+  }, [isDragging, isVerticalSwipe]);
+
+  // Mouse up handler
+  const handleMouseUp = useCallback(() => {
+    if (!isDragging) return;
+    
+    const container = scrollRef.current;
+    if (container) {
+      container.style.cursor = 'grab';
+      container.style.userSelect = '';
+    }
+    
+    setIsDragging(false);
+    
+    // Check if it was a vertical swipe
+    if (isVerticalSwipe) {
+      const deltaY = dragState.current.startY - (dragState.current.lastY || dragState.current.startY);
+      // If swiped down significantly, close
+      if (deltaY < -50 || (dragState.current.lastY - dragState.current.startY > 80)) {
+        onClose();
+      }
+    } else {
+      // Apply inertia for horizontal scroll
+      if (Math.abs(dragState.current.velocity) > 1) {
+        applyInertia();
+      }
+    }
+    
+    setIsVerticalSwipe(false);
+  }, [isDragging, isVerticalSwipe, onClose, applyInertia]);
+
+  // Mouse leave handler
+  const handleMouseLeave = useCallback(() => {
+    if (isDragging) {
+      handleMouseUp();
+    }
+  }, [isDragging, handleMouseUp]);
+
+  // Touch handlers for mobile
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length !== 1) return;
+    
+    const container = scrollRef.current;
+    if (!container) return;
+
+    stopInertia();
+    
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setIsVerticalSwipe(false);
+    dragState.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      scrollLeft: container.scrollLeft,
+      velocity: 0,
+      lastX: touch.clientX,
+      lastTime: Date.now(),
+      movedX: false
+    };
+  }, [stopInertia]);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - dragState.current.startX;
+    const deltaY = touch.clientY - dragState.current.startY;
+    
+    // Check if this is a horizontal or vertical swipe
+    if (!dragState.current.movedX) {
+      if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+        dragState.current.movedX = Math.abs(deltaX) > Math.abs(deltaY);
+        if (!dragState.current.movedX) {
+          setIsVerticalSwipe(true);
+        }
+      }
+    }
+    
+    // Only handle horizontal scroll if not a vertical swipe
+    if (!isVerticalSwipe && dragState.current.movedX) {
+      const walk = (touch.clientX - dragState.current.startX) * 1.2;
+      container.scrollLeft = dragState.current.scrollLeft - walk;
+
+      const now = Date.now();
+      const dt = now - dragState.current.lastTime;
+      if (dt > 0) {
+        const dx = touch.clientX - dragState.current.lastX;
+        dragState.current.velocity = dx / dt * 16;
+      }
+      dragState.current.lastX = touch.clientX;
+      dragState.current.lastTime = now;
+    }
+  }, [isDragging, isVerticalSwipe]);
+
+  const handleTouchEnd = useCallback(() => {
+    handleMouseUp();
+  }, [handleMouseUp]);
+
+  // Wheel handler for vertical scroll to close
   useEffect(() => {
     const handleWheel = (e) => {
-      if (Math.abs(e.deltaY) > 1) {
-        e.preventDefault();
-        e.stopPropagation();
+      if (Math.abs(e.deltaY) > 50 && !isDragging) {
         onClose();
       }
     };
 
     window.addEventListener('wheel', handleWheel, { passive: false });
     return () => window.removeEventListener('wheel', handleWheel);
-  }, [onClose]);
+  }, [onClose, isDragging]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopInertia();
+    };
+  }, [stopInertia]);
 
   const ProjectIcon = IconMap[project.general?.icon] || Building2;
 
@@ -101,7 +311,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] bg-white text-black overflow-hidden font-sans"
     >
-      {/* Loading overlay when fetching full project data */}
+      {/* Loading overlay */}
       {isLoading && (
         <div className="absolute inset-0 z-[200] bg-white/90 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
@@ -111,29 +321,30 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
         </div>
       )}
 
-      <motion.div 
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={0.4}
-        onDragEnd={handleDragEnd}
-        className="relative w-full h-full"
+      {/* Horizontal scroll container with mouse drag */}
+      <div 
+        ref={scrollRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="absolute inset-0 h-screen w-screen overflow-x-auto overflow-y-hidden scrollbar-hidden"
+        style={{ 
+          cursor: 'grab',
+          scrollBehavior: 'auto',
+          WebkitOverflowScrolling: 'touch'
+        }}
       >
-        {/* Horizontal Content Track (Draggable) */}
-        <motion.div 
-          ref={containerRef}
-          drag="x"
-          dragConstraints={dragConstraints}
-          dragElastic={0.2}
-          className="h-screen w-screen overflow-x-auto overflow-y-hidden flex flex-nowrap items-center gap-[5vw] lg:gap-16 scrollbar-hidden overscroll-none cursor-grab active:cursor-grabbing will-change-transform perspective-1000"
-        >
-          {/* Smart Spacer to center the image. */}
+        <div className="h-full flex flex-nowrap items-center gap-[5vw] lg:gap-16 pl-[5vw] pr-[5vw] lg:pr-[calc(50vw-57vh)]">
+          
+          {/* Smart Spacer */}
           <div 
             className="relative z-50 hidden lg:block h-px shrink-0 flex-[0_0_auto]" 
             style={{ width: 'calc(50vw - 57vh - 64px)' }} 
           />
-
-          {/* Mobile spacer fallback */}
-          <div className="shrink-0 w-[5vw] lg:hidden block" />
 
           {/* BLOCK 1: COVER IMAGE & TITLE */}
           <div className="relative h-full flex flex-col justify-center flex-[0_0_auto] shrink-0 pt-[12vh] pb-[12vh] pointer-events-none select-none">
@@ -162,15 +373,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
             </div>
 
             {/* Main Cover Image */}
-            <motion.div
-              layoutId={`project-image-${project._id}`}
-              className="relative h-[76vh] shrink-0 shadow-sm will-change-transform"
-              style={{ aspectRatio: '3432 / 2288' }}
-              transition={{ 
-                duration: 0.8, 
-                ease: [0.16, 1, 0.3, 1] 
-              }}
-            >
+            <div className="relative h-[76vh] shrink-0 shadow-sm will-change-transform" style={{ aspectRatio: '3432 / 2288' }}>
               <Image
                 src={project.general?.coverImage || '/placeholder.jpg'}
                 alt="Cover"
@@ -180,10 +383,10 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
                 draggable={false}
                 className="object-cover select-none pointer-events-none"
               />
-            </motion.div>
+            </div>
           </div>
 
-          {/* BLOCK 2: DESCRIPTION - Get from blocks type='text' */}
+          {/* BLOCK 2: DESCRIPTION */}
           {description && (
             <div className="h-full flex flex-col shrink-0 lg:pt-[12vh] lg:pb-[12vh] justify-start pt-[20vh] pointer-events-none select-none">
                <div className="w-[290px] text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
@@ -192,11 +395,10 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
             </div>
           )}
 
-          {/* BLOCK 3: SLIDER - Get from blocks type='slider' */}
+          {/* BLOCK 3: SLIDER */}
           {sliderImages.length > 0 && (
             <div 
-              className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center cursor-pointer overflow-hidden group shadow-sm bg-gray-50 pointer-events-auto"
-              onPointerDown={(e) => e.stopPropagation()}
+              className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center overflow-hidden shadow-sm bg-gray-50 pointer-events-auto"
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <AnimatePresence mode="wait">
@@ -225,7 +427,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
             </div>
           )}
 
-          {/* BLOCK 4: ADDITIONAL GALLERY - Get from blocks type='image' */}
+          {/* BLOCK 4: GALLERY IMAGES */}
           {imageBlocks.map((block, idx) => (
             <div key={`gallery-${idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center shadow-sm pointer-events-none select-none">
               {block.url && (
@@ -247,7 +449,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           ))}
 
           {/* Credits Block */}
-          <div className="h-[76vh] self-center flex flex-col flex-wrap gap-x-12 gap-y-6 pt-12 pointer-events-none select-none">
+          <div className="h-[76vh] self-center flex flex-col flex-wrap gap-x-12 gap-y-6 pt-12 pointer-events-none select-none shrink-0">
             <div className="w-[200px]">
               <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Status</h4>
               <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
@@ -257,12 +459,24 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
               <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
             </div>
           </div>
-        </motion.div>
-      </motion.div>
+
+          {/* End spacer */}
+          <div className="shrink-0 w-[5vw]" />
+        </div>
+      </div>
+
+      {/* Drag indicator */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-40">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-black">
+          <span className="w-8 h-px bg-black"></span>
+          <span>Kéo để xem</span>
+          <span className="w-8 h-px bg-black"></span>
+        </div>
+      </div>
 
       <style jsx global>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-hidden::-webkit-scrollbar { display: none; }
+        .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </motion.div>
   );

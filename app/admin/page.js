@@ -3,31 +3,27 @@
 import { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
+import { apiGet, apiDelete } from '@/lib/api';
 
 export default function AdminDashboard() {
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
-    fetch('/api/projects')
-      .then(res => res.json())
+    apiGet('/api/projects')
       .then(data => {
-        if (!data.error) setProjects(data);
+        if (!data.error && Array.isArray(data)) setProjects(data);
       })
-      .catch(err => console.error(err));
+      .catch(err => console.error('Error fetching projects:', err));
   }, []);
 
   const handleDelete = async (id) => {
     if (!confirm('Bạn có chắc chắn muốn xóa bản ghi này? Hành động này không thể hoàn tác!')) return;
     try {
-      const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setProjects(prev => prev.filter(p => p._id !== id));
-      } else {
-        alert('Xóa thất bại');
-      }
+      await apiDelete(`/api/projects/${id}`);
+      setProjects(prev => prev.filter(p => p._id !== id));
     } catch (err) {
-      console.error(err);
-      alert('Lỗi kết nối mạng');
+      console.error('Error deleting project:', err);
+      alert('Xóa thất bại');
     }
   };
 

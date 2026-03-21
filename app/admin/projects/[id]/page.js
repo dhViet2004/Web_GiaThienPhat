@@ -7,6 +7,7 @@ import {
   ArrowLeft, Building2, Plus, Trash2, ArrowUp, ArrowDown, 
   Image as ImageIcon, Type, LayoutTemplate, Video, Users, Check, Loader2
 } from 'lucide-react';
+import { apiGet, apiPut } from '@/lib/api';
 
 export default function EditProjectPage({ params }) {
   const { id: projectId } = use(params);
@@ -33,8 +34,7 @@ export default function EditProjectPage({ params }) {
     if (!projectId) return;
     
     setLoading(true);
-    fetch(`/api/projects/${projectId}`)
-      .then(res => res.json())
+    apiGet(`/api/projects/${projectId}`)
       .then(data => {
         if (data.error) {
           alert('Không tìm thấy dự án!');
@@ -58,7 +58,7 @@ export default function EditProjectPage({ params }) {
         setLoading(false);
       })
       .catch(err => {
-        console.error(err);
+        console.error('Error loading project:', err);
         alert('Lỗi khi tải dữ liệu dự án');
         setLoading(false);
       });
@@ -220,22 +220,13 @@ export default function EditProjectPage({ params }) {
     
     setSaving(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(project)
-      });
-      if (res.ok) {
-        alert('Đã cập nhật Dự Án thành công!');
-        router.push('/admin');
-        router.refresh();
-      } else {
-        const data = await res.json();
-        alert('Lỗi: ' + (data.error || 'Không thể cập nhật'));
-      }
+      await apiPut(`/api/projects/${projectId}`, project);
+      alert('Đã cập nhật Dự Án thành công!');
+      router.push('/admin');
+      router.refresh();
     } catch (err) {
-      console.error(err);
-      alert('Lỗi mạng khi lưu dự án.');
+      console.error('Error updating project:', err);
+      alert('Lỗi: ' + (err.message || 'Không thể cập nhật'));
     } finally {
       setSaving(false);
     }
@@ -435,6 +426,24 @@ export default function EditProjectPage({ params }) {
                           placeholder="Đường dẫn URL Hình Ảnh"
                           className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-300"
                         />
+                        {/* Image Preview */}
+                        {block.url ? (
+                          <div className="relative w-full max-h-[200px] bg-gray-50 border border-gray-200 overflow-hidden">
+                            <img 
+                              src={block.url} 
+                              alt="Preview" 
+                              className="max-w-full max-h-[200px] object-contain mx-auto"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentElement.innerHTML += '<div class="p-4 text-center text-red-400 text-xs">⚠ Lỗi: Không thể tải ảnh từ URL này</div>';
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-full h-[100px] bg-gray-50 border border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs">
+                            <ImageIcon size={20} className="mr-2" /> Chưa có URL ảnh - Vui lòng nhập URL bên trên
+                          </div>
+                        )}
                         <input
                           type="text"
                           value={block.caption}
@@ -639,8 +648,16 @@ export default function EditProjectPage({ params }) {
                       return (
                         <div key={block.id} className="shrink-0 h-full bg-white border border-gray-100 flex flex-col items-center justify-center px-6 min-w-[300px]">
                            {block.url ? (
-                             <div className="relative max-h-[85%] w-auto">
-                               <img src={block.url} alt="block" className="max-h-full w-auto object-contain" />
+                             <div className="relative max-h-[85%] w-auto h-full flex flex-col items-center justify-center">
+                               <img 
+                                 src={block.url} 
+                                 alt="block" 
+                                 className="max-h-[85%] w-auto object-contain" 
+                                 onError={(e) => {
+                                   e.target.style.display = 'none';
+                                   e.target.parentElement.innerHTML = '<div class="text-red-400 text-[8px] uppercase tracking-widest">Lỗi tải ảnh</div>';
+                                 }}
+                               />
                                {block.caption && <div className="text-[9px] uppercase tracking-widest text-gray-400 mt-2 text-center">{block.caption}</div>}
                              </div>
                            ) : (
