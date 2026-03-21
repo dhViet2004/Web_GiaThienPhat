@@ -288,7 +288,7 @@ export default function EditProjectPage({ params }) {
         {/* =========================================
             LEFT COLUMN: FORM BUILDER (60%)
         =========================================== */}
-        <div className="lg:col-span-7 p-8 lg:p-12 pb-32 border-r border-gray-200">
+        <div className="lg:col-span-12 p-8 lg:p-12 pb-32">
           
           <form onSubmit={handleSubmit} className="flex flex-col gap-16">
             
@@ -374,12 +374,13 @@ export default function EditProjectPage({ params }) {
 
             {/* --- SECTION B: CONTENT BUILDER --- */}
             <section>
-              <div className="mb-8 border-b border-black pb-2 flex items-center justify-between">
+              <div className="mb-10 border-b border-black pb-4">
                 <h2 className="text-xs uppercase font-bold tracking-[0.25em]">B. Cấu Trúc Khối Nội Dung (Kéo thả Timeline)</h2>
+                <p className="text-[10px] text-gray-400 mt-2">Sắp xếp các khối theo thứ tự hiển thị ngang trên trang chi tiết dự án</p>
               </div>
 
               {/* Added Blocks List */}
-              <div className="flex flex-col gap-4 mb-8">
+              <div className="flex flex-col gap-8 mb-10">
                 {project.blocks.length === 0 && (
                   <div className="p-8 border border-dashed border-gray-300 text-center text-gray-400 text-xs uppercase tracking-[0.1em]">
                     Dòng thời gian đang rỗng. Hãy thêm Khối Mới để bắt đầu.
@@ -387,7 +388,7 @@ export default function EditProjectPage({ params }) {
                 )}
 
                 {project.blocks.map((block, index) => (
-                  <div key={block.id} className="relative border border-gray-200 p-6 bg-gray-50/50 group">
+                  <div key={block.id} className="relative border border-gray-200 p-8 bg-gray-50/50 group shadow-sm">
                     
                     {/* Block Toolbar */}
                     <div className="absolute top-0 right-0 p-2 flex items-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity bg-white border-b border-l border-gray-200">
@@ -397,13 +398,14 @@ export default function EditProjectPage({ params }) {
                       <button type="button" onClick={() => removeBlock(block.id)} className="p-1 text-red-500 hover:text-red-700"><Trash2 size={14} /></button>
                     </div>
 
-                    <div className="mb-4 flex items-center gap-2 text-black border-b border-gray-200 pb-2 w-fit">
-                      {block.type === 'text' && <Type size={14} />}
-                      {block.type === 'image' && <ImageIcon size={14} />}
-                      {block.type === 'slider' && <LayoutTemplate size={14} />}
-                      {block.type === 'video' && <Video size={14} />}
-                      {block.type === 'credits' && <Users size={14} />}
-                      <span className="text-[10px] font-bold uppercase tracking-[0.2em]">KHỐI: {block.type}</span>
+                    <div className="mb-6 flex items-center gap-3 text-black border-b border-gray-200 pb-3 w-full">
+                      {block.type === 'text' && <Type size={16} className="text-gray-600" />}
+                      {block.type === 'image' && <ImageIcon size={16} className="text-gray-600" />}
+                      {block.type === 'slider' && <LayoutTemplate size={16} className="text-gray-600" />}
+                      {block.type === 'video' && <Video size={16} className="text-gray-600" />}
+                      {block.type === 'credits' && <Users size={16} className="text-gray-600" />}
+                      <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Khối: {block.type}</span>
+                      <span className="text-[9px] text-gray-400 ml-auto">#{index + 1}</span>
                     </div>
 
                     {/* Block Specific Form Fields */}
@@ -412,129 +414,150 @@ export default function EditProjectPage({ params }) {
                         value={block.content}
                         onChange={(e) => updateBlock(block.id, 'content', e.target.value)}
                         placeholder="Nhập nội dung văn bản cho mục này..."
-                        rows={4}
-                        className="w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-3 text-sm placeholder:text-gray-300 resize-y"
+                        rows={5}
+                        className="w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-4 text-sm placeholder:text-gray-300 resize-y"
                       />
                     )}
 
                     {block.type === 'image' && (
-                      <div className="flex flex-col gap-4">
-                        <input
-                          type="url"
-                          value={block.url}
-                          onChange={(e) => updateBlock(block.id, 'url', e.target.value)}
-                          placeholder="Đường dẫn URL Hình Ảnh"
-                          className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-300"
-                        />
+                      <div className="flex flex-col gap-5">
+                        <div>
+                          <label className="text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-2 block">URL Hình Ảnh</label>
+                          <input
+                            type="url"
+                            value={block.url}
+                            onChange={(e) => updateBlock(block.id, 'url', e.target.value)}
+                            placeholder="https://images.unsplash.com/..."
+                            className="w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-3 text-sm placeholder:text-gray-300"
+                          />
+                        </div>
                         {/* Image Preview */}
                         {block.url ? (
-                          <div className="relative w-full max-h-[200px] bg-gray-50 border border-gray-200 overflow-hidden">
+                          <div className="relative w-full max-h-[180px] bg-gray-100 border border-gray-200 overflow-hidden">
                             <img 
                               src={block.url} 
                               alt="Preview" 
-                              className="max-w-full max-h-[200px] object-contain mx-auto"
+                              className="max-w-full max-h-[180px] object-contain mx-auto"
                               onError={(e) => {
                                 e.target.style.display = 'none';
-                                e.target.parentElement.innerHTML += '<div class="p-4 text-center text-red-400 text-xs">⚠ Lỗi: Không thể tải ảnh từ URL này</div>';
+                                e.target.parentElement.innerHTML += '<div class="p-6 text-center text-red-400 text-xs">⚠ Lỗi: Không thể tải ảnh từ URL này</div>';
                               }}
                             />
                           </div>
                         ) : (
-                          <div className="w-full h-[100px] bg-gray-50 border border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs">
-                            <ImageIcon size={20} className="mr-2" /> Chưa có URL ảnh - Vui lòng nhập URL bên trên
+                          <div className="w-full h-[100px] bg-gray-100 border border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs">
+                            <ImageIcon size={24} className="mr-2" /> Chưa có URL ảnh - Vui lòng nhập URL bên trên
                           </div>
                         )}
-                        <input
-                          type="text"
-                          value={block.caption}
-                          onChange={(e) => updateBlock(block.id, 'caption', e.target.value)}
-                          placeholder="Chú thích ảnh phía dưới (Tùy chọn)"
-                          className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-300"
-                        />
+                        <div>
+                          <label className="text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-2 block">Chú Thích (Tùy Chọn)</label>
+                          <input
+                            type="text"
+                            value={block.caption}
+                            onChange={(e) => updateBlock(block.id, 'caption', e.target.value)}
+                            placeholder="VD: Hình ảnh phối cảnh tổng thể"
+                            className="w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-3 text-sm placeholder:text-gray-300"
+                          />
+                        </div>
                       </div>
                     )}
 
                     {block.type === 'slider' && (
-                      <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-5">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-2">Danh Sách Slides</div>
                         {block.slides && block.slides.map((slide, sIdx) => (
-                          <div key={sIdx} className="flex gap-4 items-start pb-4 border-b border-gray-100 last:border-0 last:pb-0">
-                            <span className="text-[10px] font-bold mt-3 text-gray-400 w-4">{sIdx + 1}.</span>
-                            <div className="flex-1 flex flex-col gap-2">
-                              <input
-                                type="url"
-                                value={slide.url}
-                                onChange={(e) => updateSlide(block.id, sIdx, 'url', e.target.value)}
-                                placeholder="Link Hình Ảnh cho Khung Chiếu Này"
-                                className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-sm placeholder:text-gray-300"
-                              />
-                              <input
-                                type="text"
-                                value={slide.caption}
-                                onChange={(e) => updateSlide(block.id, sIdx, 'caption', e.target.value)}
-                                placeholder="Ghi nhận Chú Thích"
-                                className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-xs placeholder:text-gray-300 text-gray-500"
-                              />
+                          <div key={sIdx} className="flex gap-4 items-start bg-white p-4 border border-gray-200">
+                            <span className="text-[11px] font-bold mt-3 text-gray-400 w-5">{sIdx + 1}</span>
+                            <div className="flex-1 flex flex-col gap-3">
+                              <div>
+                                <label className="text-[9px] text-gray-400 uppercase tracking-[0.1em] mb-1 block">URL Hình Ảnh</label>
+                                <input
+                                  type="url"
+                                  value={slide.url}
+                                  onChange={(e) => updateSlide(block.id, sIdx, 'url', e.target.value)}
+                                  placeholder="https://images.unsplash.com/..."
+                                  className="w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[9px] text-gray-400 uppercase tracking-[0.1em] mb-1 block">Chú Thích</label>
+                                <input
+                                  type="text"
+                                  value={slide.caption}
+                                  onChange={(e) => updateSlide(block.id, sIdx, 'caption', e.target.value)}
+                                  placeholder="VD: Hình ảnh nội thất"
+                                  className="w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
+                                />
+                              </div>
                             </div>
-                            <button type="button" onClick={() => removeSlide(block.id, sIdx)} className="mt-2 text-gray-400 hover:text-red-500">
-                              <Trash2 size={14} />
+                            <button type="button" onClick={() => removeSlide(block.id, sIdx)} className="mt-6 text-gray-400 hover:text-red-500 p-1">
+                              <Trash2 size={16} />
                             </button>
                           </div>
                         ))}
                         <button 
                           type="button" 
                           onClick={() => addSlide(block.id)}
-                          className="text-[10px] tracking-[0.15em] uppercase font-bold flex items-center gap-1 w-fit mt-2 hover:text-blue-600 transition-colors"
+                          className="text-[11px] tracking-[0.15em] uppercase font-bold flex items-center gap-2 w-fit mt-2 hover:text-blue-600 transition-colors border border-dashed border-gray-300 px-4 py-3"
                         >
-                          <Plus size={12} /> Thêm Slide Hình
+                          <Plus size={14} /> Thêm Slide Mới
                         </button>
                       </div>
                     )}
 
                     {block.type === 'video' && (
-                      <input
-                        type="url"
-                        value={block.iframeUrl}
-                        onChange={(e) => updateBlock(block.id, 'iframeUrl', e.target.value)}
-                        placeholder="Liên Kết Video Vimeo / YouTube Cần Nhúng (Embed URL)"
-                        className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-300"
-                      />
+                      <div className="flex flex-col gap-4">
+                        <div>
+                          <label className="text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-2 block">URL Video Vimeo / YouTube</label>
+                          <input
+                            type="url"
+                            value={block.iframeUrl}
+                            onChange={(e) => updateBlock(block.id, 'iframeUrl', e.target.value)}
+                            placeholder="https://vimeo.com/... hoặc https://youtube.com/embed/..."
+                            className="w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-3 text-sm placeholder:text-gray-300"
+                          />
+                        </div>
+                      </div>
                     )}
 
                     {block.type === 'credits' && (
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-5">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-2">Danh Sách Vai Trò</div>
                         {block.roles && block.roles.map((role, rIdx) => (
-                          <div key={rIdx} className="flex gap-4 items-end">
-                            <div className="flex-1">
-                              <label className="text-[9px] text-gray-400 uppercase tracking-[0.1em] mb-1 block">Vai Trò Đảm Lĩnh</label>
-                              <input
-                                type="text"
-                                value={role.roleName}
-                                onChange={(e) => updateRole(block.id, rIdx, 'roleName', e.target.value)}
-                                placeholder="VD: Đối Tác Dự Án"
-                                className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-sm placeholder:text-gray-200"
-                              />
+                          <div key={rIdx} className="flex gap-4 items-start bg-white p-4 border border-gray-200">
+                            <div className="flex-1 flex flex-col gap-3">
+                              <div>
+                                <label className="text-[9px] text-gray-400 uppercase tracking-[0.1em] mb-1 block">Vai Trò</label>
+                                <input
+                                  type="text"
+                                  value={role.roleName}
+                                  onChange={(e) => updateRole(block.id, rIdx, 'roleName', e.target.value)}
+                                  placeholder="VD: Kiến Trúc Sư Chính"
+                                  className="w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[9px] text-gray-400 uppercase tracking-[0.1em] mb-1 block">Tên Cá Nhân (Cách nhau bằng dấu phẩy)</label>
+                                <input
+                                  type="text"
+                                  value={role.people}
+                                  onChange={(e) => updateRole(block.id, rIdx, 'people', e.target.value)}
+                                  placeholder="VD: Nguyễn Văn A, Trần Thị B"
+                                  className="w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
+                                />
+                              </div>
                             </div>
-                            <div className="flex-[2]">
-                              <label className="text-[9px] text-gray-400 uppercase tracking-[0.1em] mb-1 block">Tên Các Cá Nhân Thực Hiện (Cách nhau bằng dấu phẩy)</label>
-                              <input
-                                type="text"
-                                value={role.people}
-                                onChange={(e) => updateRole(block.id, rIdx, 'people', e.target.value)}
-                                placeholder="Bjarke Ingels, Thomas Christoffersen"
-                                className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-sm placeholder:text-gray-200"
-                              />
-                            </div>
-                            <button type="button" onClick={() => removeRole(block.id, rIdx)} className="mb-2 text-gray-400 hover:text-red-500">
-                              <Trash2 size={14} />
+                            <button type="button" onClick={() => removeRole(block.id, rIdx)} className="mt-6 text-gray-400 hover:text-red-500 p-1">
+                              <Trash2 size={16} />
                             </button>
                           </div>
                         ))}
                         <button 
                           type="button" 
                           onClick={() => addRole(block.id)}
-                          className="text-[10px] tracking-[0.15em] uppercase font-bold flex items-center gap-1 w-fit mt-3 hover:text-blue-600 transition-colors"
+                          className="text-[11px] tracking-[0.15em] uppercase font-bold flex items-center gap-2 w-fit mt-2 hover:text-blue-600 transition-colors border border-dashed border-gray-300 px-4 py-3"
                         >
-                          <Plus size={12} /> Bổ Sung Nhóm Vai Trò
+                          <Plus size={14} /> Thêm Vai Trò Mới
                         </button>
                       </div>
                     )}
@@ -544,199 +567,35 @@ export default function EditProjectPage({ params }) {
               </div>
 
               {/* Add New Block Buttons */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                <button type="button" onClick={() => addBlock('text')} className="border border-gray-300 p-3 flex flex-col items-center justify-center gap-2 hover:border-black hover:bg-black hover:text-white transition-all text-gray-600">
-                  <Type size={18} strokeWidth={1.5} />
-                  <span className="text-[9px] font-bold uppercase tracking-[0.1em]">Chữ Text</span>
-                </button>
-                <button type="button" onClick={() => addBlock('image')} className="border border-gray-300 p-3 flex flex-col items-center justify-center gap-2 hover:border-black hover:bg-black hover:text-white transition-all text-gray-600">
-                  <ImageIcon size={18} strokeWidth={1.5} />
-                  <span className="text-[9px] font-bold uppercase tracking-[0.1em]">1 Ảnh</span>
-                </button>
-                <button type="button" onClick={() => addBlock('slider')} className="border border-gray-300 p-3 flex flex-col items-center justify-center gap-2 hover:border-black hover:bg-black hover:text-white transition-all text-gray-600">
-                  <LayoutTemplate size={18} strokeWidth={1.5} />
-                  <span className="text-[9px] font-bold uppercase tracking-[0.1em]">Trình Chiếu</span>
-                </button>
-                <button type="button" onClick={() => addBlock('video')} className="border border-gray-300 p-3 flex flex-col items-center justify-center gap-2 hover:border-black hover:bg-black hover:text-white transition-all text-gray-600">
-                  <Video size={18} strokeWidth={1.5} />
-                  <span className="text-[9px] font-bold uppercase tracking-[0.1em]">Trình Phát Video</span>
-                </button>
-                <button type="button" onClick={() => addBlock('credits')} className="border border-gray-300 p-3 flex flex-col items-center justify-center gap-2 hover:border-black hover:bg-black hover:text-white transition-all text-gray-600 col-span-2 md:col-span-1">
-                  <Users size={18} strokeWidth={1.5} />
-                  <span className="text-[9px] font-bold uppercase tracking-[0.1em]">Thông Tín Dụng</span>
-                </button>
+              <div className="mt-6 pt-8 border-t border-gray-200">
+                <div className="text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-4">Thêm Khối Mới</div>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <button type="button" onClick={() => addBlock('text')} className="border-2 border-gray-200 p-5 flex flex-col items-center justify-center gap-3 hover:border-black hover:bg-black hover:text-white transition-all text-gray-500 group">
+                    <Type size={20} strokeWidth={1.5} />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.1em]">Chữ Text</span>
+                  </button>
+                  <button type="button" onClick={() => addBlock('image')} className="border-2 border-gray-200 p-5 flex flex-col items-center justify-center gap-3 hover:border-black hover:bg-black hover:text-white transition-all text-gray-500 group">
+                    <ImageIcon size={20} strokeWidth={1.5} />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.1em]">1 Ảnh</span>
+                  </button>
+                  <button type="button" onClick={() => addBlock('slider')} className="border-2 border-gray-200 p-5 flex flex-col items-center justify-center gap-3 hover:border-black hover:bg-black hover:text-white transition-all text-gray-500 group">
+                    <LayoutTemplate size={20} strokeWidth={1.5} />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.1em]">Trình Chiếu</span>
+                  </button>
+                  <button type="button" onClick={() => addBlock('video')} className="border-2 border-gray-200 p-5 flex flex-col items-center justify-center gap-3 hover:border-black hover:bg-black hover:text-white transition-all text-gray-500 group">
+                    <Video size={20} strokeWidth={1.5} />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.1em]">Trình Phát Video</span>
+                  </button>
+                  <button type="button" onClick={() => addBlock('credits')} className="border-2 border-gray-200 p-5 flex flex-col items-center justify-center gap-3 hover:border-black hover:bg-black hover:text-white transition-all text-gray-500 group col-span-2 md:col-span-1">
+                    <Users size={20} strokeWidth={1.5} />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.1em]">Thông Tín Dụng</span>
+                  </button>
+                </div>
               </div>
 
             </section>
           </form>
         </div>
-
-        {/* =========================================
-            RIGHT COLUMN: LIVE PREVIEW (40%)
-        =========================================== */}
-        <div className="lg:col-span-5 bg-[#fbfbfb] p-8 hidden lg:block overflow-hidden relative">
-          
-          <div className="sticky top-32 w-full">
-            <div className="mb-4 flex items-center justify-between border-b border-gray-200 pb-2">
-               <h3 className="text-[10px] uppercase font-bold tracking-[0.25em] text-gray-400">Bản Xem Trước Trực Tiếp (Bố Cục Ngang)</h3>
-               <div className="flex items-center gap-2">
-                 <span className="text-[8px] uppercase tracking-widest text-gray-400">Trực Tuyến</span>
-                 <div className="size-2 bg-green-500 rounded-full animate-pulse"></div>
-               </div>
-            </div>
-
-            {/* Simulated Horizontal Scroll Portal */}
-            <div className="w-full bg-white border border-gray-200 shadow-sm relative overflow-hidden">
-              <div 
-                className="flex flex-nowrap items-start gap-4 p-4 h-[450px] overflow-x-auto overflow-y-hidden"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              >
-                <style dangerouslySetInnerHTML={{__html: `
-                  .flex-nowrap::-webkit-scrollbar { display: none; }
-                `}} />
-
-                {/* 1. The Cover Block */}
-                <div className="shrink-0 h-full w-[280px] flex flex-col border border-gray-100 bg-white relative group">
-                  <div className="relative w-full aspect-[3/2] bg-gray-100">
-                    {project.general.coverImage ? (
-                      <img src={project.general.coverImage} alt="Ảnh Bìa" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300"><Building2 size={24} /></div>
-                    )}
-                  </div>
-                  <div className="p-4 bg-white flex items-start gap-3 mt-auto absolute bottom-0 left-0">
-                     <div className="size-8 bg-black shrink-0 text-white flex items-center justify-center"><Building2 size={16} /></div>
-                     <div>
-                       <h4 className="text-xl font-bold uppercase tracking-tighter leading-none break-all">{project.general.title || 'CHƯA ĐẶT TÊN'}</h4>
-                       <span className="text-[8px] uppercase tracking-[0.2em] text-gray-400">{project.general.location || 'CHƯA RÕ VỊ TRÍ'}</span>
-                     </div>
-                  </div>
-                </div>
-
-                {/* 2. Fact Sheet */}
-                <div className="shrink-0 h-full w-[200px] p-6 bg-white border border-gray-100 flex flex-col justify-center">
-                  <div className="flex flex-col gap-4">
-                    <div>
-                      <span className="text-[8px] text-gray-400 uppercase tracking-widest block mb-1">Loại Hình / Chức Năng</span>
-                      <span className="text-xs font-bold uppercase break-words">{project.general.typology || '—'}</span>
-                    </div>
-                    <div>
-                      <span className="text-[8px] text-gray-400 uppercase tracking-widest block mb-1">Tình Trạng Hiện Tại</span>
-                      <span className="text-xs font-bold uppercase break-words">{project.general.status || '—'}</span>
-                    </div>
-                    <div>
-                      <span className="text-[8px] text-gray-400 uppercase tracking-widest block mb-1">Chủ Đầu Tư</span>
-                      <span className="text-xs font-bold uppercase break-words">{project.general.client || '—'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. The Sequence Blocks */}
-                {project.blocks.map(block => {
-                  switch(block.type) {
-                    
-                    case 'text':
-                      return (
-                        <div key={block.id} className="shrink-0 h-full w-[260px] max-w-[400px] p-6 bg-white border border-gray-100 overflow-hidden">
-                          <p className="text-[11px] leading-[1.6] text-black whitespace-pre-wrap font-medium break-words overflow-wrap-anywhere">
-                            {block.content || 'Chưa nhập nội dung chữ...'}
-                          </p>
-                        </div>
-                      );
-                    
-                    case 'image':
-                      return (
-                        <div key={block.id} className="shrink-0 h-full bg-white border border-gray-100 flex flex-col items-center justify-center px-6 min-w-[300px]">
-                           {block.url ? (
-                             <div className="relative max-h-[85%] w-auto h-full flex flex-col items-center justify-center">
-                               <img 
-                                 src={block.url} 
-                                 alt="block" 
-                                 className="max-h-[85%] w-auto object-contain" 
-                                 onError={(e) => {
-                                   e.target.style.display = 'none';
-                                   e.target.parentElement.innerHTML = '<div class="text-red-400 text-[8px] uppercase tracking-widest">Lỗi tải ảnh</div>';
-                                 }}
-                               />
-                               {block.caption && <div className="text-[9px] uppercase tracking-widest text-gray-400 mt-2 text-center">{block.caption}</div>}
-                             </div>
-                           ) : (
-                             <div className="flex flex-col items-center gap-2 text-gray-300"><ImageIcon size={24} /><span className="text-[8px] uppercase tracking-widest">Chỗ Trống Cho Hình Ảnh</span></div>
-                           )}
-                        </div>
-                      );
-
-                    case 'slider':
-                      return (
-                        <div key={block.id} className="shrink-0 h-full flex items-center bg-gray-50 border border-gray-100 px-4 min-w-[200px] border-l-4 border-l-black">
-                          {(!block.slides || block.slides.length === 0) ? (
-                            <div className="w-[150px] text-center flex flex-col items-center gap-2 text-gray-300"><LayoutTemplate size={24} /><span className="text-[8px] uppercase tracking-widest">Trình Chiếu Đang Rỗng</span></div>
-                          ) : (
-                            <div className="flex gap-2 h-[80%] items-center">
-                              {block.slides.map((s, i) => (
-                                <div key={i} className="h-full relative flex-shrink-0">
-                                  {s.url ? (
-                                    <img src={s.url} alt={`slide ${i}`} className="h-full w-auto object-contain bg-white" />
-                                  ) : (
-                                    <div className="h-full w-[150px] bg-white flex items-center justify-center text-gray-200 border border-dashed border-gray-300 text-[8px] uppercase">Slide {i+1}</div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-
-                    case 'video':
-                      return (
-                        <div key={block.id} className="shrink-0 h-full w-[400px] bg-black border border-gray-100 flex items-center justify-center p-4">
-                          <div className="w-full aspect-video border border-gray-800 flex items-center justify-center text-gray-600 bg-gray-900 overflow-hidden relative">
-                             {block.iframeUrl ? (
-                               <div className="absolute inset-0 bg-gray-800 flex items-center justify-center text-white text-[10px] uppercase font-bold tracking-widest"><Video size={16} className="mr-2"/> Bản Xem Trước Video Nhúng</div>
-                             ) : (
-                               <div className="flex flex-col items-center gap-2"><Video size={24} /><span className="text-[8px] uppercase tracking-widest">Chỗ Trống Cho Kênh Video</span></div>
-                             )}
-                          </div>
-                        </div>
-                      );
-
-                    case 'credits':
-                      return (
-                        <div key={block.id} className="shrink-0 h-full w-[300px] p-6 bg-white border border-gray-100 overflow-y-auto">
-                          <h4 className="text-[10px] uppercase font-black tracking-[0.2em] mb-6 border-b border-black pb-2">Tín Dụng Nguồn Trích Dẫn</h4>
-                          <div className="flex flex-col gap-4">
-                            {(!block.roles || block.roles.length === 0) ? (
-                              <span className="text-[9px] text-gray-400 uppercase tracking-widest">Chưa có thông tin được nhập vào</span>
-                            ) : (
-                              block.roles.map((r, i) => (
-                                <div key={i}>
-                                  <span className="text-[8px] text-gray-400 uppercase tracking-widest block">{r.roleName || '-'}</span>
-                                  <span className="text-[10px] leading-tight font-medium uppercase mt-0.5 block">{r.people || '-'}</span>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </div>
-                      );
-
-                    default:
-                      return null;
-                  }
-                })}
-
-                {/* Cap end */}
-                <div className="shrink-0 w-[40px]"></div>
-
-              </div>
-            </div>
-            
-            <p className="text-[9px] text-gray-400 uppercase tracking-widest mt-4 text-center">
-              * Cuộn ngang để trải nghiệm trước trình tự hiển thị thực tế
-            </p>
-
-          </div>
-        </div>
-
       </div>
     </div>
   );
