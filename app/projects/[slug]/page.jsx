@@ -400,7 +400,7 @@ export default function ProjectDetailPage({ params }) {
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <div className="h-full flex flex-nowrap items-center gap-[5vw] lg:gap-16 pr-[5vw] lg:pr-[calc(50vw-57vh)]">
+        <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[30px]  pr-[5vw] lg:pr-[calc(50vw-57vh)]">
           
           {/* Smart Spacer (QUAN TRỌNG: CÔNG THỨC CANH GIỮA ẢNH BÌA) */}
           <div 
@@ -411,7 +411,7 @@ export default function ProjectDetailPage({ params }) {
           {/* BLOCK 1: COVER IMAGE & TITLE */}
           <div className="relative h-full flex flex-col justify-center flex-[0_0_auto] shrink-0 pt-[12vh] pb-[12vh] pointer-events-none select-none">
             {/* Title & Location */}
-            <div className="absolute top-0 right-full mr-[30px] lg:mr-[44px] w-[300px] flex flex-col items-end text-right z-20 pt-[12vh]">
+            <div className="absolute top-0 right-full mr-[20px] lg:mr-[30px] w-[300px] flex flex-col items-end text-right z-20 pt-[12vh]">
               <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
                 <ProjectIcon size={24} strokeWidth={1.5} />
               </div>
