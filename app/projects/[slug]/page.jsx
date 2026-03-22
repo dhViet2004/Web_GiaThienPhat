@@ -400,7 +400,7 @@ export default function ProjectDetailPage({ params }) {
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <div className="h-full flex flex-nowrap items-center gap-[5vw] lg:gap-16 pl-[5vw] pr-[5vw] lg:pr-[calc(50vw-57vh)]">
+        <div className="h-full flex flex-nowrap items-center gap-[5vw] lg:gap-16 pr-[5vw] lg:pr-[calc(50vw-57vh)]">
           
           {/* Smart Spacer (QUAN TRỌNG: CÔNG THỨC CANH GIỮA ẢNH BÌA) */}
           <div 
