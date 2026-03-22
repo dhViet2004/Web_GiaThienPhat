@@ -412,9 +412,9 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
             </div>
           )}
 
-          {/* 描述 + 首张图：内部 gap-x 须与上方轨道 gap 一致，否则「封面→文字」与「文字→图」视觉间距不对称 */}
+          {/* DESC + Hình ảnh nối liền */}
           {descPairedWithFirstImage && firstGalleryBlock && (
-            <div className="h-full flex flex-row flex-nowrap gap-x-[5vw] lg:gap-x-16 shrink-0 flex-[0_0_auto] items-center lg:pt-[12vh] lg:pb-[12vh] pt-[20vh] pointer-events-none select-none self-center isolate">
+            <div className="h-full flex flex-row flex-nowrap gap-x-[5vw] lg:gap-x-16 shrink-0 flex-[0_0_auto] pt-[12vh] pointer-events-none select-none">
               {/* min-w-0 + break-all：避免长路径/无空格字符串溢出盖住右侧图片 */}
               <div className="w-[290px] min-w-0 max-w-[min(290px,42vw)] shrink-0 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80 pr-1">
                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
@@ -443,7 +443,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           {/* BLOCK 3: SLIDER */}
           {sliderImages.length > 0 && (
             <div 
-              className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center overflow-hidden shadow-sm bg-gray-50 pointer-events-auto"
+              className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center overflow-hidden shadow-sm bg-gray-50 pointer-events-auto pt-[20vh] lg:pt-[12vh]"
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <AnimatePresence mode="wait">
@@ -474,7 +474,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
 
           {/* BLOCK 4: GALLERY IMAGES */}
           {galleryImageBlocks.map((block, idx) => (
-            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center shadow-sm pointer-events-none select-none">
+            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center shadow-sm pointer-events-none select-none pt-[20vh] lg:pt-[12vh]">
               {block.url && (
                 <Image
                   src={block.url}
