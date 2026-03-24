@@ -400,7 +400,7 @@ export default function ProjectDetailPage({ params }) {
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[30px]  pr-[5vw] lg:pr-[calc(50vw-57vh)]">
+        <div className="h-full flex flex-nowrap items-start gap-[20px] lg:gap-[30px] pr-[5vw] lg:pr-[calc(50vw-57vh)] mt-8 lg:mt-12">
           
           {/* Smart Spacer (QUAN TRỌNG: CÔNG THỨC CANH GIỮA ẢNH BÌA) */}
           <div 
@@ -409,9 +409,9 @@ export default function ProjectDetailPage({ params }) {
           />
 
           {/* BLOCK 1: COVER IMAGE & TITLE */}
-          <div className="relative h-full flex flex-col justify-center flex-[0_0_auto] shrink-0 pt-[12vh] pb-[12vh] pointer-events-none select-none">
+          <div className="relative h-full flex flex-col justify-start flex-[0_0_auto] shrink-0 pt-[8vh] lg:pt-[12vh] pb-[8vh] lg:pb-[12vh] pointer-events-none select-none">
             {/* Title & Location */}
-            <div className="absolute top-0 right-full mr-[20px] lg:mr-[30px] w-[300px] flex flex-col items-end text-right z-20 pt-[12vh]">
+            <div className="absolute top-0 right-full mr-[20px] lg:mr-[30px] w-[300px] flex flex-col items-end text-right z-20 pt-[8vh] lg:pt-[12vh]">
               <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
                 <ProjectIcon size={24} strokeWidth={1.5} />
               </div>
@@ -434,23 +434,23 @@ export default function ProjectDetailPage({ params }) {
               </div>
             </div>
 
-            {/* Main Cover Image */}
-            <div className="relative h-[76vh] shrink-0 shadow-sm will-change-transform" style={{ aspectRatio: '3432 / 2288' }}>
+            {/* Main Cover Image — chiều cao cố định 70vh, chiều rộng auto */}
+            <div className="relative h-auto md:h-[60vh] lg:h-[70vh] w-[90vw] md:w-auto shrink-0 shadow-sm will-change-transform">
               <Image
                 src={projectData.general?.coverImage || '/placeholder.jpg'}
                 alt="Cover"
-                fill
+                height={700}
+                width={1000}
                 priority
-                sizes="90vw"
                 draggable={false}
-                className="object-cover select-none pointer-events-none"
+                className="w-full h-auto md:h-full md:w-auto object-contain object-top select-none pointer-events-none"
               />
             </div>
           </div>
 
-          {/* BLOCK 2: DESCRIPTION — Đã cập nhật y hệt Overlay */}
+          {/* BLOCK 2: DESCRIPTION — max-lg: thêm pt để thẳng hàng với ảnh (ảnh có pt nằm trong hộp cố định) */}
           {description && !descPairedWithFirstImage && (
-            <div className="h-full flex flex-col shrink-0 lg:pt-[12vh] lg:pb-[12vh] justify-start pt-[20vh] pointer-events-none select-none">
+            <div className="h-full flex flex-col shrink-0 pt-[calc(8vh+1.75rem)] lg:pt-[12vh] justify-start pointer-events-none select-none">
                <div className="w-[290px] min-w-0 max-w-[min(290px,85vw)] text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
                  <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
                  <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
@@ -460,20 +460,20 @@ export default function ProjectDetailPage({ params }) {
 
           {/* DESC + Hình ảnh nối liền */}
           {descPairedWithFirstImage && firstGalleryBlock && (
-            <div className="h-full flex flex-row flex-nowrap gap-x-[5vw] lg:gap-x-16 shrink-0 flex-[0_0_auto] pt-[12vh] pointer-events-none select-none">
-              <div className="w-[290px] min-w-0 max-w-[min(290px,42vw)] shrink-0 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80 pr-1">
+            <div className="flex flex-row items-start flex-nowrap gap-x-[5vw] lg:gap-x-16 shrink-0 flex-[0_0_auto] pt-[8vh] lg:pt-[12vh] pointer-events-none select-none">
+              <div className="w-[290px] min-w-0 max-w-[min(290px,42vw)] shrink-0 pt-[1.75rem] lg:pt-0 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80 pr-1">
                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
                 <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
               </div>
-              <div className="relative z-0 h-[76vh] aspect-[3/2] w-auto max-w-[min(90vw,960px)] shrink-0 shadow-sm overflow-hidden">
+              <div className="relative z-0 h-auto md:h-[60vh] lg:h-[70vh] w-[90vw] md:w-auto shrink-0 shadow-sm overflow-hidden pointer-events-auto">
                 {firstGalleryBlock.url && (
                   <Image
                     src={firstGalleryBlock.url}
                     alt={firstGalleryBlock.caption || 'Gallery 1'}
-                    fill
-                    sizes="90vw"
+                    height={700}
+                    width={1000}
                     draggable={false}
-                    className="object-cover"
+                    className="w-full h-auto md:h-full md:w-auto object-contain object-top"
                   />
                 )}
                 {firstGalleryBlock.caption && (
@@ -488,7 +488,7 @@ export default function ProjectDetailPage({ params }) {
           {/* BLOCK 3: SLIDER */}
           {sliderImages.length > 0 && (
             <div 
-              className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center overflow-hidden shadow-sm bg-gray-50 pointer-events-auto pt-[20vh] lg:pt-[12vh]"
+              className="relative h-auto md:h-[60vh] lg:h-[70vh] w-[90vw] md:w-auto shrink-0 overflow-hidden shadow-sm cursor-pointer pointer-events-auto"
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <AnimatePresence mode="wait">
@@ -498,15 +498,15 @@ export default function ProjectDetailPage({ params }) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.6 }}
-                  className="absolute inset-0"
+                  className="h-full"
                 >
                   <Image
                     src={sliderImages[activeSlide]}
                     alt={`Slide ${activeSlide + 1}`}
-                    fill
-                    sizes="90vw"
+                    height={700}
+                    width={1000}
                     draggable={false}
-                    className="object-cover select-none"
+                  className="w-full h-auto md:h-full md:w-auto object-contain object-top select-none"
                   />
                 </motion.div>
               </AnimatePresence>
@@ -519,15 +519,15 @@ export default function ProjectDetailPage({ params }) {
 
           {/* BLOCK 4: GALLERY IMAGES */}
           {galleryImageBlocks.map((block, idx) => (
-            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center shadow-sm pointer-events-none select-none pt-[20vh] lg:pt-[12vh]">
+            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative h-auto md:h-[60vh] lg:h-[70vh] w-[90vw] md:w-auto shrink-0 shadow-sm pointer-events-auto select-none">
               {block.url && (
                 <Image
                   src={block.url}
                   alt={block.caption || `Gallery ${idx + 1}`}
-                  fill
-                  sizes="90vw"
+                  height={700}
+                  width={1000}
                   draggable={false}
-                  className="object-cover"
+                  className="w-full h-auto md:h-full md:w-auto object-contain object-top"
                 />
               )}
               {block.caption && (
@@ -539,7 +539,7 @@ export default function ProjectDetailPage({ params }) {
           ))}
 
           {/* Credits Block */}
-          <div className="h-[76vh] self-center flex flex-col flex-wrap gap-x-12 gap-y-6 pt-12 pointer-events-none select-none shrink-0">
+          <div className="w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] flex flex-col flex-wrap gap-x-12 gap-y-6 pointer-events-none select-none shrink-0 pt-[8vh] lg:pt-[12vh]">
             <div className="w-[200px]">
               <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Status</h4>
               <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectData.general?.status || 'Completed'}</p>
@@ -556,7 +556,7 @@ export default function ProjectDetailPage({ params }) {
       </div>
 
       {/* Drag indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-40">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[150] pointer-events-none opacity-40">
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-black">
           <span className="w-8 h-px bg-black"></span>
           <span>Kéo ngang để xem</span>

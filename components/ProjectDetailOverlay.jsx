@@ -349,7 +349,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[30px] pr-[5vw] lg:pr-[calc(50vw-57vh)]">
+        <div className="h-full flex flex-nowrap items-start lg:items-center gap-[20px] lg:gap-[30px] pr-[5vw] lg:pr-[calc(50vw-57vh)]">
           
           {/* Smart Spacer */}
           <div 
@@ -358,9 +358,9 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           />
 
           {/* BLOCK 1: COVER IMAGE & TITLE */}
-          <div className="relative h-full flex flex-col justify-center flex-[0_0_auto] shrink-0 pt-[12vh] pb-[12vh] pointer-events-none select-none">
+          <div className="relative h-full flex flex-col justify-center flex-[0_0_auto] shrink-0 pt-[8vh] lg:pt-[12vh] pb-[8vh] lg:pb-[12vh] pointer-events-none select-none">
             {/* Title & Location */}
-            <div className="absolute top-0 right-full mr-[20px] lg:mr-[30px] w-[300px] flex flex-col items-end text-right z-20 pt-[12vh]">
+            <div className="absolute top-0 right-full mr-[20px] lg:mr-[30px] w-[300px] flex flex-col items-end text-right z-20 pt-[8vh] lg:pt-[12vh]">
               <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
                 <ProjectIcon size={24} strokeWidth={1.5} />
               </div>
@@ -387,8 +387,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
             <motion.div
               layoutId={`project-image-${project._id}`}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="relative shrink-0 shadow-sm will-change-transform"
-              style={{ aspectRatio: '3 / 2', height: '76vh', width: 'auto' }}
+              className="relative w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] lg:w-auto shrink-0 shadow-sm will-change-transform aspect-[3/2]"
             >
               <Image
                 src={coverImageUrl}
@@ -402,9 +401,9 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
             </motion.div>
           </div>
 
-          {/* BLOCK 2: DESCRIPTION — 单独文本；或与首张图片合并为同一列（见下方） */}
+          {/* BLOCK 2: DESCRIPTION */}
           {description && !descPairedWithFirstImage && (
-            <div className="h-full flex flex-col shrink-0 lg:pt-[12vh] lg:pb-[12vh] justify-start pt-[20vh] pointer-events-none select-none">
+            <div className="h-full flex flex-col shrink-0 pt-[8vh] lg:pt-[12vh] justify-start pointer-events-none select-none">
                <div className="w-[290px] min-w-0 max-w-[min(290px,85vw)] text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
                  <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
                  <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
@@ -414,13 +413,13 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
 
           {/* DESC + Hình ảnh nối liền */}
           {descPairedWithFirstImage && firstGalleryBlock && (
-            <div className="h-full flex flex-row flex-nowrap gap-x-[5vw] lg:gap-x-16 shrink-0 flex-[0_0_auto] pt-[12vh] pointer-events-none select-none">
+            <div className="h-full flex flex-row flex-nowrap gap-x-[5vw] lg:gap-x-16 shrink-0 flex-[0_0_auto] pt-[8vh] lg:pt-[12vh] pointer-events-none select-none">
               {/* min-w-0 + break-all：避免长路径/无空格字符串溢出盖住右侧图片 */}
               <div className="w-[290px] min-w-0 max-w-[min(290px,42vw)] shrink-0 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80 pr-1">
                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
                 <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
               </div>
-              <div className="relative z-0 h-[76vh] aspect-[3/2] w-auto max-w-[min(90vw,960px)] shrink-0 shadow-sm overflow-hidden">
+              <div className="relative z-0 w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] aspect-[3/2] shrink-0 shadow-sm overflow-hidden">
                 {firstGalleryBlock.url && (
                   <Image
                     src={firstGalleryBlock.url}
@@ -443,7 +442,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           {/* BLOCK 3: SLIDER */}
           {sliderImages.length > 0 && (
             <div 
-              className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center overflow-hidden shadow-sm bg-gray-50 pointer-events-auto pt-[20vh] lg:pt-[12vh]"
+              className="relative w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 overflow-hidden shadow-sm bg-gray-50 pointer-events-auto pt-[8vh] lg:pt-[12vh]"
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <AnimatePresence mode="wait">
@@ -474,7 +473,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
 
           {/* BLOCK 4: GALLERY IMAGES */}
           {galleryImageBlocks.map((block, idx) => (
-            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 self-center shadow-sm pointer-events-none select-none pt-[20vh] lg:pt-[12vh]">
+            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 shadow-sm pointer-events-none select-none pt-[8vh] lg:pt-[12vh]">
               {block.url && (
                 <Image
                   src={block.url}
@@ -494,7 +493,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           ))}
 
           {/* Credits Block */}
-          <div className="h-[76vh] self-center flex flex-col flex-wrap gap-x-12 gap-y-6 pt-12 pointer-events-none select-none shrink-0">
+          <div className="w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] flex flex-col flex-wrap gap-x-12 gap-y-6 pointer-events-none select-none shrink-0 pt-[8vh] lg:pt-[12vh]">
             <div className="w-[200px]">
               <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Status</h4>
               <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
