@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Building2, Plus, Trash2, ArrowUp, ArrowDown, 
-  Image as ImageIcon, Type, LayoutTemplate, Video, Users, Check, Loader2
+  Image as ImageIcon, Type, LayoutTemplate, Users, Check, Loader2
 } from 'lucide-react';
 import { apiGet, apiPut } from '@/lib/api';
 
@@ -87,9 +87,6 @@ export default function EditProjectPage({ params }) {
         break;
       case 'slider':
         newBlock.slides = [{ url: '', caption: '' }];
-        break;
-      case 'video':
-        newBlock.iframeUrl = '';
         break;
       case 'credits':
         newBlock.roles = [{ roleName: '', people: '' }];
@@ -402,7 +399,6 @@ export default function EditProjectPage({ params }) {
                       {block.type === 'text' && <Type size={16} className="text-gray-600" />}
                       {block.type === 'image' && <ImageIcon size={16} className="text-gray-600" />}
                       {block.type === 'slider' && <LayoutTemplate size={16} className="text-gray-600" />}
-                      {block.type === 'video' && <Video size={16} className="text-gray-600" />}
                       {block.type === 'credits' && <Users size={16} className="text-gray-600" />}
                       <span className="text-[11px] font-bold uppercase tracking-[0.2em]">Khối: {block.type}</span>
                       <span className="text-[9px] text-gray-400 ml-auto">#{index + 1}</span>
@@ -505,21 +501,6 @@ export default function EditProjectPage({ params }) {
                       </div>
                     )}
 
-                    {block.type === 'video' && (
-                      <div className="flex flex-col gap-4">
-                        <div>
-                          <label className="text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-2 block">URL Video Vimeo / YouTube</label>
-                          <input
-                            type="url"
-                            value={block.iframeUrl}
-                            onChange={(e) => updateBlock(block.id, 'iframeUrl', e.target.value)}
-                            placeholder="https://vimeo.com/... hoặc https://youtube.com/embed/..."
-                            className="w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-3 text-sm placeholder:text-gray-300"
-                          />
-                        </div>
-                      </div>
-                    )}
-
                     {block.type === 'credits' && (
                       <div className="flex flex-col gap-5">
                         <div className="text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-2">Danh Sách Vai Trò</div>
@@ -581,10 +562,6 @@ export default function EditProjectPage({ params }) {
                   <button type="button" onClick={() => addBlock('slider')} className="border-2 border-gray-200 p-5 flex flex-col items-center justify-center gap-3 hover:border-black hover:bg-black hover:text-white transition-all text-gray-500 group">
                     <LayoutTemplate size={20} strokeWidth={1.5} />
                     <span className="text-[10px] font-bold uppercase tracking-[0.1em]">Trình Chiếu</span>
-                  </button>
-                  <button type="button" onClick={() => addBlock('video')} className="border-2 border-gray-200 p-5 flex flex-col items-center justify-center gap-3 hover:border-black hover:bg-black hover:text-white transition-all text-gray-500 group">
-                    <Video size={20} strokeWidth={1.5} />
-                    <span className="text-[10px] font-bold uppercase tracking-[0.1em]">Trình Phát Video</span>
                   </button>
                   <button type="button" onClick={() => addBlock('credits')} className="border-2 border-gray-200 p-5 flex flex-col items-center justify-center gap-3 hover:border-black hover:bg-black hover:text-white transition-all text-gray-500 group col-span-2 md:col-span-1">
                     <Users size={20} strokeWidth={1.5} />
