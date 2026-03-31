@@ -292,15 +292,15 @@ export default function ProjectsFeed() {
                   className="project-row relative flex w-full max-w-[1600px] justify-center items-start"
                 >
                   <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-start will-change-transform">
-                    <div className="hidden md:flex absolute top-0 right-full mr-[30px] lg:mr-[44px] w-[324px] project-info justify-end z-20">
+                    <div className="hidden md:flex absolute top-0 right-full mr-[10px] lg:mr-[16px] w-[324px] project-info justify-end z-20">
                       <div className="relative w-full text-right flex flex-col items-end origin-right">
                         <div className="absolute top-0 right-0 size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center">
                           <ProjectIcon size={22} strokeWidth={1.5} />
                         </div>
 
-                        <Link href={linkHref} className="mt-[18px] lg:mt-[24px] group cursor-pointer flex flex-col items-end">
+                        <Link href={linkHref} className="mt-0 group cursor-pointer flex flex-col items-end">
                           <motion.div
-                            className="relative pr-14 lg:pr-20"
+                            className="relative pr-6 lg:pr-15"
                             whileHover="hover"
                             initial="rest"
                           >
@@ -308,12 +308,12 @@ export default function ProjectsFeed() {
                               {project.general?.title}
                             </h2>
                             <motion.span
-                              className="absolute -bottom-1 right-14 lg:right-20 h-px bg-black"
+                              className="absolute -bottom-1 right-6 lg:right-8 h-px bg-black"
                               variants={{ rest: { width: 0 }, hover: { width: '100%' } }}
                               transition={{ duration: 0.4, ease: [0.45, 0, 0.55, 1] }}
                             />
                           </motion.div>
-                          <p className="text-[#797979] text-[11px] lg:text-[12px] uppercase mt-[4px] lg:mt-[6px] pr-14 lg:pr-20">
+                          <p className="text-[#797979] text-[11px] lg:text-[12px] uppercase mt-[4px] lg:mt-[6px] pr-6 lg:pr-15">
                             {project.general?.location}
                           </p>
                         </Link>

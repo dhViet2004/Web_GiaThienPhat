@@ -320,11 +320,11 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-[100] bg-white text-black overflow-hidden font-sans"
+      className="fixed inset-0 z-100 bg-white text-black overflow-hidden font-sans"
     >
       {/* Loading overlay */}
       {isLoading && (
-        <div className="absolute inset-0 z-[200] bg-white flex items-center justify-center">
+        <div className="absolute inset-0 z-200 bg-white flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-black" />
             <span className="text-xs uppercase tracking-[0.2em] text-gray-500">Loading project details...</span>
@@ -349,56 +349,70 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <div className="h-full flex flex-nowrap items-start lg:items-center gap-[20px] lg:gap-[30px] pr-[5vw] lg:pr-[calc(50vw-57vh)]">
+        <div className="h-full flex flex-nowrap items-start gap-[20px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
           
-          {/* Smart Spacer */}
-          <div 
-            className="relative z-50 hidden lg:block h-px shrink-0 flex-[0_0_auto]" 
-            style={{ width: 'calc(50vw - 57vh - 64px)' }} 
-          />
+          {/* BLOCK 1: 1fr | auto | 1fr — ảnh vẫn giữa viewport, chữ sát mép trái ảnh (không còn khoảng trống do căn giữa trong 1fr) */}
+          <div className="relative h-full w-[calc(100vw-40px)] lg:w-[calc(100vw-70px)] flex flex-col justify-start flex-[0_0_auto] shrink-0 pt-[8vh] lg:pt-[12vh] pb-[8vh] lg:pb-[12vh] pointer-events-none select-none">
+            <div className="relative flex flex-col gap-6 lg:gap-0 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-start lg:gap-x-4">
+              {/* Cột trái: đẩy khối nội dung sát cạnh ảnh */}
+              <div className="lg:min-w-0 lg:flex lg:justify-end">
+                <div className="w-[min(300px,85vw)] shrink-0 flex flex-col items-start text-left lg:max-w-[280px] lg:w-full lg:items-end lg:text-right z-20">
+                  <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
+                    <ProjectIcon size={24} strokeWidth={1.5} />
+                  </div>
+                  <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none m-0 p-0 wrap-break-word w-full">
+                    {project.general?.title || 'Untitled Project'}
+                  </h1>
+                  <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12">
+                    {project.general?.location || ''}
+                  </p>
 
-          {/* BLOCK 1: COVER IMAGE & TITLE */}
-          <div className="relative h-full flex flex-col justify-center flex-[0_0_auto] shrink-0 pt-[8vh] lg:pt-[12vh] pb-[8vh] lg:pb-[12vh] pointer-events-none select-none">
-            {/* Title & Location */}
-            <div className="absolute top-0 right-full mr-[20px] lg:mr-[30px] w-[300px] flex flex-col items-end text-right z-20 pt-[8vh] lg:pt-[12vh]">
-              <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
-                <ProjectIcon size={24} strokeWidth={1.5} />
-              </div>
-              <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none m-0 p-0 break-words w-full">
-                {project.general?.title || 'Untitled Project'}
-              </h1>
-              <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12">
-                {project.general?.location || ''}
-              </p>
-
-              <div className="hidden lg:flex flex-col items-end w-full space-y-4">
-                <div>
-                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
-                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
+                  <div className="hidden lg:flex flex-col items-end w-full space-y-4">
+                    <div className="text-right">
+                      <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
+                      <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
+                    </div>
+                    <div className="text-right">
+                      <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
+                      <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
-                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
+              </div>
+
+              {/* Cột giữa: chỉ rộng bằng ảnh — sát cột trái, ảnh vẫn nằm giữa màn hình nhờ hai bên 1fr cân bằng */}
+              <div className="w-full flex justify-center lg:justify-start min-w-0 lg:w-auto lg:shrink-0">
+                <motion.div
+                  layoutId={`project-image-${project._id}`}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  className="relative flex w-full max-w-full justify-center lg:w-auto h-[min(38vh,280px)] sm:h-[min(44vh,360px)] lg:h-[60vh] shrink-0 shadow-sm will-change-transform"
+                >
+                  <Image
+                    src={coverImageUrl}
+                    alt="Cover"
+                    width={0}
+                    height={0}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
+                    priority
+                    draggable={false}
+                    className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full"
+                  />
+                </motion.div>
+              </div>
+
+              {/* Cột phải: Status / Year — nằm cạnh ảnh (chỉ thay cột trống 1fr), không sửa cột trái và cột ảnh */}
+              <div className="w-full min-w-0 flex flex-col gap-6 shrink-0 lg:min-w-0 lg:justify-start lg:items-start">
+                <div className="w-[200px] min-w-0 max-w-full">
+                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Status</h4>
+                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
+                </div>
+                <div className="w-[200px] min-w-0 max-w-full">
+                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Year</h4>
+                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
                 </div>
               </div>
             </div>
-
-            {/* Main Cover Image with shared-element transition */}
-            <motion.div
-              layoutId={`project-image-${project._id}`}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="relative w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] lg:w-auto shrink-0 shadow-sm will-change-transform aspect-[3/2]"
-            >
-              <Image
-                src={coverImageUrl}
-                alt="Cover"
-                fill
-                priority
-                sizes="90vw"
-                draggable={false}
-                className="object-cover select-none pointer-events-none"
-              />
-            </motion.div>
           </div>
 
           {/* BLOCK 2: DESCRIPTION */}
@@ -406,28 +420,30 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
             <div className="h-full flex flex-col shrink-0 pt-[8vh] lg:pt-[12vh] justify-start pointer-events-none select-none">
                <div className="w-[290px] min-w-0 max-w-[min(290px,85vw)] text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
                  <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
-                 <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
+                 <p className="whitespace-pre-wrap wrap-anywhere break-all">{normalizeDescriptionText(description)}</p>
                </div>
             </div>
           )}
 
-          {/* DESC + Hình ảnh nối liền */}
+          {/* DESC + Hình ảnh nối liền — mô tả bên trái, ảnh bên phải */}
           {descPairedWithFirstImage && firstGalleryBlock && (
             <div className="h-full flex flex-row flex-nowrap gap-x-[5vw] lg:gap-x-16 shrink-0 flex-[0_0_auto] pt-[8vh] lg:pt-[12vh] pointer-events-none select-none">
               {/* min-w-0 + break-all：避免长路径/无空格字符串溢出盖住右侧图片 */}
               <div className="w-[290px] min-w-0 max-w-[min(290px,42vw)] shrink-0 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80 pr-1">
                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
-                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
+                <p className="whitespace-pre-wrap wrap-anywhere break-all">{normalizeDescriptionText(description)}</p>
               </div>
-              <div className="relative z-0 w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] aspect-[3/2] shrink-0 shadow-sm overflow-hidden">
+              <div className="relative z-0 w-full max-w-full flex justify-end ml-auto h-[min(38vh,280px)] sm:h-[min(44vh,360px)] lg:h-[60vh] shrink-0 shadow-sm overflow-hidden">
                 {firstGalleryBlock.url && (
                   <Image
                     src={firstGalleryBlock.url}
                     alt={firstGalleryBlock.caption || 'Gallery 1'}
-                    fill
-                    sizes="90vw"
+                    width={0}
+                    height={0}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
                     draggable={false}
-                    className="object-cover"
+                    className="object-contain max-h-full w-auto max-w-full"
                   />
                 )}
                 {firstGalleryBlock.caption && (
@@ -442,7 +458,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           {/* BLOCK 3: SLIDER */}
           {sliderImages.length > 0 && (
             <div 
-              className="relative w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 overflow-hidden shadow-sm bg-gray-50 pointer-events-auto pt-[8vh] lg:pt-[12vh]"
+              className="relative w-full max-w-[min(100vw-40px,85vw)] lg:w-auto h-[min(38vh,280px)] sm:h-[min(44vh,360px)] lg:h-[60vh] flex-[0_0_auto] shrink-0 shadow-sm bg-gray-50 pointer-events-auto pt-[8vh] lg:pt-[12vh]"
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <AnimatePresence mode="wait">
@@ -452,15 +468,17 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.6 }}
-                  className="absolute inset-0"
+                  className="relative w-full h-full flex items-center justify-center"
                 >
                   <Image
                     src={sliderImages[activeSlide]}
                     alt={`Slide ${activeSlide + 1}`}
-                    fill
-                    sizes="90vw"
+                    width={0}
+                    height={0}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
                     draggable={false}
-                    className="object-cover select-none"
+                    className="object-contain select-none max-h-full w-auto max-w-full"
                   />
                 </motion.div>
               </AnimatePresence>
@@ -473,15 +491,17 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
 
           {/* BLOCK 4: GALLERY IMAGES */}
           {galleryImageBlocks.map((block, idx) => (
-            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] aspect-[3/2] flex-[0_0_auto] shrink-0 shadow-sm pointer-events-none select-none pt-[8vh] lg:pt-[12vh]">
+            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative w-full max-w-[min(100vw-40px,85vw)] lg:w-auto h-[min(38vh,280px)] sm:h-[min(44vh,360px)] lg:h-[60vh] flex-[0_0_auto] shrink-0 shadow-sm pointer-events-none select-none pt-[8vh] lg:pt-[12vh] flex items-center justify-center">
               {block.url && (
                 <Image
                   src={block.url}
                   alt={block.caption || `Gallery ${idx + 1}`}
-                  fill
-                  sizes="90vw"
+                  width={0}
+                  height={0}
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
                   draggable={false}
-                  className="object-cover"
+                  className="object-contain max-h-full w-auto max-w-full"
                 />
               )}
               {block.caption && (
@@ -491,18 +511,6 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
               )}
             </div>
           ))}
-
-          {/* Credits Block */}
-          <div className="w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] flex flex-col flex-wrap gap-x-12 gap-y-6 pointer-events-none select-none shrink-0 pt-[8vh] lg:pt-[12vh]">
-            <div className="w-[200px]">
-              <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Status</h4>
-              <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
-            </div>
-            <div className="w-[200px]">
-              <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Year</h4>
-              <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
-            </div>
-          </div>
 
           {/* End spacer */}
           <div className="shrink-0 w-[5vw]" />

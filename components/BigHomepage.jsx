@@ -39,7 +39,7 @@ export default function BigHomepage() {
     <div className="min-h-screen bg-white text-black font-sans selection:bg-black selection:text-white pb-32">
       {/* HEADER */}
       <header className={`fixed top-0 left-0 w-full z-[900] bg-white transition-opacity duration-[1500ms] ${navVisible ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="relative flex justify-between items-start px-[20px] lg:px-[35px] pt-[22px] lg:pt-[24px] pb-4">
+        <div className="relative flex justify-between items-center px-[20px] lg:px-[35px] pt-[22px] lg:pt-[24px] pb-4">
           
           {/* 1. Logo acting as Hamburger Menu trigger on Mobile, Home Link on Desktop */}
           <div className="w-1/4 flex items-start">
@@ -59,8 +59,8 @@ export default function BigHomepage() {
             </div>
           </div>
 
-          {/* 2. Navigation (Desktop Only) - ĐÃ FIX CĂN GIỮA TUYỆT ĐỐI */}
-          <nav className="hidden md:flex absolute top-[22px] lg:top-[24px] left-1/2 -translate-x-1/2 flex-row justify-center w-max gap-0 z-20">
+          {/* 2. Navigation (Desktop Only) */}
+          <nav className="hidden md:flex absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 flex-row justify-center w-max gap-0 z-20">
             {navigation.map((cat) => (
               <div 
                 key={cat.title}
@@ -92,7 +92,7 @@ export default function BigHomepage() {
           </nav>
 
           {/* 3. Search Bar (Right) */}
-          <div className="absolute top-[22px] lg:top-[24px] right-0 px-[20px] lg:pr-[35px] z-50 flex items-center">
+          <div className="absolute top-1/2 -translate-y-1/2 right-0 pr-[20px] lg:pr-[35px] z-50 flex items-center">
             <div className="relative flex items-center bg-white">
               {/* Search Icon */}
               <div className="px-2 cursor-pointer">
