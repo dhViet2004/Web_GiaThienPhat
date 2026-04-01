@@ -510,13 +510,13 @@ export default function ProjectsFeed() {
         @media (min-width: 640px) { .img-sync-height { --img-h: min(42vh, 300px); } }
         @media (min-width: 768px) { .img-sync-height { --img-h: min(48vh, 360px); } }
         @media (min-width: 1024px) { .img-sync-height { --img-h: min(52vh, 440px); } }
-        @media (min-width: 1280px) { .img-sync-height { --img-h: min(58vh, 1200px); } }
+        @media (min-width: 1280px) { .img-sync-height { --img-h: min(55vh, 1200px); } }
       `}</style>
 
       <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
         <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
           <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
-            <div className={`flex flex-col items-center w-full transition-all duration-500 gap-[10vh] lg:gap-[15vh]'
+            <div className={`flex flex-col items-center w-full transition-all duration-500 gap-16 lg:gap-24'
               }`}>
               {projects.map((project, index) => {
                 const isSelected = selectedProject?._id === project._id;
@@ -530,13 +530,13 @@ export default function ProjectsFeed() {
                     layout
                     className={`relative w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSelected
                         ? 'h-[55vh] md:h-[60vh] max-w-none z-50 my-0'
-                        : 'flex justify-center items-start max-w-[1600px] h-auto md:h-80 my-0 bg-transparent'
+                        : 'flex justify-center items-center max-w-[1600px] h-auto my-4'
                       }`}
                     transition={{ type: 'spring', stiffness: 100, damping: 20, mass: 1 }}
                   >
                     {!isSelected ? (
-                      <div className="project-row w-full flex justify-center items-start group">
-                        <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-start will-change-transform">
+                      <div className="project-row w-full flex justify-center items-center group">
+                        <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
 
                           {/* Left Info Desktop */}
                           <div className="hidden md:flex absolute top-0 right-full mr-[10px] lg:mr-[16px] w-[324px] project-info justify-end z-20">
