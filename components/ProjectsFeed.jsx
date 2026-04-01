@@ -7,20 +7,12 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CustomEase } from 'gsap/CustomEase';
 import { useGSAP } from '@gsap/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon, X, Loader2 } from 'lucide-react';
+import { useAnimation } from 'framer-motion';
+import { X, Loader2 } from 'lucide-react';
 import { apiGet } from '@/lib/api';
 
 gsap.registerPlugin(ScrollTrigger, CustomEase);
 CustomEase.create('customBIG', 'M0,0 C0.45,0 0.55,1 1,1');
-
-const IconMap = {
-  Building2: Building2,
-  Trees: Trees,
-  Sofa: Sofa,
-  LayoutTemplate: LayoutTemplate,
-  Video: Video,
-  Image: ImageIcon
-};
 
 // --- Helpers ---
 function getTextBlock(project) {
@@ -54,7 +46,7 @@ function getProjectYear(project) {
 }
 
 // --- Inline Expanded Detail Component ---
-const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, ProjectIcon }) => {
+const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const scrollRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -213,20 +205,18 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, ProjectIco
         className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden img-sync-height"
         style={{ cursor: isDragging ? 'grabbing' : 'grab', scrollBehavior: 'auto', WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[20px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
+        <div className="h-full flex flex-nowrap items-center gap-[8px] lg:gap-[8px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
 
           {/* Info Block */}
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]">
-            <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
-              <ProjectIcon size={24} strokeWidth={1.5} />
-            </div>
-            <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0">
+            <div className="mb-6"></div>
+            <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0 text-right">
               {project.general?.title || 'Untitled Project'}
             </h1>
-            <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12">
+            <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12 text-right">
               {project.general?.location || ''}
             </p>
-            <div className="flex flex-col gap-4 items-start">
+            <div className="flex flex-col gap-4 items-end">
               <div>
                 <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
                 <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
@@ -481,13 +471,35 @@ export default function ProjectsFeed() {
       if (imageBlock) {
         gsap.fromTo(imageBlock,
           { y: 150, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, scrollTrigger: st }
+          {
+            y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, scrollTrigger: {
+              trigger: item,
+              start: 'top 95%',
+              toggleActions: 'play none none reverse',
+              onLeaveBack: () => {
+                gsap.to(imageBlock, {
+                  y: 150, opacity: 0, duration: 1.4, ease: 'power2.inOut', force3D: true
+                });
+              }
+            }
+          }
         );
       }
       if (infoWrapper) {
         gsap.fromTo(infoWrapper,
           { y: 100, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, delay: 0.1, scrollTrigger: st }
+          {
+            y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, delay: 0.1, scrollTrigger: {
+              trigger: item,
+              start: 'top 95%',
+              toggleActions: 'play none none reverse',
+              onLeaveBack: () => {
+                gsap.to(infoWrapper, {
+                  y: 100, opacity: 0, duration: 1.2, ease: 'power2.inOut', force3D: true, delay: 0.05
+                });
+              }
+            }
+          }
         );
       }
     });
@@ -516,11 +528,9 @@ export default function ProjectsFeed() {
       <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
         <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
           <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
-            <div className={`flex flex-col items-center w-full transition-all duration-500 gap-16 lg:gap-24'
-              }`}>
+            <div className="flex flex-col items-center w-full transition-all duration-500 gap-1 lg:gap-1">
               {projects.map((project, index) => {
                 const isSelected = selectedProject?._id === project._id;
-                const ProjectIcon = IconMap[project.general?.icon] || Building2;
                 const fullData = isSelected ? getProjectData(project._id) : project;
 
                 return (
@@ -530,22 +540,22 @@ export default function ProjectsFeed() {
                     layout
                     className={`relative w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSelected
                         ? 'h-[55vh] md:h-[60vh] max-w-none z-50 my-0'
-                        : 'flex justify-center items-center max-w-[1600px] h-auto my-4'
+                        : 'flex justify-center items-center max-w-[1600px] h-auto my-2'
                       }`}
-                    transition={{ type: 'spring', stiffness: 100, damping: 20, mass: 1 }}
+                    transition={
+                      isSelected
+                        ? { type: 'spring', stiffness: 100, damping: 20, mass: 1 }
+                        : { type: 'spring', stiffness: 50, damping: 18, mass: 1, duration: 1.2 }
+                    }
                   >
                     {!isSelected ? (
                       <div className="project-row w-full flex justify-center items-center group">
                         <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
 
                           {/* Left Info Desktop */}
-                          <div className="hidden md:flex absolute top-0 right-full mr-[10px] lg:mr-[16px] w-[324px] project-info justify-end z-20">
+                          <div className="hidden md:flex absolute top-0 right-full mr-[4px] lg:mr-[6px] w-[324px] project-info justify-end z-20">
                             <div className="relative w-full text-right flex flex-col items-end origin-right">
-                              <div className="absolute top-0 right-0 size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center">
-                                <ProjectIcon size={22} strokeWidth={1.5} />
-                              </div>
-
-                              <div onClick={(e) => { e.preventDefault(); handleSelectProject(project); }} className="mt-0 group/link cursor-pointer flex flex-col items-end">
+                              <div onClick={(e) => { e.preventDefault(); handleSelectProject(project); }} className="group/link cursor-pointer flex flex-col items-end">
                                 <div className="relative pr-6 lg:pr-15">
                                   <h2 className="text-[14px] lg:text-[18px] font-normal uppercase text-black m-0 p-0 leading-tight whitespace-nowrap">
                                     {project.general?.title}
@@ -581,9 +591,6 @@ export default function ProjectsFeed() {
                           {/* Mobile Info */}
                           <div className="flex md:hidden flex-col w-full mt-4 project-info px-2" onClick={() => handleSelectProject(project)}>
                             <div className="flex items-start gap-4 cursor-pointer">
-                              <div className="size-[30px] bg-black text-white shrink-0 flex items-center justify-center">
-                                <ProjectIcon size={16} strokeWidth={1.5} />
-                              </div>
                               <div>
                                 <h2 className="text-[15px] font-normal uppercase text-black leading-none">{project.general?.title}</h2>
                                 <p className="text-[#797979] text-[11px] uppercase mt-1">{project.general?.location}</p>
@@ -598,7 +605,6 @@ export default function ProjectsFeed() {
                         project={fullData}
                         onClose={() => handleSelectProject(null)}
                         layoutId={`img-container-${project._id}`}
-                        ProjectIcon={ProjectIcon}
                         isLoading={!projectsCache[project._id]}
                       />
                     )}

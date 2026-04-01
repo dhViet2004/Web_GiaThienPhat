@@ -6,13 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon, Loader2 } from 'lucide-react';
 
 const IconMap = {
-  Building2: Building2,
-  Trees: Trees,
-  Sofa: Sofa,
-  LayoutTemplate: LayoutTemplate,
-  Video: Video,
-  Image: ImageIcon
-};
 
 // Helper to get text blocks
 function getTextBlock(project) {
@@ -342,7 +335,6 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
   }, [isLoading, centerMainImageInViewport]);
 
   const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
-  const ProjectIcon = IconMap[project.general?.icon] || Building2;
 
   return (
     <motion.div
@@ -379,25 +371,23 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
+        <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[30px]">
 
           {/* BLOCK 1A: PROJECT INFO — independent sibling, self-padded */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]"
+            className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none"
           >
-            <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
-              <ProjectIcon size={24} strokeWidth={1.5} />
-            </div>
-            <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0">
+            <div className="mb-6"></div>
+            <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0 text-right">
               {project.general?.title || 'Untitled Project'}
             </h1>
-            <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12">
+            <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12 text-right">
               {project.general?.location || ''}
             </p>
-            <div className="flex flex-col gap-4 items-start">
+            <div className="flex flex-col gap-4 items-end">
               <div>
                 <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
                 <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
@@ -547,7 +537,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           </motion.div>
 
           {/* End spacer */}
-          <div className="shrink-0 w-[5vw]" />
+          <div className="shrink-0 w-0" />
         </div>
       </div>
 

@@ -8,14 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon, Loader2 } from 'lucide-react';
 import { apiGet } from '@/lib/api';
 
-const IconMap = {
-  Building2: Building2,
-  Trees: Trees,
-  Sofa: Sofa,
-  LayoutTemplate: LayoutTemplate,
-  Video: Video,
-  Image: ImageIcon
-};
+const IconMap = {};
 
 // Helper to get text blocks
 function getTextBlock(project) {
@@ -342,7 +335,7 @@ export default function ProjectDetailPage({ params }) {
     );
   }
 
-  const ProjectIcon = IconMap[projectData.general?.icon] || Building2;
+  const ProjectIcon = {};
 
   return (
     <div className="fixed inset-0 z-[100] bg-white text-black overflow-hidden font-sans">
@@ -376,9 +369,7 @@ export default function ProjectDetailPage({ params }) {
 
           {/* BLOCK 1A: PROJECT INFO — independent sibling, self-padded */}
           <div className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]">
-            <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
-              <ProjectIcon size={24} strokeWidth={1.5} />
-            </div>
+            <div className="mb-6"></div>
             <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0">
               {projectData.general?.title || 'Untitled Project'}
             </h1>
