@@ -200,14 +200,6 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, ProjectIco
         </div>
       )}
 
-      {/* Close Button */}
-      <button 
-        onClick={(e) => { e.stopPropagation(); onClose(); }}
-        className="absolute top-4 right-4 md:top-8 md:right-8 z-[150] p-3 bg-white/80 hover:bg-black hover:text-white backdrop-blur-sm transition-colors rounded-full shadow-md border border-gray-100"
-      >
-        <X size={20} />
-      </button>
-
       {/* Horizontal Scroll Content */}
       <div
         ref={scrollRef}
@@ -221,7 +213,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, ProjectIco
         className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden img-sync-height"
         style={{ cursor: isDragging ? 'grabbing' : 'grab', scrollBehavior: 'auto', WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
+        <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[20px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
           
           {/* Info Block */}
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]">
@@ -402,6 +394,38 @@ export default function ProjectsFeed() {
     }
   }, []);
 
+  // LOGIC MỚI: Đóng project khi cuộn chuột
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const handleUserScroll = (e) => {
+      // 1. Kiểm tra xem người dùng có đang cuộn bên trong nội dung chi tiết không
+      if (e.target.closest('.img-sync-height')) {
+        if (e instanceof WheelEvent) {
+          // Cho phép cuộn ngang (xem gallery), đóng khi cuộn dọc
+          if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+        } else {
+          return; // Touchmove bên trong gallery thì không đóng
+        }
+      }
+
+      // 2. Đóng project và quay lại danh sách
+      setSelectedProject(null);
+    };
+
+    // Đợi 500ms sau khi mở để tránh đóng ngay lập tức
+    const timer = setTimeout(() => {
+      window.addEventListener('wheel', handleUserScroll, { passive: true });
+      window.addEventListener('touchmove', handleUserScroll, { passive: true });
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('wheel', handleUserScroll);
+      window.removeEventListener('touchmove', handleUserScroll);
+    };
+  }, [selectedProject]);
+
   const getProjectData = useCallback((projectId) => {
     return projectsCache[projectId] || projects.find(p => p._id === projectId) || null;
   }, [projectsCache, projects]);
@@ -486,13 +510,13 @@ export default function ProjectsFeed() {
         @media (min-width: 640px) { .img-sync-height { --img-h: min(42vh, 300px); } }
         @media (min-width: 768px) { .img-sync-height { --img-h: min(48vh, 360px); } }
         @media (min-width: 1024px) { .img-sync-height { --img-h: min(52vh, 440px); } }
-        @media (min-width: 1280px) { .img-sync-height { --img-h: min(58vh, 500px); } }
+        @media (min-width: 1280px) { .img-sync-height { --img-h: min(58vh, 1200px); } }
       `}</style>
 
       <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
         <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
           <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
-            <div className="flex flex-col items-center gap-[5vh] lg:gap-[4vh] w-full">
+            <div className="flex flex-col items-center gap-[5vh] lg:gap-[10vh] w-full">
               {projects.map((project, index) => {
                 const isSelected = selectedProject?._id === project._id;
                 const ProjectIcon = IconMap[project.general?.icon] || Building2;
@@ -505,8 +529,8 @@ export default function ProjectsFeed() {
                     layout
                     className={`relative w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                       isSelected 
-                        ? 'h-[75vh] md:h-[85vh] max-w-none bg-gray-50 z-50 my-10 border-y border-gray-200 shadow-xl' 
-                        : 'flex justify-center items-start max-w-[1600px] my-0 bg-transparent'
+                        ? 'h-[75vh] md:h-[85vh] max-w-none z-50 my-10' 
+                        : 'flex justify-center items-start max-w-[1600px] h-64 md:h-80 my-0 bg-transparent'
                     }`}
                     transition={{ type: 'spring', stiffness: 100, damping: 20, mass: 1 }}
                   >
