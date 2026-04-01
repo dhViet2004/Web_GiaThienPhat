@@ -1,19 +1,16 @@
 'use client';
 
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CustomEase } from 'gsap/CustomEase';
 import { useGSAP } from '@gsap/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon } from 'lucide-react';
-import ProjectDetailOverlay from './ProjectDetailOverlay';
+import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon, X, Loader2 } from 'lucide-react';
 import { apiGet } from '@/lib/api';
 
 gsap.registerPlugin(ScrollTrigger, CustomEase);
-
 CustomEase.create('customBIG', 'M0,0 C0.45,0 0.55,1 1,1');
 
 const IconMap = {
@@ -25,56 +22,324 @@ const IconMap = {
   Image: ImageIcon
 };
 
+// --- Helpers ---
+function getTextBlock(project) {
+  const textBlock = project.blocks?.find(b => b.type === 'text');
+  return textBlock?.content || '';
+}
+
+function getSliderImages(project) {
+  const sliderBlocks = project.blocks?.filter(b => b.type === 'slider');
+  const images = [];
+  const seenUrls = new Set();
+  sliderBlocks?.forEach(block => {
+    if (block.slides && block.slides.length > 0) {
+      block.slides.forEach(slide => {
+        if (slide.url && !seenUrls.has(slide.url)) {
+          seenUrls.add(slide.url);
+          images.push(slide.url);
+        }
+      });
+    }
+  });
+  return images;
+}
+
+function getProjectYear(project) {
+  if (project.general?.year) return project.general.year;
+  if (project.createdAt) {
+    return new Date(project.createdAt).getFullYear().toString();
+  }
+  return '2024';
+}
+
+// --- Inline Expanded Detail Component ---
+const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, ProjectIcon }) => {
+  const scrollRef = useRef(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragState = useRef({ startX: 0, scrollLeft: 0, velocity: 0, lastX: 0, lastTime: 0 });
+  const animationRef = useRef(null);
+
+  const stopInertia = useCallback(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+  }, []);
+
+  const applyInertia = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container || Math.abs(dragState.current.velocity) < 0.5) {
+      dragState.current.velocity = 0;
+      return;
+    }
+    container.scrollLeft -= dragState.current.velocity;
+    dragState.current.velocity *= 0.95; 
+    animationRef.current = requestAnimationFrame(applyInertia);
+  }, []);
+
+  const handleMouseDown = useCallback((e) => {
+    if (e.button !== 0) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    stopInertia();
+    setIsDragging(true);
+    dragState.current = {
+      startX: e.pageX,
+      scrollLeft: container.scrollLeft,
+      velocity: 0,
+      lastX: e.pageX,
+      lastTime: Date.now()
+    };
+    container.style.cursor = 'grabbing';
+    container.style.userSelect = 'none';
+  }, [stopInertia]);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    const walk = (e.pageX - dragState.current.startX) * 1.5;
+    container.scrollLeft = dragState.current.scrollLeft - walk;
+    
+    const now = Date.now();
+    const dt = now - dragState.current.lastTime;
+    if (dt > 0) {
+      const dx = e.pageX - dragState.current.lastX;
+      dragState.current.velocity = dx / dt * 16;
+    }
+    dragState.current.lastX = e.pageX;
+    dragState.current.lastTime = now;
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    if (!isDragging) return;
+    const container = scrollRef.current;
+    if (container) {
+      container.style.cursor = 'grab';
+      container.style.userSelect = '';
+    }
+    setIsDragging(false);
+    if (Math.abs(dragState.current.velocity) > 1) applyInertia();
+  }, [isDragging, applyInertia]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (isDragging) handleMouseUp();
+  }, [isDragging, handleMouseUp]);
+
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length !== 1) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    stopInertia();
+    setIsDragging(true);
+    const touch = e.touches[0];
+    dragState.current = {
+      startX: touch.clientX,
+      scrollLeft: container.scrollLeft,
+      velocity: 0,
+      lastX: touch.clientX,
+      lastTime: Date.now()
+    };
+  }, [stopInertia]);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    const touch = e.touches[0];
+    const walk = (touch.clientX - dragState.current.startX) * 1.5;
+    container.scrollLeft = dragState.current.scrollLeft - walk;
+    const now = Date.now();
+    const dt = now - dragState.current.lastTime;
+    if (dt > 0) {
+      const dx = touch.clientX - dragState.current.lastX;
+      dragState.current.velocity = dx / dt * 16;
+    }
+    dragState.current.lastX = touch.clientX;
+    dragState.current.lastTime = now;
+  }, [isDragging]);
+
+  const handleTouchEnd = useCallback(() => handleMouseUp(), [handleMouseUp]);
+
+  useEffect(() => { return () => stopInertia(); }, [stopInertia]);
+
+  const description = getTextBlock(project);
+  const sliderImages = getSliderImages(project);
+  const projectYear = getProjectYear(project);
+  
+  let allImageUrls = [];
+  if (project.blocks && Array.isArray(project.blocks)) {
+    project.blocks.forEach(block => {
+      if (block.type === 'image' && block.url) allImageUrls.push({ url: block.url, caption: block.caption });
+    });
+  }
+  if (project.sliderGallery && Array.isArray(project.sliderGallery)) {
+    project.sliderGallery.forEach(url => { if (url) allImageUrls.push({ url: url, caption: '' }); });
+  }
+  
+  const seenUrls = new Set();
+  const galleryImageBlocks = allImageUrls.filter(img => {
+    if (seenUrls.has(img.url)) return false;
+    seenUrls.add(img.url);
+    return true;
+  });
+
+  const normalizeDescriptionText = (text) => String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
+  const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
+
+  return (
+    <div className="relative w-full h-full bg-white text-black font-sans flex flex-col overflow-hidden group/expanded">
+      {isLoading && (
+        <div className="absolute inset-0 z-[200] bg-white flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-black" />
+            <span className="text-xs uppercase tracking-[0.2em] text-gray-500">Loading details...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Close Button */}
+      <button 
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        className="absolute top-4 right-4 md:top-8 md:right-8 z-[150] p-3 bg-white/80 hover:bg-black hover:text-white backdrop-blur-sm transition-colors rounded-full shadow-md border border-gray-100"
+      >
+        <X size={20} />
+      </button>
+
+      {/* Horizontal Scroll Content */}
+      <div
+        ref={scrollRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden img-sync-height"
+        style={{ cursor: isDragging ? 'grabbing' : 'grab', scrollBehavior: 'auto', WebkitOverflowScrolling: 'touch' }}
+      >
+        <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
+          
+          {/* Info Block */}
+          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]">
+            <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
+              <ProjectIcon size={24} strokeWidth={1.5} />
+            </div>
+            <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0">
+              {project.general?.title || 'Untitled Project'}
+            </h1>
+            <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12">
+              {project.general?.location || ''}
+            </p>
+            <div className="flex flex-col gap-4 items-start">
+              <div>
+                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
+                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
+              </div>
+              <div>
+                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
+                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Cover Image with shared LayoutId */}
+          <div className="relative shrink-0 shadow-sm self-center pointer-events-none select-none" style={{ height: 'var(--img-h)', aspectRatio: 'auto' }}>
+            <motion.div layoutId={layoutId} className="relative w-auto h-full flex items-center justify-center">
+              <Image src={coverImageUrl} alt="Cover" width={0} height={0} sizes="(max-width: 1024px) 70vw, 500px" style={{ width: 'auto', height: '100%', maxWidth: '100%' }} priority draggable={false} className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full" />
+            </motion.div>
+          </div>
+
+          {/* Description */}
+          {description && (
+            <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="relative h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[290px] pointer-events-none select-none">
+              <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
+                <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Gallery Images */}
+          {galleryImageBlocks.map((block, idx) => (
+            <div key={`gallery-${idx}`} className="relative h-full shrink-0 flex items-center justify-center pointer-events-none select-none" style={{ height: 'var(--img-h)', minWidth: 'min(75vw,500px)' }}>
+              <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.5 + idx * 0.1 }} className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center" style={{ height: 'var(--img-h)' }}>
+                {block.url && (
+                  <Image src={block.url} alt={block.caption || `Gallery ${idx + 1}`} width={0} height={0} sizes="(max-width: 1024px) 75vw, 500px" style={{ width: 'auto', height: '100%', maxWidth: '100%' }} draggable={false} className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto" />
+                )}
+                {block.caption && (
+                  <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">{block.caption}</div>
+                )}
+              </motion.div>
+            </div>
+          ))}
+
+          {/* Slider Images */}
+          {sliderImages.length > 0 && (
+            <div className="h-full flex items-center shrink-0 w-[min(75vw,340px)] lg:w-[500px] shadow-sm bg-gray-50 pointer-events-auto cursor-pointer" onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}>
+              <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.5 }} className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center" style={{ height: 'var(--img-h)' }}>
+                <AnimatePresence mode="wait">
+                  <motion.div key={activeSlide} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }} className="relative w-auto h-full flex items-center justify-center">
+                    <Image src={sliderImages[activeSlide]} alt={`Slide ${activeSlide + 1}`} width={0} height={0} sizes="(max-width: 1024px) 75vw, 500px" style={{ width: 'auto', height: '100%', maxWidth: '100%' }} draggable={false} className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto" />
+                  </motion.div>
+                </AnimatePresence>
+                <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase">{activeSlide + 1} / {sliderImages.length}</div>
+              </motion.div>
+            </div>
+          )}
+
+          {/* Status + Year */}
+          <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.7 }} className="h-full flex flex-col justify-center shrink-0 w-[min(180px,45vw)] lg:w-[240px] gap-8 pointer-events-none select-none">
+            <div>
+              <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Status</h4>
+              <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
+            </div>
+            <div>
+              <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Year</h4>
+              <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
+            </div>
+          </motion.div>
+
+          <div className="shrink-0 w-[5vw]" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Main Feed Component ---
 export default function ProjectsFeed() {
   const containerRef = useRef(null);
   
-  // Basic projects list (for feed display)
   const [projects, setProjects] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
-  
-  // Full project data cache - prefetched during intro
   const [projectsCache, setProjectsCache] = useState({});
-  
-  // Overlay state
   const [selectedProject, setSelectedProject] = useState(null);
-  const [isExiting, setIsExiting] = useState(false);
+  const selectedProjectRef = useRef(null);
 
-  // Track if we're in intro phase (prefetching data)
-  const [isIntroPhase, setIsIntroPhase] = useState(true);
-
-  // Prefetch all project details
   const prefetchAllProjects = useCallback(async (projectsList) => {
     if (!projectsList || projectsList.length === 0) return;
-    
     const cache = {};
-    
-    // Fetch all project details in parallel (but limit concurrency)
     const batchSize = 5;
     for (let i = 0; i < projectsList.length; i += batchSize) {
       const batch = projectsList.slice(i, i + batchSize);
       const promises = batch.map(project => 
         apiGet(`/api/projects/${project._id}`)
           .then(data => {
-            if (!data.error && (data.project || data)) {
-              cache[project._id] = data.project || data;
-            }
+            if (!data.error && (data.project || data)) cache[project._id] = data.project || data;
           })
-          .catch(err => {
-            console.warn(`Failed to prefetch project ${project._id}:`, err);
-            // Cache the basic data as fallback
-            cache[project._id] = project;
-          })
+          .catch(err => { cache[project._id] = project; })
       );
       await Promise.all(promises);
     }
-    
     setProjectsCache(cache);
   }, []);
 
-  // Initialize: fetch projects list, then prefetch all details
   useEffect(() => {
     let mounted = true;
-    
     const init = async () => {
       try {
         const data = await apiGet('/api/projects');
@@ -82,30 +347,15 @@ export default function ProjectsFeed() {
         
         if (!data.error && Array.isArray(data)) {
           setProjects(data);
-          
-          // Check if URL has a project ID (direct link)
           const pathParts = window.location.pathname.split('/');
           const projectUrlId = pathParts[pathParts.length - 1];
           const found = data.find(p => p._id === projectUrlId);
-          if (found) {
-            setSelectedProject(found);
-          }
+          if (found) setSelectedProject(found);
         }
-        
         setIsInitialized(true);
         
-        // Wait for intro to start or finish, then prefetch
-        const startPrefetch = () => {
-          setIsIntroPhase(true);
-          prefetchAllProjects(data);
-          // After prefetch, mark intro phase as done
-          setTimeout(() => setIsIntroPhase(false), 100);
-        };
-        
-        // Listen for intro start or fallback
+        const startPrefetch = () => prefetchAllProjects(data);
         window.addEventListener('introStarted', startPrefetch, { once: true });
-        
-        // If intro already started (unlikely), or as fallback
         const fallback = setTimeout(startPrefetch, 100);
         
         return () => {
@@ -113,42 +363,17 @@ export default function ProjectsFeed() {
           clearTimeout(fallback);
         };
       } catch (err) {
-        console.error('Error fetching projects:', err);
         setIsInitialized(true);
       }
     };
-    
     init();
-    
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [prefetchAllProjects]);
 
-  // Listen for intro complete to trigger prefetch if not started
   useEffect(() => {
-    const handleIntroComplete = () => {
-      if (projects.length > 0 && Object.keys(projectsCache).length === 0) {
-        prefetchAllProjects(projects);
-      }
-    };
-    
-    window.addEventListener('introAnimationComplete', handleIntroComplete);
-    
-    // Fallback: if intro takes too long, prefetch anyway
-    const fallback = setTimeout(() => {
-      if (projects.length > 0 && Object.keys(projectsCache).length === 0) {
-        prefetchAllProjects(projects);
-      }
-    }, 4000);
-    
-    return () => {
-      window.removeEventListener('introAnimationComplete', handleIntroComplete);
-      clearTimeout(fallback);
-    };
-  }, [projects, projectsCache, prefetchAllProjects]);
+    selectedProjectRef.current = selectedProject;
+  }, [selectedProject]);
 
-  // Handle browser back/forward
   useEffect(() => {
     const handlePopState = () => {
       const pathParts = window.location.pathname.split('/');
@@ -156,7 +381,6 @@ export default function ProjectsFeed() {
       const found = projects.find(p => p._id === projectUrlId);
       setSelectedProject(found || null);
     };
-
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [projects]);
@@ -165,42 +389,22 @@ export default function ProjectsFeed() {
     if (project) {
       window.history.pushState(null, '', `/projects/${project._id}`);
       gsap.killTweensOf('.velocity-card');
-      gsap.killTweensOf('.projects-scaler');
       gsap.set('.velocity-card', { scale: 1, y: 0 });
-      document.body.style.overflow = 'hidden';
       setSelectedProject(project);
-      // No loading state - use cached data immediately
+
+      setTimeout(() => {
+        const el = document.getElementById(`project-${project._id}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     } else {
       window.history.pushState(null, '', '/');
-      setIsExiting(true);
-      gsap.set('.velocity-card', { scale: 1, y: 0 });
       setSelectedProject(null);
-      setTimeout(() => {
-        document.body.style.overflow = 'auto';
-        setIsExiting(false);
-      }, 800);
     }
   }, []);
 
-  // Get full project data from cache (with fallback to basic data)
   const getProjectData = useCallback((projectId) => {
     return projectsCache[projectId] || projects.find(p => p._id === projectId) || null;
   }, [projectsCache, projects]);
-
-  // GSAP animations
-  useEffect(() => {
-    const handleIntroComplete = () => {
-      setTimeout(() => ScrollTrigger.refresh(), 100);
-    };
-    window.addEventListener('introAnimationComplete', handleIntroComplete);
-    const fallback = setTimeout(() => {
-      ScrollTrigger.refresh();
-    }, 4500);
-    return () => {
-      window.removeEventListener('introAnimationComplete', handleIntroComplete);
-      clearTimeout(fallback);
-    };
-  }, []);
 
   useGSAP(() => {
     if (!isInitialized || projects.length === 0) return;
@@ -222,6 +426,8 @@ export default function ProjectsFeed() {
       start: 'top bottom',
       end: 'bottom top',
       onUpdate: (self) => {
+        if (selectedProjectRef.current) return; // Disallow velocity when expanding
+
         const rawVelocity = typeof self.getVelocity === 'function' ? self.getVelocity() : 0;
         const velocity = Math.abs(rawVelocity);
         const targetCardScale = Math.max(0.97, 1 - velocity / 8000);
@@ -248,129 +454,137 @@ export default function ProjectsFeed() {
         toggleActions: 'play none none reverse',
       };
 
-      gsap.fromTo(imageBlock,
-        { y: 150, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, scrollTrigger: st }
-      );
-
-      gsap.fromTo(infoWrapper,
-        { y: 100, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, delay: 0.1, scrollTrigger: st }
-      );
+      if(imageBlock) {
+        gsap.fromTo(imageBlock,
+          { y: 150, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, scrollTrigger: st }
+        );
+      }
+      if(infoWrapper) {
+        gsap.fromTo(infoWrapper,
+          { y: 100, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, delay: 0.1, scrollTrigger: st }
+        );
+      }
     });
 
   }, { scope: containerRef, dependencies: [isInitialized, projects.length] });
 
-  // Don't show loading - render projects immediately (empty list if not loaded yet)
-  if (!isInitialized) {
-    return (
-      <div className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10" />
-    );
-  }
+  if (!isInitialized) return <div className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10" />;
 
   return (
-    <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
-      <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
-        <div
-          className="projects-scaler origin-top will-change-transform"
-          style={{
-            transformOrigin: '50% 0%',
-            transform: 'translateZ(0)',
-            pointerEvents: (selectedProject || isExiting) ? 'none' : 'auto',
-            opacity: selectedProject ? 0 : 1,
-            transition: 'opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
-          }}
-        >
-          <div className="flex flex-col items-center gap-[5vh] lg:gap-[4vh] w-full">
-            {projects.map((project, index) => {
-              const ProjectIcon = IconMap[project.general?.icon] || Building2;
-              const linkHref = `/projects/${project._id}`;
+    <>
+      <style jsx global>{`
+        .scrollbar-hidden::-webkit-scrollbar { display: none; }
+        .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+        .img-sync-height {
+          --img-h: min(36vh, 220px);
+        }
+        .img-sync-height > div {
+          height: 100%;
+        }
+        @media (min-width: 640px) { .img-sync-height { --img-h: min(42vh, 300px); } }
+        @media (min-width: 768px) { .img-sync-height { --img-h: min(48vh, 360px); } }
+        @media (min-width: 1024px) { .img-sync-height { --img-h: min(52vh, 440px); } }
+        @media (min-width: 1280px) { .img-sync-height { --img-h: min(58vh, 500px); } }
+      `}</style>
 
-              return (
-                <section
-                  key={project._id || index}
-                  className="project-row relative flex w-full max-w-[1600px] justify-center items-start"
-                >
-                  <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-start will-change-transform">
-                    <div className="hidden md:flex absolute top-0 right-full mr-[10px] lg:mr-[16px] w-[324px] project-info justify-end z-20">
-                      <div className="relative w-full text-right flex flex-col items-end origin-right">
-                        <div className="absolute top-0 right-0 size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center">
-                          <ProjectIcon size={22} strokeWidth={1.5} />
+      <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
+        <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
+          <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
+            <div className="flex flex-col items-center gap-[5vh] lg:gap-[4vh] w-full">
+              {projects.map((project, index) => {
+                const isSelected = selectedProject?._id === project._id;
+                const ProjectIcon = IconMap[project.general?.icon] || Building2;
+                const fullData = isSelected ? getProjectData(project._id) : project;
+
+                return (
+                  <motion.div
+                    key={project._id || index}
+                    id={`project-${project._id}`}
+                    layout
+                    className={`relative w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                      isSelected 
+                        ? 'h-[75vh] md:h-[85vh] max-w-none bg-gray-50 z-50 my-10 border-y border-gray-200 shadow-xl' 
+                        : 'flex justify-center items-start max-w-[1600px] my-0 bg-transparent'
+                    }`}
+                    transition={{ type: 'spring', stiffness: 100, damping: 20, mass: 1 }}
+                  >
+                    {!isSelected ? (
+                      <div className="project-row w-full flex justify-center items-start group">
+                        <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-start will-change-transform">
+                          
+                          {/* Left Info Desktop */}
+                          <div className="hidden md:flex absolute top-0 right-full mr-[10px] lg:mr-[16px] w-[324px] project-info justify-end z-20">
+                            <div className="relative w-full text-right flex flex-col items-end origin-right">
+                              <div className="absolute top-0 right-0 size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center">
+                                <ProjectIcon size={22} strokeWidth={1.5} />
+                              </div>
+
+                              <div onClick={(e) => { e.preventDefault(); handleSelectProject(project); }} className="mt-0 group/link cursor-pointer flex flex-col items-end">
+                                <div className="relative pr-6 lg:pr-15">
+                                  <h2 className="text-[14px] lg:text-[18px] font-normal uppercase text-black m-0 p-0 leading-tight whitespace-nowrap">
+                                    {project.general?.title}
+                                  </h2>
+                                  <span className="absolute -bottom-1 right-6 lg:right-8 h-px bg-black w-0 group-hover/link:w-full transition-all duration-400" style={{ right: '0', left: 'auto' }}></span>
+                                </div>
+                                <p className="text-[#797979] text-[11px] lg:text-[12px] uppercase mt-[4px] lg:mt-[6px] pr-6 lg:pr-15">
+                                  {project.general?.location}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Cover Image Wrapper with LayoutID */}
+                          <div className="shrink-0 project-image overflow-hidden w-[90vw] sm:w-[350px] lg:w-[64vh] aspect-3/2 relative">
+                            <motion.div
+                              layoutId={`img-container-${project._id}`}
+                              onClick={() => handleSelectProject(project)}
+                              className="relative w-full h-full cursor-pointer group"
+                            >
+                              <Image
+                                src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
+                                alt={project.general?.title || 'Preview'}
+                                fill
+                                priority={index < 4}
+                                sizes="(max-width: 768px) 90vw, 64vh"
+                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                            </motion.div>
+                          </div>
+
+                          {/* Mobile Info */}
+                          <div className="flex md:hidden flex-col w-full mt-4 project-info px-2" onClick={() => handleSelectProject(project)}>
+                            <div className="flex items-start gap-4 cursor-pointer">
+                              <div className="size-[30px] bg-black text-white shrink-0 flex items-center justify-center">
+                                <ProjectIcon size={16} strokeWidth={1.5} />
+                              </div>
+                              <div>
+                                <h2 className="text-[15px] font-normal uppercase text-black leading-none">{project.general?.title}</h2>
+                                <p className="text-[#797979] text-[11px] uppercase mt-1">{project.general?.location}</p>
+                              </div>
+                            </div>
+                          </div>
+
                         </div>
-
-                        <Link href={linkHref} className="mt-0 group cursor-pointer flex flex-col items-end">
-                          <motion.div
-                            className="relative pr-6 lg:pr-15"
-                            whileHover="hover"
-                            initial="rest"
-                          >
-                            <h2 className="text-[14px] lg:text-[18px] font-normal uppercase text-black m-0 p-0 leading-tight whitespace-nowrap">
-                              {project.general?.title}
-                            </h2>
-                            <motion.span
-                              className="absolute -bottom-1 right-6 lg:right-8 h-px bg-black"
-                              variants={{ rest: { width: 0 }, hover: { width: '100%' } }}
-                              transition={{ duration: 0.4, ease: [0.45, 0, 0.55, 1] }}
-                            />
-                          </motion.div>
-                          <p className="text-[#797979] text-[11px] lg:text-[12px] uppercase mt-[4px] lg:mt-[6px] pr-6 lg:pr-15">
-                            {project.general?.location}
-                          </p>
-                        </Link>
                       </div>
-                    </div>
-
-                    <div className="shrink-0 project-image overflow-hidden w-[90vw] sm:w-[350px] lg:w-[64vh] aspect-3/2">
-                      <div className="relative w-full h-full">
-                        <motion.div
-                          onClick={() => handleSelectProject(project)}
-                          className="relative w-full h-full cursor-pointer group"
-                          whileHover="hover"
-                          initial="rest"
-                          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                        >
-                          <Image
-                            src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
-                            alt={project.general?.title || 'Preview'}
-                            fill
-                            priority={index < 4}
-                            sizes="(max-width: 768px) 90vw, 64vh"
-                            className="object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                        </motion.div>
-                      </div>
-                    </div>
-
-                    <div className="flex md:hidden flex-col w-full mt-4 project-info px-2">
-                      <Link href={linkHref} className="flex items-start gap-4">
-                        <div className="size-[30px] bg-black text-white shrink-0 flex items-center justify-center">
-                          <ProjectIcon size={16} strokeWidth={1.5} />
-                        </div>
-                        <div>
-                          <h2 className="text-[15px] font-normal uppercase text-black leading-none">{project.general?.title}</h2>
-                          <p className="text-[#797979] text-[11px] uppercase mt-1">{project.general?.location}</p>
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-                </section>
-              );
-            })}
+                    ) : (
+                      <InlineProjectDetail 
+                        project={fullData} 
+                        onClose={() => handleSelectProject(null)} 
+                        layoutId={`img-container-${project._id}`}
+                        ProjectIcon={ProjectIcon}
+                        isLoading={!projectsCache[project._id]}
+                      />
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
-
-      <AnimatePresence>
-        {selectedProject && selectedProject.general && (
-          <ProjectDetailOverlay
-            key={selectedProject._id}
-            project={getProjectData(selectedProject._id)}
-            onClose={() => handleSelectProject(null)}
-            isLoading={false}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+    </>
   );
 }
