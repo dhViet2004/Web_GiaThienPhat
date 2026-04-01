@@ -75,7 +75,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, ProjectIco
       return;
     }
     container.scrollLeft -= dragState.current.velocity;
-    dragState.current.velocity *= 0.95; 
+    dragState.current.velocity *= 0.95;
     animationRef.current = requestAnimationFrame(applyInertia);
   }, []);
 
@@ -102,7 +102,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, ProjectIco
     if (!container) return;
     const walk = (e.pageX - dragState.current.startX) * 1.5;
     container.scrollLeft = dragState.current.scrollLeft - walk;
-    
+
     const now = Date.now();
     const dt = now - dragState.current.lastTime;
     if (dt > 0) {
@@ -168,7 +168,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, ProjectIco
   const description = getTextBlock(project);
   const sliderImages = getSliderImages(project);
   const projectYear = getProjectYear(project);
-  
+
   let allImageUrls = [];
   if (project.blocks && Array.isArray(project.blocks)) {
     project.blocks.forEach(block => {
@@ -178,7 +178,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, ProjectIco
   if (project.sliderGallery && Array.isArray(project.sliderGallery)) {
     project.sliderGallery.forEach(url => { if (url) allImageUrls.push({ url: url, caption: '' }); });
   }
-  
+
   const seenUrls = new Set();
   const galleryImageBlocks = allImageUrls.filter(img => {
     if (seenUrls.has(img.url)) return false;
@@ -214,7 +214,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, ProjectIco
         style={{ cursor: isDragging ? 'grabbing' : 'grab', scrollBehavior: 'auto', WebkitOverflowScrolling: 'touch' }}
       >
         <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[20px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
-          
+
           {/* Info Block */}
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]">
             <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
@@ -305,7 +305,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, ProjectIco
 // --- Main Feed Component ---
 export default function ProjectsFeed() {
   const containerRef = useRef(null);
-  
+
   const [projects, setProjects] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [projectsCache, setProjectsCache] = useState({});
@@ -318,7 +318,7 @@ export default function ProjectsFeed() {
     const batchSize = 5;
     for (let i = 0; i < projectsList.length; i += batchSize) {
       const batch = projectsList.slice(i, i + batchSize);
-      const promises = batch.map(project => 
+      const promises = batch.map(project =>
         apiGet(`/api/projects/${project._id}`)
           .then(data => {
             if (!data.error && (data.project || data)) cache[project._id] = data.project || data;
@@ -336,7 +336,7 @@ export default function ProjectsFeed() {
       try {
         const data = await apiGet('/api/projects');
         if (!mounted) return;
-        
+
         if (!data.error && Array.isArray(data)) {
           setProjects(data);
           const pathParts = window.location.pathname.split('/');
@@ -345,11 +345,11 @@ export default function ProjectsFeed() {
           if (found) setSelectedProject(found);
         }
         setIsInitialized(true);
-        
+
         const startPrefetch = () => prefetchAllProjects(data);
         window.addEventListener('introStarted', startPrefetch, { once: true });
         const fallback = setTimeout(startPrefetch, 100);
-        
+
         return () => {
           window.removeEventListener('introStarted', startPrefetch);
           clearTimeout(fallback);
@@ -478,13 +478,13 @@ export default function ProjectsFeed() {
         toggleActions: 'play none none reverse',
       };
 
-      if(imageBlock) {
+      if (imageBlock) {
         gsap.fromTo(imageBlock,
           { y: 150, opacity: 0 },
           { y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, scrollTrigger: st }
         );
       }
-      if(infoWrapper) {
+      if (infoWrapper) {
         gsap.fromTo(infoWrapper,
           { y: 100, opacity: 0 },
           { y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, delay: 0.1, scrollTrigger: st }
@@ -516,7 +516,8 @@ export default function ProjectsFeed() {
       <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
         <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
           <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
-            <div className="flex flex-col items-center gap-[5vh] lg:gap-[10vh] w-full">
+            <div className={`flex flex-col items-center w-full transition-all duration-500 ${selectedProject ? 'gap-0' : 'gap-[5vh] lg:gap-[10vh]'
+              }`}>
               {projects.map((project, index) => {
                 const isSelected = selectedProject?._id === project._id;
                 const ProjectIcon = IconMap[project.general?.icon] || Building2;
@@ -527,17 +528,16 @@ export default function ProjectsFeed() {
                     key={project._id || index}
                     id={`project-${project._id}`}
                     layout
-                    className={`relative w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                      isSelected 
-                        ? 'h-[75vh] md:h-[85vh] max-w-none z-50 my-10' 
+                    className={`relative w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSelected
+                        ? 'h-[70vh] md:h-[80vh] max-w-none z-50 my-2'
                         : 'flex justify-center items-start max-w-[1600px] h-64 md:h-80 my-0 bg-transparent'
-                    }`}
+                      }`}
                     transition={{ type: 'spring', stiffness: 100, damping: 20, mass: 1 }}
                   >
                     {!isSelected ? (
                       <div className="project-row w-full flex justify-center items-start group">
                         <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-start will-change-transform">
-                          
+
                           {/* Left Info Desktop */}
                           <div className="hidden md:flex absolute top-0 right-full mr-[10px] lg:mr-[16px] w-[324px] project-info justify-end z-20">
                             <div className="relative w-full text-right flex flex-col items-end origin-right">
@@ -594,9 +594,9 @@ export default function ProjectsFeed() {
                         </div>
                       </div>
                     ) : (
-                      <InlineProjectDetail 
-                        project={fullData} 
-                        onClose={() => handleSelectProject(null)} 
+                      <InlineProjectDetail
+                        project={fullData}
+                        onClose={() => handleSelectProject(null)}
                         layoutId={`img-container-${project._id}`}
                         ProjectIcon={ProjectIcon}
                         isLoading={!projectsCache[project._id]}
