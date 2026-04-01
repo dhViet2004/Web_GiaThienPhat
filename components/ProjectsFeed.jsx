@@ -516,7 +516,7 @@ export default function ProjectsFeed() {
       <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
         <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
           <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
-            <div className={`flex flex-col items-center w-full transition-all duration-500 ${selectedProject ? 'gap-0' : 'gap-[5vh] lg:gap-[10vh]'
+            <div className={`flex flex-col items-center w-full transition-all duration-500 gap-[5vh] lg:gap-[10vh]'
               }`}>
               {projects.map((project, index) => {
                 const isSelected = selectedProject?._id === project._id;
@@ -529,7 +529,7 @@ export default function ProjectsFeed() {
                     id={`project-${project._id}`}
                     layout
                     className={`relative w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSelected
-                        ? 'h-[70vh] md:h-[80vh] max-w-none z-50 my-2'
+                        ? 'h-[55vh] md:h-[60vh] max-w-none z-50 my-0'
                         : 'flex justify-center items-start max-w-[1600px] h-64 md:h-80 my-0 bg-transparent'
                       }`}
                     transition={{ type: 'spring', stiffness: 100, damping: 20, mass: 1 }}
