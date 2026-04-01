@@ -99,10 +99,8 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
     return true;
   });
 
-  /** 首段描述 + 首张图合并为同一横向滑块时，避免重复渲染第一张图 */
-  const descPairedWithFirstImage = Boolean(description && imageBlocks[0]);
-  const galleryImageBlocks = descPairedWithFirstImage ? imageBlocks.slice(1) : imageBlocks;
-  const firstGalleryBlock = imageBlocks[0];
+  // All image blocks for gallery — no slicing, no pairing
+  const galleryImageBlocks = imageBlocks;
 
   const normalizeDescriptionText = (text) =>
     String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
@@ -386,36 +384,23 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
       >
         <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
 
-          {/*
-            FLAT SEQUENCE — mỗi khối là một "card" riêng biệt.
-            Thứ tự: [spacer] → Title+Icon → Main Image → …
-            Spacer: khi ảnh lệch TRÁI tâm màn hình, scrollLeft không thể âm — cần S sao cho
-            tại scrollLeft=0 có: pl + S + gap + title + gap + (w_ảnh/2) ≈ 50vw (mobile & lg tính riêng).
-          */}
-
-          {/* LEADING SPACER — cố định để Title card không bị đẩy sát mép */}
-          <div
-            className="shrink-0 w-[clamp(0px,6vw,48px)]"
-            aria-hidden
-          />
-
-          {/* CARD 1: Title + Icon + location + meta */}
+          {/* BLOCK 1A: PROJECT INFO — independent sibling, self-padded */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="h-full flex flex-col justify-center shrink-0 w-[min(220px,50vw)] lg:w-[320px] pointer-events-none select-none text-right"
+            className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]"
           >
-            <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-end ml-auto mb-6">
+            <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
               <ProjectIcon size={24} strokeWidth={1.5} />
             </div>
-            <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none wrap-break-word w-full">
+            <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0">
               {project.general?.title || 'Untitled Project'}
             </h1>
-            <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-8">
+            <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12">
               {project.general?.location || ''}
             </p>
-            <div className="flex flex-col gap-4 items-end">
+            <div className="flex flex-col gap-4 items-start">
               <div>
                 <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
                 <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
@@ -427,18 +412,18 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
             </div>
           </motion.div>
 
-          {/* CARD 2: Main cover image — căn giữa viewport sau layout */}
+          {/* BLOCK 1B: COVER IMAGE — independent sibling, natural flex flow */}
           <div
             ref={mainImageCardRef}
             data-main-image-card
-            className="h-full flex items-center shrink-0 w-[min(70vw,320px)] lg:w-[500px] pointer-events-none select-none"
+            className="relative shrink-0 shadow-sm self-center pointer-events-none select-none"
+            style={{ height: 'var(--img-h)', aspectRatio: 'auto' }}
           >
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center"
-              style={{ height: 'var(--img-h)' }}
+              className="relative w-auto h-full flex items-center justify-center"
             >
               <Image
                 src={coverImageUrl}
@@ -449,67 +434,64 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
                 style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
                 priority
                 draggable={false}
-                className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto"
+                className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full"
               />
             </motion.div>
           </div>
 
-          {/* CARD 3a: Description + first gallery image PAIRED */}
-          {descPairedWithFirstImage && firstGalleryBlock && (
-            <div className="h-full flex items-center shrink-0 w-[min(90vw,420px)] lg:w-[450px] gap-x-4 lg:gap-x-6 pointer-events-none select-none">
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="shrink-0 w-[290px] min-w-0 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80 pr-1 self-center"
-              >
+          {/* CARD 3: INDEPENDENT DESCRIPTION */}
+          {description && (
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="relative h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[290px] pointer-events-none select-none"
+            >
+              <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
-                <p className="whitespace-pre-wrap wrap-anywhere break-all">{normalizeDescriptionText(description)}</p>
-              </motion.div>
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                  {normalizeDescriptionText(description)}
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* CARD 4: INDEPENDENT GALLERY IMAGES */}
+          {galleryImageBlocks.map((block, idx) => (
+            <div
+              key={`gallery-${idx}`}
+              className="relative h-full shrink-0 flex items-center justify-center pointer-events-none select-none"
+              style={{ height: 'var(--img-h)', minWidth: 'min(75vw,500px)' }}
+            >
               <motion.div
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.6, delay: 0.5 + idx * 0.1, ease: [0.16, 1, 0.3, 1] }}
                 className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center"
                 style={{ height: 'var(--img-h)' }}
               >
-                {firstGalleryBlock.url && (
+                {block.url && (
                   <Image
-                    src={firstGalleryBlock.url}
-                    alt={firstGalleryBlock.caption || 'Gallery 1'}
+                    src={block.url}
+                    alt={block.caption || `Gallery ${idx + 1}`}
                     width={0}
                     height={0}
-                    sizes="50vw"
+                    sizes="(max-width: 1024px) 75vw, 500px"
                     style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
                     draggable={false}
                     className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto"
                   />
                 )}
-                {firstGalleryBlock.caption && (
+                {block.caption && (
                   <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">
-                    {firstGalleryBlock.caption}
+                    {block.caption}
                   </div>
                 )}
               </motion.div>
             </div>
-          )}
+          ))}
 
-          {/* CARD 3b: Description alone (no paired first image) */}
-          {description && !descPairedWithFirstImage && (
-            <div className="h-full flex items-center shrink-0 w-[min(300px,75vw)] lg:w-[320px] pointer-events-none select-none">
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80"
-              >
-                <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
-                <p className="whitespace-pre-wrap wrap-anywhere break-all">{normalizeDescriptionText(description)}</p>
-              </motion.div>
-            </div>
-          )}
-
-          {/* CARD 4: Slider */}
+          {/* CARD 5: Slider */}
           {sliderImages.length > 0 && (
             <div
               className="h-full flex items-center shrink-0 w-[min(75vw,340px)] lg:w-[500px] shadow-sm bg-gray-50 pointer-events-auto cursor-pointer"
@@ -549,40 +531,6 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
               </motion.div>
             </div>
           )}
-
-          {/* CARD 5: Gallery images */}
-          {galleryImageBlocks.map((block, idx) => (
-            <div
-              key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`}
-              className="h-full flex items-center shrink-0 w-auto max-w-[min(75vw,500px)] lg:max-w-[500px] pointer-events-none select-none"
-            >
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 + idx * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center"
-                style={{ height: 'var(--img-h)' }}
-              >
-                {block.url && (
-                  <Image
-                    src={block.url}
-                    alt={block.caption || `Gallery ${idx + 1}`}
-                    width={0}
-                    height={0}
-                    sizes="(max-width: 1024px) 75vw, 500px"
-                    style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
-                    draggable={false}
-                    className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto"
-                  />
-                )}
-                {block.caption && (
-                  <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">
-                    {block.caption}
-                  </div>
-                )}
-              </motion.div>
-            </div>
-          ))}
 
           {/* CARD 6: Status + Year */}
           <motion.div
