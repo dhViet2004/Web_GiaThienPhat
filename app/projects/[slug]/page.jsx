@@ -318,20 +318,17 @@ export default function ProjectDetailPage({ params }) {
     const card = mainImageCardRef.current;
     if (!scrollEl || !card) return;
     const cardRect = card.getBoundingClientRect();
-    const scrollRect = scrollEl.getBoundingClientRect();
-    const targetX = scrollRect.left + scrollRect.width / 2;
     const cardCenterX = cardRect.left + cardRect.width / 2;
-    const delta = cardCenterX - targetX;
+    const viewportCenterX = window.scrollX + window.innerWidth / 2;
+    const delta = cardCenterX - viewportCenterX;
     scrollEl.scrollLeft = Math.max(0, scrollEl.scrollLeft + delta);
   }, []);
 
   useEffect(() => {
     if (isLoading || !projectData) return;
-    const scrollEl = scrollRef.current;
-    if (!scrollEl) return;
-    const initialScroll = Math.min(80, scrollEl.scrollWidth - scrollEl.clientWidth);
-    scrollEl.scrollLeft = initialScroll;
-    requestAnimationFrame(() => { centerMainImageInViewport(); });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(centerMainImageInViewport);
+    });
   }, [projectId, isLoading, centerMainImageInViewport]);
 
   if (isLoading || !projectData) {

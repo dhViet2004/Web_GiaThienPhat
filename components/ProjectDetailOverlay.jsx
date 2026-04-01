@@ -313,35 +313,32 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
     const card = mainImageCardRef.current;
     if (!scrollEl || !card) return;
     const cardRect = card.getBoundingClientRect();
-    const scrollRect = scrollEl.getBoundingClientRect();
-    // Center the main image card horizontally within the scroll viewport
-    const targetX = scrollRect.left + scrollRect.width / 2;
     const cardCenterX = cardRect.left + cardRect.width / 2;
-    const delta = cardCenterX - targetX;
+    const viewportCenterX = window.scrollX + window.innerWidth / 2;
+    const delta = cardCenterX - viewportCenterX;
     scrollEl.scrollLeft = Math.max(0, scrollEl.scrollLeft + delta);
   }, []);
 
-  /** Đẩy scroll sang phải vừa đủ để Title + MainImage hiển thị tốt, không che Description/Status */
+  /** Center the main image in the viewport. */
   useLayoutEffect(() => {
     if (isLoading) return;
-    const scrollEl = scrollRef.current;
-    if (!scrollEl) return;
-    // Scroll nhẹ để Title card nằm gần mép trái, MainImage nhìn thấy rõ,
-    // Description/Status vẫn nằm trong vùng cuộn có thể thấy được
-    const initialScroll = Math.min(100, scrollEl.scrollWidth - scrollEl.clientWidth);
-    scrollEl.scrollLeft = initialScroll;
     requestAnimationFrame(() => {
-      centerMainImageInViewport();
+      requestAnimationFrame(centerMainImageInViewport);
     });
   }, [project?._id, isLoading, centerMainImageInViewport]);
 
   useEffect(() => {
     if (isLoading) return;
+    let rafId;
     const onResize = () => {
-      requestAnimationFrame(centerMainImageInViewport);
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(centerMainImageInViewport);
     };
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      cancelAnimationFrame(rafId);
+    };
   }, [isLoading, centerMainImageInViewport]);
 
   const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
