@@ -323,24 +323,20 @@ export default function ProjectsFeed() {
                     <div className="shrink-0 project-image overflow-hidden w-[90vw] sm:w-[350px] lg:w-[64vh] aspect-3/2">
                       <div className="relative w-full h-full">
                         <motion.div
-                          layoutId={`project-image-${project._id}`}
                           onClick={() => handleSelectProject(project)}
                           className="relative w-full h-full cursor-pointer group"
                           whileHover="hover"
                           initial="rest"
-                          style={{ aspectRatio: '3 / 2', height: '100%' }}
                           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                         >
-                          <div className="relative w-full h-full">
-                            <Image
-                              src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
-                              alt={project.general?.title || 'Preview'}
-                              fill
-                              priority={index < 4}
-                              sizes="(max-width: 768px) 90vw, 64vh"
-                              className="object-cover"
-                            />
-                          </div>
+                          <Image
+                            src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
+                            alt={project.general?.title || 'Preview'}
+                            fill
+                            priority={index < 4}
+                            sizes="(max-width: 768px) 90vw, 64vh"
+                            className="object-cover"
+                          />
                           <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                         </motion.div>
                       </div>

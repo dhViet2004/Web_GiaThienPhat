@@ -55,6 +55,7 @@ export default function ProjectDetailPage({ params }) {
   const router = useRouter();
   
   const scrollRef = useRef(null);
+  const mainImageCardRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [projectData, setProjectData] = useState(null);
   const [prevProject, setPrevProject] = useState(null);
@@ -151,22 +152,16 @@ export default function ProjectDetailPage({ params }) {
       dragState.current.velocity = 0;
       return;
     }
-
     container.scrollLeft -= dragState.current.velocity;
     dragState.current.velocity *= 0.95;
-
     animationRef.current = requestAnimationFrame(applyInertia);
   }, []);
 
-  // Mouse down handler
   const handleMouseDown = useCallback((e) => {
     if (e.button !== 0) return;
-    
     const container = scrollRef.current;
     if (!container) return;
-
     stopInertia();
-    
     setIsDragging(true);
     setIsVerticalSwipe(false);
     dragState.current = {
@@ -178,34 +173,25 @@ export default function ProjectDetailPage({ params }) {
       lastTime: Date.now(),
       movedX: false
     };
-
     container.style.cursor = 'grabbing';
     container.style.userSelect = 'none';
   }, [stopInertia]);
 
-  // Mouse move handler
   const handleMouseMove = useCallback((e) => {
     if (!isDragging) return;
-    
     const container = scrollRef.current;
     if (!container) return;
-
     const deltaX = e.pageX - dragState.current.startX;
     const deltaY = e.pageY - dragState.current.startY;
-    
     if (!dragState.current.movedX) {
       if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
         dragState.current.movedX = Math.abs(deltaX) > Math.abs(deltaY);
-        if (!dragState.current.movedX) {
-          setIsVerticalSwipe(true);
-        }
+        if (!dragState.current.movedX) setIsVerticalSwipe(true);
       }
     }
-    
     if (!isVerticalSwipe && dragState.current.movedX) {
       const walk = (e.pageX - dragState.current.startX) * 1.2;
       container.scrollLeft = dragState.current.scrollLeft - walk;
-
       const now = Date.now();
       const dt = now - dragState.current.lastTime;
       if (dt > 0) {
@@ -217,21 +203,16 @@ export default function ProjectDetailPage({ params }) {
     }
   }, [isDragging, isVerticalSwipe]);
 
-  // Mouse up handler
   const handleMouseUp = useCallback(() => {
     if (!isDragging) return;
-    
     const container = scrollRef.current;
     if (container) {
       container.style.cursor = 'grab';
       container.style.userSelect = '';
     }
-    
     setIsDragging(false);
-    
     if (isVerticalSwipe) {
       const deltaY = dragState.current.startY - (dragState.current.lastY || dragState.current.startY);
-      // Navigate or close based on swipe
       if (deltaY < -50 && prevProject?._id) {
         router.push(`/projects/${prevProject._id}`);
       } else if (deltaY > 50 && nextProject?._id) {
@@ -244,26 +225,18 @@ export default function ProjectDetailPage({ params }) {
         applyInertia();
       }
     }
-    
     setIsVerticalSwipe(false);
   }, [isDragging, isVerticalSwipe, prevProject, nextProject, router, applyInertia]);
 
-  // Mouse leave handler
   const handleMouseLeave = useCallback(() => {
-    if (isDragging) {
-      handleMouseUp();
-    }
+    if (isDragging) handleMouseUp();
   }, [isDragging, handleMouseUp]);
 
-  // Touch handlers for mobile
   const handleTouchStart = useCallback((e) => {
     if (e.touches.length !== 1) return;
-    
     const container = scrollRef.current;
     if (!container) return;
-
     stopInertia();
-    
     const touch = e.touches[0];
     setIsDragging(true);
     setIsVerticalSwipe(false);
@@ -280,27 +253,20 @@ export default function ProjectDetailPage({ params }) {
 
   const handleTouchMove = useCallback((e) => {
     if (!isDragging || e.touches.length !== 1) return;
-    
     const container = scrollRef.current;
     if (!container) return;
-
     const touch = e.touches[0];
     const deltaX = touch.clientX - dragState.current.startX;
     const deltaY = touch.clientY - dragState.current.startY;
-    
     if (!dragState.current.movedX) {
       if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
         dragState.current.movedX = Math.abs(deltaX) > Math.abs(deltaY);
-        if (!dragState.current.movedX) {
-          setIsVerticalSwipe(true);
-        }
+        if (!dragState.current.movedX) setIsVerticalSwipe(true);
       }
     }
-    
     if (!isVerticalSwipe && dragState.current.movedX) {
       const walk = (touch.clientX - dragState.current.startX) * 1.2;
       container.scrollLeft = dragState.current.scrollLeft - walk;
-
       const now = Date.now();
       const dt = now - dragState.current.lastTime;
       if (dt > 0) {
@@ -321,16 +287,9 @@ export default function ProjectDetailPage({ params }) {
     const handleWheel = (e) => {
       const container = scrollRef.current;
       if (!container) return;
-      
-      // Allow natural horizontal scroll from trackpad
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-        return;
-      }
-      
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const atStart = container.scrollLeft <= 0;
       const atEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 2;
-      
-      // Navigate to prev/next project based on scroll direction
       if (!isDragging) {
         if (atEnd && e.deltaY > 0 && nextProject?._id) {
           router.push(`/projects/${nextProject._id}`);
@@ -341,27 +300,44 @@ export default function ProjectDetailPage({ params }) {
           return;
         }
       }
-      
-      // Any vertical scroll closes/returns
       if (Math.abs(e.deltaY) > 3 && !isDragging) {
         router.push('/');
       }
     };
-
     window.addEventListener('wheel', handleWheel, { passive: false });
     return () => window.removeEventListener('wheel', handleWheel);
   }, [isDragging, prevProject, nextProject, router]);
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      stopInertia();
-    };
+    return () => { stopInertia(); };
   }, [stopInertia]);
+
+  // Center the cover image in viewport on load
+  const centerMainImageInViewport = useCallback(() => {
+    const scrollEl = scrollRef.current;
+    const card = mainImageCardRef.current;
+    if (!scrollEl || !card) return;
+    const cardRect = card.getBoundingClientRect();
+    const scrollRect = scrollEl.getBoundingClientRect();
+    const targetX = scrollRect.left + scrollRect.width / 2;
+    const cardCenterX = cardRect.left + cardRect.width / 2;
+    const delta = cardCenterX - targetX;
+    scrollEl.scrollLeft = Math.max(0, scrollEl.scrollLeft + delta);
+  }, []);
+
+  useEffect(() => {
+    if (isLoading || !projectData) return;
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) return;
+    const initialScroll = Math.min(80, scrollEl.scrollWidth - scrollEl.clientWidth);
+    scrollEl.scrollLeft = initialScroll;
+    requestAnimationFrame(() => { centerMainImageInViewport(); });
+  }, [projectId, isLoading, centerMainImageInViewport]);
 
   if (isLoading || !projectData) {
     return (
-      <div className="fixed inset-0 z-[100] bg-white flex items-center justify-center">
+      <div className="fixed inset-0 z-100 bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-black" />
           <span className="text-xs uppercase tracking-[0.2em] text-gray-500">Loading project details...</span>
@@ -383,7 +359,7 @@ export default function ProjectDetailPage({ params }) {
         </svg>
       </Link>
 
-      {/* Horizontal scroll container with mouse drag */}
+      {/* Horizontal scroll container */}
       <div 
         ref={scrollRef}
         onMouseDown={handleMouseDown}
@@ -393,87 +369,87 @@ export default function ProjectDetailPage({ params }) {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="absolute inset-0 h-screen w-screen overflow-x-auto overflow-y-hidden scrollbar-hidden"
+        className="absolute inset-0 h-screen w-screen overflow-x-auto overflow-y-hidden scrollbar-hidden img-sync-height"
         style={{ 
           cursor: 'grab',
           scrollBehavior: 'auto',
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <div className="h-full flex flex-nowrap items-start gap-[20px] lg:gap-[30px] pr-[5vw] lg:pr-[calc(50vw-57vh)] mt-8 lg:mt-12">
-          
-          {/* Smart Spacer (QUAN TRỌNG: CÔNG THỨC CANH GIỮA ẢNH BÌA) */}
-          <div 
-            className="relative z-50 hidden lg:block h-px shrink-0 flex-[0_0_auto]" 
-            style={{ width: 'calc(50vw - 57vh - 64px)' }} 
-          />
+        <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
 
-          {/* BLOCK 1: COVER IMAGE & TITLE */}
-          <div className="relative h-full flex flex-col justify-start flex-[0_0_auto] shrink-0 pt-[8vh] lg:pt-[12vh] pb-[8vh] lg:pb-[12vh] pointer-events-none select-none">
-            {/* Title & Location */}
-            <div className="absolute top-0 right-full mr-[20px] lg:mr-[30px] w-[300px] flex flex-col items-end text-right z-20 pt-[8vh] lg:pt-[12vh]">
-              <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-center mb-6">
-                <ProjectIcon size={24} strokeWidth={1.5} />
+          {/* LEADING SPACER */}
+          <div className="shrink-0 w-[clamp(0px,6vw,48px)]" aria-hidden />
+
+          {/* CARD 1: Title + Icon + location + meta */}
+          <div className="h-full flex flex-col justify-center shrink-0 w-[min(220px,50vw)] lg:w-[320px] pointer-events-none select-none text-right">
+            <div className="size-[38px] lg:size-[50px] bg-black text-white flex items-center justify-end ml-auto mb-6">
+              <ProjectIcon size={24} strokeWidth={1.5} />
+            </div>
+            <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full">
+              {projectData.general?.title || 'Untitled Project'}
+            </h1>
+            <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-8">
+              {projectData.general?.location || ''}
+            </p>
+            <div className="flex flex-col gap-4 items-end">
+              <div>
+                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
+                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectData.general?.client || 'N/A'}</p>
               </div>
-              <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none m-0 p-0 break-words w-full">
-                {projectData.general?.title || 'Untitled Project'}
-              </h1>
-              <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12">
-                {projectData.general?.location || ''}
-              </p>
-
-              <div className="hidden lg:flex flex-col items-end w-full space-y-4">
-                <div>
-                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
-                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectData.general?.client || 'N/A'}</p>
-                </div>
-                <div>
-                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
-                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectData.general?.typology || 'N/A'}</p>
-                </div>
+              <div>
+                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
+                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectData.general?.typology || 'N/A'}</p>
               </div>
             </div>
+          </div>
 
-            {/* Main Cover Image — chiều cao cố định 70vh, chiều rộng auto */}
-            <div className="relative h-auto md:h-[60vh] lg:h-[70vh] w-[90vw] md:w-auto shrink-0 shadow-sm will-change-transform">
+          {/* CARD 2: Cover image — căn giữa viewport */}
+          <div
+            ref={mainImageCardRef}
+            className="h-full flex items-center shrink-0 w-[min(70vw,320px)] lg:w-[500px] pointer-events-none select-none"
+          >
+            <div
+              className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center"
+              style={{ height: 'var(--img-h)' }}
+            >
               <Image
                 src={projectData.general?.coverImage || '/placeholder.jpg'}
                 alt="Cover"
-                height={700}
-                width={1000}
+                width={0}
+                height={0}
+                sizes="(max-width: 1024px) 70vw, 500px"
+                style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
                 priority
                 draggable={false}
-                className="w-full h-auto md:h-full md:w-auto object-contain object-top select-none pointer-events-none"
+                className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto"
               />
             </div>
           </div>
 
-          {/* BLOCK 2: DESCRIPTION — max-lg: thêm pt để thẳng hàng với ảnh (ảnh có pt nằm trong hộp cố định) */}
-          {description && !descPairedWithFirstImage && (
-            <div className="h-full flex flex-col shrink-0 pt-[calc(8vh+1.75rem)] lg:pt-[12vh] justify-start pointer-events-none select-none">
-               <div className="w-[290px] min-w-0 max-w-[min(290px,85vw)] text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
-                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
-                 <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
-               </div>
-            </div>
-          )}
-
-          {/* DESC + Hình ảnh nối liền */}
+          {/* CARD 3a: Description + first gallery image PAIRED */}
           {descPairedWithFirstImage && firstGalleryBlock && (
-            <div className="flex flex-row items-start flex-nowrap gap-x-[5vw] lg:gap-x-16 shrink-0 flex-[0_0_auto] pt-[8vh] lg:pt-[12vh] pointer-events-none select-none">
-              <div className="w-[290px] min-w-0 max-w-[min(290px,42vw)] shrink-0 pt-[1.75rem] lg:pt-0 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80 pr-1">
+            <div className="h-full flex items-center shrink-0 w-[min(90vw,420px)] lg:w-[450px] gap-x-4 lg:gap-x-6 pointer-events-none select-none">
+              <div
+                className="shrink-0 w-[290px] min-w-0 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80 pr-1 self-center"
+              >
                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
-                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] break-all">{normalizeDescriptionText(description)}</p>
+                <p className="whitespace-pre-wrap wrap-anywhere break-all">{normalizeDescriptionText(description)}</p>
               </div>
-              <div className="relative z-0 h-auto md:h-[60vh] lg:h-[70vh] w-[90vw] md:w-auto shrink-0 shadow-sm overflow-hidden pointer-events-auto">
+              <div
+                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center"
+                style={{ height: 'var(--img-h)' }}
+              >
                 {firstGalleryBlock.url && (
                   <Image
                     src={firstGalleryBlock.url}
                     alt={firstGalleryBlock.caption || 'Gallery 1'}
-                    height={700}
-                    width={1000}
+                    width={0}
+                    height={0}
+                    sizes="50vw"
+                    style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
                     draggable={false}
-                    className="w-full h-auto md:h-full md:w-auto object-contain object-top"
+                    className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto"
                   />
                 )}
                 {firstGalleryBlock.caption && (
@@ -485,66 +461,92 @@ export default function ProjectDetailPage({ params }) {
             </div>
           )}
 
-          {/* BLOCK 3: SLIDER */}
-          {sliderImages.length > 0 && (
-            <div 
-              className="relative h-auto md:h-[60vh] lg:h-[70vh] w-[90vw] md:w-auto shrink-0 overflow-hidden shadow-sm cursor-pointer pointer-events-auto"
-              onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
-            >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeSlide}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="h-full"
-                >
-                  <Image
-                    src={sliderImages[activeSlide]}
-                    alt={`Slide ${activeSlide + 1}`}
-                    height={700}
-                    width={1000}
-                    draggable={false}
-                  className="w-full h-auto md:h-full md:w-auto object-contain object-top select-none"
-                  />
-                </motion.div>
-              </AnimatePresence>
-              
-              <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase">
-                {activeSlide + 1} / {sliderImages.length}
+          {/* CARD 3b: Description alone (no paired first image) */}
+          {description && !descPairedWithFirstImage && (
+            <div className="h-full flex items-center shrink-0 w-[min(300px,75vw)] lg:w-[320px] pointer-events-none select-none">
+              <div className="w-full text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
+                <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
+                <p className="whitespace-pre-wrap wrap-anywhere break-all">{normalizeDescriptionText(description)}</p>
               </div>
             </div>
           )}
 
-          {/* BLOCK 4: GALLERY IMAGES */}
-          {galleryImageBlocks.map((block, idx) => (
-            <div key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`} className="relative h-auto md:h-[60vh] lg:h-[70vh] w-[90vw] md:w-auto shrink-0 shadow-sm pointer-events-auto select-none">
-              {block.url && (
-                <Image
-                  src={block.url}
-                  alt={block.caption || `Gallery ${idx + 1}`}
-                  height={700}
-                  width={1000}
-                  draggable={false}
-                  className="w-full h-auto md:h-full md:w-auto object-contain object-top"
-                />
-              )}
-              {block.caption && (
-                <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">
-                  {block.caption}
+          {/* CARD 4: Slider */}
+          {sliderImages.length > 0 && (
+            <div
+              className="h-full flex items-center shrink-0 w-[min(75vw,340px)] lg:w-[500px] shadow-sm bg-gray-50 pointer-events-auto cursor-pointer"
+              onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
+            >
+              <div
+                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center"
+                style={{ height: 'var(--img-h)' }}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeSlide}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="relative w-auto h-full flex items-center justify-center"
+                  >
+                    <Image
+                      src={sliderImages[activeSlide]}
+                      alt={`Slide ${activeSlide + 1}`}
+                      width={0}
+                      height={0}
+                      sizes="(max-width: 1024px) 75vw, 500px"
+                      style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
+                      draggable={false}
+                      className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto"
+                    />
+                  </motion.div>
+                </AnimatePresence>
+                <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase">
+                  {activeSlide + 1} / {sliderImages.length}
                 </div>
-              )}
+              </div>
+            </div>
+          )}
+
+          {/* CARD 5: Gallery images */}
+          {galleryImageBlocks.map((block, idx) => (
+            <div
+              key={`gallery-${descPairedWithFirstImage ? idx + 1 : idx}`}
+              className="h-full flex items-center shrink-0 w-auto max-w-[min(75vw,500px)] lg:max-w-[500px] pointer-events-none select-none"
+            >
+              <div
+                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center"
+                style={{ height: 'var(--img-h)' }}
+              >
+                {block.url && (
+                  <Image
+                    src={block.url}
+                    alt={block.caption || `Gallery ${idx + 1}`}
+                    width={0}
+                    height={0}
+                    sizes="(max-width: 1024px) 75vw, 500px"
+                    style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
+                    draggable={false}
+                    className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto"
+                  />
+                )}
+                {block.caption && (
+                  <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">
+                    {block.caption}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
 
-          {/* Credits Block */}
-          <div className="w-[90vw] max-w-[min(90vw,calc(100vw-2rem))] h-auto lg:h-[76vh] flex flex-col flex-wrap gap-x-12 gap-y-6 pointer-events-none select-none shrink-0 pt-[8vh] lg:pt-[12vh]">
-            <div className="w-[200px]">
+          {/* CARD 6: Status + Year */}
+          <div className="h-full flex flex-col justify-center shrink-0 w-[min(180px,45vw)] lg:w-[240px] gap-8 pointer-events-none select-none">
+            <div>
               <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Status</h4>
               <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectData.general?.status || 'Completed'}</p>
             </div>
-            <div className="w-[200px]">
+            <div>
               <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Year</h4>
               <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
             </div>
@@ -567,6 +569,32 @@ export default function ProjectDetailPage({ params }) {
       <style jsx global>{`
         .scrollbar-hidden::-webkit-scrollbar { display: none; }
         .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+        .img-sync-height {
+          --img-h: min(36vh, 220px);
+        }
+        .img-sync-height > div {
+          height: 100%;
+        }
+        @media (min-width: 640px) {
+          .img-sync-height {
+            --img-h: min(42vh, 300px);
+          }
+        }
+        @media (min-width: 768px) {
+          .img-sync-height {
+            --img-h: min(48vh, 360px);
+          }
+        }
+        @media (min-width: 1024px) {
+          .img-sync-height {
+            --img-h: min(52vh, 440px);
+          }
+        }
+        @media (min-width: 1280px) {
+          .img-sync-height {
+            --img-h: min(58vh, 500px);
+          }
+        }
       `}</style>
     </div>
   );
