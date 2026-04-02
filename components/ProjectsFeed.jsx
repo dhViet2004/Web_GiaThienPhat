@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -48,9 +48,7 @@ function getProjectYear(project) {
 // --- Inline Expanded Detail Component ---
 const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const scrollRef = useRef(null);
-  const mainImageCardRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
-  const [layoutAnimationDone, setLayoutAnimationDone] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragState = useRef({ startX: 0, scrollLeft: 0, velocity: 0, lastX: 0, lastTime: 0 });
   const animationRef = useRef(null);
@@ -183,44 +181,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const normalizeDescriptionText = (text) => String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
   const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
 
-  const centerMainImageInViewport = useCallback(() => {
-    const scrollEl = scrollRef.current;
-    const card = mainImageCardRef.current;
-    if (!scrollEl || !card) return;
-    const cardRect = card.getBoundingClientRect();
-    const cardCenterX = cardRect.left + cardRect.width / 2;
-    // Sửa: Dùng scrollEl bounding rect thay vì window.scrollX
-    const viewportCenterX = scrollEl.getBoundingClientRect().left + scrollEl.clientWidth / 2;
-    const delta = cardCenterX - viewportCenterX;
-    scrollEl.scrollLeft = Math.max(0, scrollEl.scrollLeft + delta);
-  }, []); // Stable: refs are mutable, isLoading checked inside hooks
-
-  // Track layoutAnimationDone changes using a ref to avoid dependency array size changes
-  const prevLayoutDone = useRef(false);
-  useEffect(() => {
-    if (layoutAnimationDone && !prevLayoutDone.current) {
-      // Animation just completed — re-center after double RAF for accuracy
-      requestAnimationFrame(() => {
-        requestAnimationFrame(centerMainImageInViewport);
-      });
-    }
-    prevLayoutDone.current = layoutAnimationDone;
-  }, [layoutAnimationDone, centerMainImageInViewport]);
-
-  // useEffect resize: Loại bỏ điều kiện layoutAnimationDone
-  useEffect(() => {
-    if (isLoading) return;
-    let rafId;
-    const onResize = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(centerMainImageInViewport);
-    };
-    window.addEventListener('resize', onResize);
-    return () => {
-      window.removeEventListener('resize', onResize);
-      cancelAnimationFrame(rafId);
-    };
-  }, [isLoading, centerMainImageInViewport]);
+  // KHÔNG canh giữa image sau phóng to - để image ở vị trí tự nhiên sau animation
 
   return (
     <div className="relative w-full h-full bg-white text-black font-sans flex flex-col overflow-hidden group/expanded">
@@ -270,19 +231,21 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           </motion.div>
 
           {/* Cover Image with shared LayoutId */}
-          <div ref={mainImageCardRef} className="relative shrink-0 self-center pointer-events-none select-none">
+          <div className="relative shrink-0 self-center pointer-events-none select-none h-[70vh]">
             <motion.div
               layoutId={layoutId}
-              className="relative w-[90vw] sm:w-[500px] lg:w-[70vw]"
-              onLayoutAnimationComplete={() => setLayoutAnimationDone(true)}
+              className="relative w-auto h-full flex items-center justify-center"
             >
-              {/* Sử dụng img tag thay vì Next.js Image để tránh xung đột object-cover/object-contain */}
-              <img
+              <Image
                 src={coverImageUrl}
                 alt="Cover"
-                className="w-full h-auto object-contain select-none pointer-events-none"
-                style={{ maxHeight: '70vh', width: 'auto', height: 'auto' }}
+                width={0}
+                height={0}
+                sizes="100vh"
+                style={{ width: 'auto', height: '100%' }}
+                priority
                 draggable={false}
+                className="object-contain select-none pointer-events-none"
               />
             </motion.div>
           </div>
@@ -436,11 +399,16 @@ export default function ProjectsFeed() {
       gsap.killTweensOf('.velocity-card');
       gsap.set('.velocity-card', { scale: 1, y: 0 });
 
-      // Cuộn trang tức thì TRƯỚC khi Framer Motion kích hoạt layout animation
-      const el = document.getElementById(`project-${project._id}`);
-      if (el) el.scrollIntoView({ behavior: 'instant', block: 'center' });
-
+      // Render InlineProjectDetail TRƯỚC, rồi scroll window SAU 1 frame
+      // Điều này đảm bảo Framer Motion đo vị trí thumbnail ở vị trí CŨ,
+      // sau đó mới scroll window, animation sẽ bay từ vị trí cũ đến vị trí mới
       setSelectedProject(project);
+
+      // Scroll window đến vị trí project row sau 1 frame
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`project-${project._id}`);
+        if (el) el.scrollIntoView({ behavior: 'instant', block: 'center' });
+      });
     } else {
       window.history.pushState(null, '', '/');
       setSelectedProject(null);
