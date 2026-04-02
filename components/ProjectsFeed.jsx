@@ -210,7 +210,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
         <div className="h-[70vh] flex flex-nowrap items-center gap-[15px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
 
           {/* Info Block */}
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="h-[70vh] flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]">
+          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="h-[70vh] flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[270px] select-none pointer-events-none">
             <div className="mb-6"></div>
             <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0 text-right">
               {project.general?.title || 'Untitled Project'}
