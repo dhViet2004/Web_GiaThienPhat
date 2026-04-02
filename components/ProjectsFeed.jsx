@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useEffect, useLayoutEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -207,15 +207,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
     prevLayoutDone.current = layoutAnimationDone;
   }, [layoutAnimationDone, centerMainImageInViewport]);
 
-  // 1. Sửa lại useLayoutEffect: Kích hoạt cuộn ngay lập tức
-  useLayoutEffect(() => {
-    if (isLoading) return;
-    // Căn giữa NGAY LẬP TỨC khi DOM vừa render (trước khi animation chạy).
-    // Điều này giúp Framer Motion biết đích đến nằm ở giữa màn hình thay vì bên phải (85vw)
-    centerMainImageInViewport();
-  }, [project?._id, isLoading, centerMainImageInViewport]);
-
-  // 2. Sửa lại useEffect resize: Loại bỏ điều kiện layoutAnimationDone
+  // useEffect resize: Loại bỏ điều kiện layoutAnimationDone
   useEffect(() => {
     if (isLoading) return;
     let rafId;
@@ -284,15 +276,13 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               className="relative w-[90vw] sm:w-[500px] lg:w-[70vw]"
               onLayoutAnimationComplete={() => setLayoutAnimationDone(true)}
             >
-              <Image 
-                src={coverImageUrl} 
-                alt="Cover" 
-                width={1200}
-                height={0}
-                style={{ width: '100%', height: 'auto' }} 
-                priority
-                draggable={false} 
-                className="object-contain select-none pointer-events-none" 
+              {/* Sử dụng img tag thay vì Next.js Image để tránh xung đột object-cover/object-contain */}
+              <img
+                src={coverImageUrl}
+                alt="Cover"
+                className="w-full h-auto object-contain select-none pointer-events-none"
+                style={{ maxHeight: '70vh', width: 'auto', height: 'auto' }}
+                draggable={false}
               />
             </motion.div>
           </div>
@@ -445,14 +435,12 @@ export default function ProjectsFeed() {
       window.history.pushState(null, '', `/projects/${project._id}`);
       gsap.killTweensOf('.velocity-card');
       gsap.set('.velocity-card', { scale: 1, y: 0 });
-      setSelectedProject(project);
 
-      // Use instant scroll so it completes synchronously — no conflict with
-      // centerMainImageInViewport which reads window.scrollX to center the image.
-      setTimeout(() => {
-        const el = document.getElementById(`project-${project._id}`);
-        if (el) el.scrollIntoView({ behavior: 'instant', block: 'center' });
-      }, 100);
+      // Cuộn trang tức thì TRƯỚC khi Framer Motion kích hoạt layout animation
+      const el = document.getElementById(`project-${project._id}`);
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'center' });
+
+      setSelectedProject(project);
     } else {
       window.history.pushState(null, '', '/');
       setSelectedProject(null);
