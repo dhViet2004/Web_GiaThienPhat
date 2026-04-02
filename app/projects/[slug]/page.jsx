@@ -312,7 +312,8 @@ export default function ProjectDetailPage({ params }) {
     if (!scrollEl || !card) return;
     const cardRect = card.getBoundingClientRect();
     const cardCenterX = cardRect.left + cardRect.width / 2;
-    const viewportCenterX = window.scrollX + window.innerWidth / 2;
+    // Sửa: Dùng scrollEl bounding rect thay vì window.scrollX
+    const viewportCenterX = scrollEl.getBoundingClientRect().left + scrollEl.clientWidth / 2;
     const delta = cardCenterX - viewportCenterX;
     scrollEl.scrollLeft = Math.max(0, scrollEl.scrollLeft + delta);
   }, []);

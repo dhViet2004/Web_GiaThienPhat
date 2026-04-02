@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -48,7 +48,9 @@ function getProjectYear(project) {
 // --- Inline Expanded Detail Component ---
 const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const scrollRef = useRef(null);
+  const mainImageCardRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [layoutAnimationDone, setLayoutAnimationDone] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragState = useRef({ startX: 0, scrollLeft: 0, velocity: 0, lastX: 0, lastTime: 0 });
   const animationRef = useRef(null);
@@ -181,6 +183,42 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const normalizeDescriptionText = (text) => String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
   const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
 
+  const centerMainImageInViewport = useCallback(() => {
+    const scrollEl = scrollRef.current;
+    const card = mainImageCardRef.current;
+    if (!scrollEl || !card) return;
+    const cardRect = card.getBoundingClientRect();
+    const cardCenterX = cardRect.left + cardRect.width / 2;
+    // Sửa: Dùng scrollEl bounding rect thay vì window.scrollX
+    const viewportCenterX = scrollEl.getBoundingClientRect().left + scrollEl.clientWidth / 2;
+    const delta = cardCenterX - viewportCenterX;
+    scrollEl.scrollLeft = Math.max(0, scrollEl.scrollLeft + delta);
+  }, []);
+
+  // Only center AFTER shared layout animation finishes — centering mid-animation reads
+  // an incorrect bounding rect and causes the "jerk to the left then center" bug.
+  useLayoutEffect(() => {
+    if (isLoading || !layoutAnimationDone) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(centerMainImageInViewport);
+    });
+  }, [project?._id, isLoading, layoutAnimationDone, centerMainImageInViewport]);
+
+  // Keep image centered on window resize even after layout animation is done.
+  useEffect(() => {
+    if (isLoading || !layoutAnimationDone) return;
+    let rafId;
+    const onResize = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(centerMainImageInViewport);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      cancelAnimationFrame(rafId);
+    };
+  }, [isLoading, layoutAnimationDone, centerMainImageInViewport]);
+
   return (
     <div className="relative w-full h-full bg-white text-black font-sans flex flex-col overflow-hidden group/expanded">
       {isLoading && (
@@ -229,8 +267,12 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           </motion.div>
 
           {/* Cover Image with shared LayoutId */}
-          <div className="relative shrink-0 shadow-sm self-center pointer-events-none select-none" style={{ height: 'var(--img-h)', aspectRatio: 'auto' }}>
-            <motion.div layoutId={layoutId} className="relative w-auto h-full flex items-center justify-center">
+          <div ref={mainImageCardRef} className="relative shrink-0 shadow-sm self-center pointer-events-none select-none" style={{ height: 'var(--img-h)', aspectRatio: 'auto' }}>
+            <motion.div
+              layoutId={layoutId}
+              className="relative w-auto h-full flex items-center justify-center"
+              onLayoutAnimationComplete={() => setLayoutAnimationDone(true)}
+            >
               <Image src={coverImageUrl} alt="Cover" width={0} height={0} sizes="(max-width: 1024px) 70vw, 500px" style={{ width: 'auto', height: '100%', maxWidth: '100%' }} priority draggable={false} className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full" />
             </motion.div>
           </div>
@@ -374,9 +416,11 @@ export default function ProjectsFeed() {
       gsap.set('.velocity-card', { scale: 1, y: 0 });
       setSelectedProject(project);
 
+      // Use instant scroll so it completes synchronously — no conflict with
+      // centerMainImageInViewport which reads window.scrollX to center the image.
       setTimeout(() => {
         const el = document.getElementById(`project-${project._id}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (el) el.scrollIntoView({ behavior: 'instant', block: 'center' });
       }, 100);
     } else {
       window.history.pushState(null, '', '/');
