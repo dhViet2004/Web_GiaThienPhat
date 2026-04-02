@@ -310,12 +310,23 @@ export default function ProjectDetailPage({ params }) {
     const scrollEl = scrollRef.current;
     const card = mainImageCardRef.current;
     if (!scrollEl || !card) return;
+    
+    // Reset window scroll to ensure accurate calculations
+    if (window.scrollX !== 0 || window.scrollY !== 0) {
+      window.scrollTo(0, 0);
+    }
+    
     const cardRect = card.getBoundingClientRect();
+    
+    // Guard: if card has no dimensions, skip
+    if (cardRect.width === 0 || cardRect.height === 0) return;
+    
     const cardCenterX = cardRect.left + cardRect.width / 2;
-    // Sửa: Dùng scrollEl bounding rect thay vì window.scrollX
     const viewportCenterX = scrollEl.getBoundingClientRect().left + scrollEl.clientWidth / 2;
     const delta = cardCenterX - viewportCenterX;
-    scrollEl.scrollLeft = Math.max(0, scrollEl.scrollLeft + delta);
+    
+    // Reset scrollLeft to 0 before adding delta for accurate centering
+    scrollEl.scrollLeft = Math.max(0, delta);
   }, []);
 
   useEffect(() => {
