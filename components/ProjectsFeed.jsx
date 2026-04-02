@@ -252,12 +252,12 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden img-sync-height"
-        style={{ cursor: isDragging ? 'grabbing' : 'grab', scrollBehavior: 'auto', WebkitOverflowScrolling: 'touch' }}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab', scrollBehavior: 'auto', WebkitOverflowScrolling: 'touch', '--img-h': '70vh' }}
       >
-        <div className="h-full flex flex-nowrap items-center gap-[15px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
+        <div className="h-[70vh] flex flex-nowrap items-center gap-[15px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
 
           {/* Info Block */}
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]">
+          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="h-[70vh] flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]">
             <div className="mb-6"></div>
             <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0 text-right">
               {project.general?.title || 'Untitled Project'}
@@ -278,19 +278,28 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           </motion.div>
 
           {/* Cover Image with shared LayoutId */}
-          <div ref={mainImageCardRef} className="relative shrink-0 shadow-sm self-center pointer-events-none select-none" style={{ height: 'var(--img-h)', aspectRatio: 'auto' }}>
+          <div ref={mainImageCardRef} className="relative shrink-0 self-center pointer-events-none select-none">
             <motion.div
               layoutId={layoutId}
-              className="relative w-auto h-full flex items-center justify-center"
+              className="relative w-[90vw] sm:w-[500px] lg:w-[70vw]"
               onLayoutAnimationComplete={() => setLayoutAnimationDone(true)}
             >
-              <Image src={coverImageUrl} alt="Cover" width={0} height={0} sizes="(max-width: 1024px) 70vw, 500px" style={{ width: 'auto', height: '100%', maxWidth: '100%' }} priority draggable={false} className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full" />
+              <Image 
+                src={coverImageUrl} 
+                alt="Cover" 
+                width={1200}
+                height={0}
+                style={{ width: '100%', height: 'auto' }} 
+                priority
+                draggable={false} 
+                className="object-contain select-none pointer-events-none" 
+              />
             </motion.div>
           </div>
 
           {/* Description */}
           {description && (
-            <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="relative h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[290px] pointer-events-none select-none">
+            <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="relative h-[70vh] flex flex-col justify-center shrink-0 w-[85vw] sm:w-[290px] pointer-events-none select-none">
               <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
                 <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
@@ -300,25 +309,36 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
 
           {/* Gallery Images */}
           {galleryImageBlocks.map((block, idx) => (
-            <div key={`gallery-${idx}`} className="relative h-full shrink-0 flex items-center justify-center pointer-events-none select-none" style={{ height: 'var(--img-h)', minWidth: 'min(75vw,500px)' }}>
-              <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.5 + idx * 0.1 }} className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center" style={{ height: 'var(--img-h)' }}>
-                {block.url && (
-                  <Image src={block.url} alt={block.caption || `Gallery ${idx + 1}`} width={0} height={0} sizes="(max-width: 1024px) 75vw, 500px" style={{ width: 'auto', height: '100%', maxWidth: '100%' }} draggable={false} className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto" />
-                )}
-                {block.caption && (
-                  <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">{block.caption}</div>
-                )}
-              </motion.div>
+            <div key={`gallery-${idx}`} className="h-full shrink-0 flex items-center pointer-events-none select-none">
+              <div className="relative h-full flex items-center justify-center" style={{ height: '70vh', minWidth: 'min(75vw,500px)' }}>
+                <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.5 + idx * 0.1 }} className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center">
+                  {block.url && (
+                    <Image 
+                      src={block.url} 
+                      alt={block.caption || `Gallery ${idx + 1}`} 
+                      width={0} 
+                      height={0} 
+                      sizes="100vh"
+                      style={{ width: 'auto', height: '100%' }} 
+                      draggable={false} 
+                      className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto" 
+                    />
+                  )}
+                  {block.caption && (
+                    <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">{block.caption}</div>
+                  )}
+                </motion.div>
+              </div>
             </div>
           ))}
 
           {/* Slider Images */}
           {sliderImages.length > 0 && (
-            <div className="h-full flex items-center shrink-0 w-[min(75vw,340px)] lg:w-[500px] shadow-sm bg-gray-50 pointer-events-auto cursor-pointer" onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}>
-              <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.5 }} className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center" style={{ height: 'var(--img-h)' }}>
+            <div className="h-full shrink-0 w-[min(75vw,340px)] lg:w-[500px] shadow-sm bg-gray-50 pointer-events-auto cursor-pointer" onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}>
+              <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.5 }} className="relative z-0 shrink-0 w-auto h-full shadow-sm overflow-hidden flex items-center justify-center" style={{ height: '70vh' }}>
                 <AnimatePresence mode="wait">
                   <motion.div key={activeSlide} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }} className="relative w-auto h-full flex items-center justify-center">
-                    <Image src={sliderImages[activeSlide]} alt={`Slide ${activeSlide + 1}`} width={0} height={0} sizes="(max-width: 1024px) 75vw, 500px" style={{ width: 'auto', height: '100%', maxWidth: '100%' }} draggable={false} className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto" />
+                    <Image src={sliderImages[activeSlide]} alt={`Slide ${activeSlide + 1}`} width={0} height={0} sizes="100vh" style={{ width: 'auto', height: '100%' }} draggable={false} className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto" />
                   </motion.div>
                 </AnimatePresence>
                 <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase">{activeSlide + 1} / {sliderImages.length}</div>
@@ -327,7 +347,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           )}
 
           {/* Status + Year */}
-          <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.7 }} className="h-full flex flex-col justify-center shrink-0 w-[min(180px,45vw)] lg:w-[240px] gap-8 pointer-events-none select-none">
+          <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.7 }} className="h-[70vh] flex flex-col justify-center shrink-0 w-[min(180px,45vw)] lg:w-[240px] gap-8 pointer-events-none select-none">
             <div>
               <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Status</h4>
               <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
@@ -569,15 +589,19 @@ export default function ProjectsFeed() {
         .scrollbar-hidden::-webkit-scrollbar { display: none; }
         .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
         .img-sync-height {
-          --img-h: min(36vh, 220px);
+          /* Loại bỏ chiều cao cố định, cho phép container giãn theo nội dung */
+          --img-h: auto;
         }
         .img-sync-height > div {
           height: 100%;
         }
-        @media (min-width: 640px) { .img-sync-height { --img-h: min(42vh, 300px); } }
-        @media (min-width: 768px) { .img-sync-height { --img-h: min(48vh, 360px); } }
-        @media (min-width: 1024px) { .img-sync-height { --img-h: min(52vh, 440px); } }
-        @media (min-width: 1280px) { .img-sync-height { --img-h: min(55vh, 1200px); } }
+        /* Đảm bảo các ảnh trong gallery có chiều cao bằng nhau */
+        .img-sync-height img {
+          max-height: 70vh; /* Giới hạn chiều cao tối đa để không tràn màn hình dọc */
+          width: auto;
+          height: 100%;
+          object-fit: contain;
+        }
       `}</style>
 
       <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
@@ -625,16 +649,18 @@ export default function ProjectsFeed() {
                           </div>
 
                           {/* Cover Image Wrapper with LayoutID */}
-                          <div className="shrink-0 project-image overflow-hidden w-[90vw] sm:w-[350px] lg:w-[64vh] aspect-3/2 relative">
+                          <div className="shrink-0 project-image overflow-hidden w-[90vw] sm:w-[350px] lg:w-[64vh] relative">
                             <motion.div
                               layoutId={`img-container-${project._id}`}
                               onClick={() => handleSelectProject(project)}
-                              className="relative w-full h-full cursor-pointer group"
+                              className="relative w-full cursor-pointer group"
                             >
                               <Image
                                 src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
                                 alt={project.general?.title || 'Preview'}
-                                fill
+                                width={800}
+                                height={0}
+                                style={{ width: '100%', height: 'auto' }}
                                 priority={index < 4}
                                 sizes="(max-width: 768px) 90vw, 64vh"
                                 className="object-cover transition-transform duration-700 group-hover:scale-105"
