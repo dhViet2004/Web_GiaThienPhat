@@ -193,20 +193,31 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
     const viewportCenterX = scrollEl.getBoundingClientRect().left + scrollEl.clientWidth / 2;
     const delta = cardCenterX - viewportCenterX;
     scrollEl.scrollLeft = Math.max(0, scrollEl.scrollLeft + delta);
-  }, []);
+  }, []); // Stable: refs are mutable, isLoading checked inside hooks
 
-  // Only center AFTER shared layout animation finishes — centering mid-animation reads
-  // an incorrect bounding rect and causes the "jerk to the left then center" bug.
-  useLayoutEffect(() => {
-    if (isLoading || !layoutAnimationDone) return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(centerMainImageInViewport);
-    });
-  }, [project?._id, isLoading, layoutAnimationDone, centerMainImageInViewport]);
-
-  // Keep image centered on window resize even after layout animation is done.
+  // Track layoutAnimationDone changes using a ref to avoid dependency array size changes
+  const prevLayoutDone = useRef(false);
   useEffect(() => {
-    if (isLoading || !layoutAnimationDone) return;
+    if (layoutAnimationDone && !prevLayoutDone.current) {
+      // Animation just completed — re-center after double RAF for accuracy
+      requestAnimationFrame(() => {
+        requestAnimationFrame(centerMainImageInViewport);
+      });
+    }
+    prevLayoutDone.current = layoutAnimationDone;
+  }, [layoutAnimationDone, centerMainImageInViewport]);
+
+  // 1. Sửa lại useLayoutEffect: Kích hoạt cuộn ngay lập tức
+  useLayoutEffect(() => {
+    if (isLoading) return;
+    // Căn giữa NGAY LẬP TỨC khi DOM vừa render (trước khi animation chạy).
+    // Điều này giúp Framer Motion biết đích đến nằm ở giữa màn hình thay vì bên phải (85vw)
+    centerMainImageInViewport();
+  }, [project?._id, isLoading, centerMainImageInViewport]);
+
+  // 2. Sửa lại useEffect resize: Loại bỏ điều kiện layoutAnimationDone
+  useEffect(() => {
+    if (isLoading) return;
     let rafId;
     const onResize = () => {
       cancelAnimationFrame(rafId);
@@ -217,7 +228,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
       window.removeEventListener('resize', onResize);
       cancelAnimationFrame(rafId);
     };
-  }, [isLoading, layoutAnimationDone, centerMainImageInViewport]);
+  }, [isLoading, centerMainImageInViewport]);
 
   return (
     <div className="relative w-full h-full bg-white text-black font-sans flex flex-col overflow-hidden group/expanded">
