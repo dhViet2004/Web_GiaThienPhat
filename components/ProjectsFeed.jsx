@@ -254,7 +254,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
         className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden img-sync-height"
         style={{ cursor: isDragging ? 'grabbing' : 'grab', scrollBehavior: 'auto', WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="h-full flex flex-nowrap items-center gap-[8px] lg:gap-[8px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
+        <div className="h-full flex flex-nowrap items-center gap-[15px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
 
           {/* Info Block */}
           <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]">
@@ -611,13 +611,13 @@ export default function ProjectsFeed() {
                           <div className="hidden md:flex absolute top-0 right-full mr-[4px] lg:mr-[6px] w-[324px] project-info justify-end z-20">
                             <div className="relative w-full text-right flex flex-col items-end origin-right">
                               <div onClick={(e) => { e.preventDefault(); handleSelectProject(project); }} className="group/link cursor-pointer flex flex-col items-end">
-                                <div className="relative pr-6 lg:pr-15">
+                                <div className="relative pr-2 lg:pr-5">
                                   <h2 className="text-[14px] lg:text-[18px] font-normal uppercase text-black m-0 p-0 leading-tight whitespace-nowrap">
                                     {project.general?.title}
                                   </h2>
-                                  <span className="absolute -bottom-1 right-6 lg:right-8 h-px bg-black w-0 group-hover/link:w-full transition-all duration-400" style={{ right: '0', left: 'auto' }}></span>
+                                  <span className="absolute -bottom-1 right-2 lg:right-5 h-px bg-black w-0 group-hover/link:w-full transition-all duration-400" style={{ left: 'auto' }}></span>
                                 </div>
-                                <p className="text-[#797979] text-[11px] lg:text-[12px] uppercase mt-[4px] lg:mt-[6px] pr-6 lg:pr-15">
+                                <p className="text-[#797979] text-[11px] lg:text-[12px] uppercase mt-[4px] lg:mt-[6px] pr-2 lg:pr-5">
                                   {project.general?.location}
                                 </p>
                               </div>
