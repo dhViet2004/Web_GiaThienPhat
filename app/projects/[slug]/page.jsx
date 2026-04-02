@@ -54,6 +54,7 @@ export default function ProjectDetailPage({ params }) {
   const [prevProject, setPrevProject] = useState(null);
   const [nextProject, setNextProject] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [error, setError] = useState(null);
   
   // Mouse drag state
   const [isDragging, setIsDragging] = useState(false);
@@ -79,6 +80,7 @@ export default function ProjectDetailPage({ params }) {
     apiGet(`/api/projects/${projectId}`)
       .then(data => {
         if (data.error) {
+          setError(data.error);
           setIsLoading(false);
           return;
         }
@@ -89,6 +91,7 @@ export default function ProjectDetailPage({ params }) {
       })
       .catch(err => {
         console.error('Error fetching project:', err);
+        setError(err.message || 'Failed to load project');
         setIsLoading(false);
       });
   }, [projectId]);
@@ -337,6 +340,23 @@ export default function ProjectDetailPage({ params }) {
   }, [projectId, isLoading, centerMainImageInViewport]);
 
   if (isLoading || !projectData) {
+    if (!isLoading && error) {
+      return (
+        <div className="fixed inset-0 z-100 bg-white flex flex-col items-center justify-center gap-4 px-8 text-center">
+          <div className="flex flex-col items-center gap-3">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#797979" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <p className="text-[13px] text-[#797979] uppercase tracking-widest">{error}</p>
+          </div>
+          <Link href="/" className="text-[10px] uppercase tracking-[0.2em] text-black hover:opacity-50 transition-opacity mt-2">
+            Quay về trang chủ
+          </Link>
+        </div>
+      );
+    }
     return (
       <div className="fixed inset-0 z-100 bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">

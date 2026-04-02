@@ -48,6 +48,7 @@ function getProjectYear(project) {
 // --- Inline Expanded Detail Component ---
 const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const scrollRef = useRef(null);
+  const introSlideRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragState = useRef({ startX: 0, scrollLeft: 0, velocity: 0, lastX: 0, lastTime: 0 });
@@ -157,6 +158,21 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
 
   useEffect(() => { return () => stopInertia(); }, [stopInertia]);
 
+  // Chiều rộng slide intro = vùng cuộn (trùng với max-w + px của feed/menu), không dùng 100vw để khỏi lệch so với header
+  useLayoutEffect(() => {
+    const scrollEl = scrollRef.current;
+    const introEl = introSlideRef.current;
+    if (!scrollEl || !introEl) return;
+    const sync = () => {
+      const w = scrollEl.clientWidth;
+      if (w > 0) introEl.style.width = `${w}px`;
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(scrollEl);
+    return () => ro.disconnect();
+  }, [project?._id]);
+
   const description = getTextBlock(project);
   const sliderImages = getSliderImages(project);
   const projectYear = getProjectYear(project);
@@ -181,10 +197,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const normalizeDescriptionText = (text) => String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
   const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
 
-  // KHÔNG canh giữa image sau phóng to - để image ở vị trí tự nhiên sau animation
-
   return (
-    <div className="relative w-full h-full bg-white text-black font-sans flex flex-col overflow-hidden group/expanded">
+    <div className="relative w-full h-full bg-white text-black font-sans flex flex-col overflow-hidden">
       {isLoading && (
         <div className="absolute inset-0 z-[200] bg-white flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
@@ -194,8 +208,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
         </div>
       )}
 
-      {/* Horizontal Scroll Content */}
-      <div
+      {/* Horizontal Scroll Container */}
+      <div 
         ref={scrollRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -204,114 +218,167 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden img-sync-height"
-        style={{ cursor: isDragging ? 'grabbing' : 'grab', scrollBehavior: 'auto', WebkitOverflowScrolling: 'touch', '--img-h': '70vh' }}
+        className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden gallery-scroll-area"
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
-        <div className="h-[70vh] flex flex-nowrap items-center gap-[15px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
+        <div className="h-full flex flex-nowrap items-center">
 
-          {/* Info Block */}
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="h-[70vh] flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[270px] select-none pointer-events-none">
-            <div className="mb-6"></div>
-            <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0 text-right">
-              {project.general?.title || 'Untitled Project'}
-            </h1>
-            <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12 text-right">
-              {project.general?.location || ''}
-            </p>
-            <div className="flex flex-col gap-4 items-end">
-              <div>
-                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
-                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
-              </div>
-              <div>
-                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
-                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Cover Image with shared LayoutId */}
-          <div className="relative shrink-0 self-center pointer-events-none select-none h-[70vh]">
-            <motion.div
-              layoutId={layoutId}
-              className="relative w-auto h-full flex items-center justify-center"
+          {/* ===== PHẦN 1: KHỐI INTRO SLIDE (100% màn hình) - Flexbox 20-60-20 ===== */}
+          {/* Không dùng px trên hàng: padding chỉ ở cột Meta / Description để cột ảnh 60% không bị thụt trái */}
+          <div
+            ref={introSlideRef}
+            className="shrink-0 h-full flex flex-col lg:flex-row items-center lg:items-stretch justify-start gap-0 lg:gap-0 min-w-0"
+          >
+            
+            {/* Cột Meta (20%) - Right aligned — flex-basis cố định để cột Description trống vẫn giữ 20-60-20 */}
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              transition={{ delay: 0.3 }}
+              className="w-full lg:flex-[0_0_20%] lg:max-w-[20%] lg:min-w-0 order-2 lg:order-1 flex flex-col items-center lg:items-end text-center lg:text-right shrink-0 select-none pointer-events-none pl-4 lg:pl-12 pr-2 lg:pr-3"
             >
-              <Image
-                src={coverImageUrl}
-                alt="Cover"
-                width={0}
-                height={0}
-                sizes="100vh"
-                style={{ width: 'auto', height: '100%' }}
-                priority
-                draggable={false}
-                className="object-contain select-none pointer-events-none"
-              />
+              <div className="mb-4 lg:mb-6"></div>
+              <h1 className="text-xl lg:text-2xl xl:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0">
+                {project.general?.title || 'Untitled Project'}
+              </h1>
+              <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-8 lg:mb-12">
+                {project.general?.location || ''}
+              </p>
+              <div className="flex flex-col gap-3 lg:gap-4 items-center lg:items-end">
+                <div>
+                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
+                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
+                </div>
+                <div>
+                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
+                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
+                </div>
+                <div>
+                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Status</h4>
+                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
+                </div>
+                <div>
+                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Year</h4>
+                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
+                </div>
+              </div>
             </motion.div>
+
+            {/* Cột Ảnh Chính (60%) — full width cột, ảnh scale theo chiều ngang trước (tránh khoảng trắng do width:auto + height:80vh) */}
+            <div className="w-full lg:flex-[0_0_60%] lg:max-w-[60%] h-full order-1 lg:order-2 flex min-w-0 justify-center items-center shrink-0 px-0">
+              <motion.div
+                layoutId={layoutId}
+                className="relative w-full h-full max-h-full flex items-center justify-center min-w-0"
+              >
+                <Image
+                  src={coverImageUrl}
+                  alt="Cover"
+                  width={1920}
+                  height={1080}
+                  sizes="60vw"
+                  priority
+                  draggable={false}
+                  className="object-contain select-none pointer-events-none w-full h-auto max-h-[min(80vh,100%)] max-w-full"
+                />
+              </motion.div>
+            </div>
+
+            {/* Cột Description (20%) - Left aligned */}
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              transition={{ delay: 0.3 }}
+              className="w-full lg:flex-[0_0_20%] lg:max-w-[20%] lg:min-w-0 order-3 flex flex-col items-center lg:items-start text-center lg:text-left shrink-0 select-none pointer-events-none pl-2 lg:pl-3 pr-4 lg:pr-12"
+            >
+              {description && (
+                <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
+                  <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
+                  <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
+                </div>
+              )}
+            </motion.div>
+
           </div>
 
-          {/* Description */}
-          {description && (
-            <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="relative h-[70vh] flex flex-col justify-center shrink-0 w-[85vw] sm:w-[290px] pointer-events-none select-none">
-              <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
-                <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
-                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
-              </div>
-            </motion.div>
-          )}
+          {/* ===== PHẦN 2: KHỐI GALLERY IMAGES SLIDES ===== */}
+          {/* Các ảnh phụ nằm tiếp nối bên phải, sẽ hiện ra khi user cuộn ngang */}
 
           {/* Gallery Images */}
-          {galleryImageBlocks.map((block, idx) => (
-            <div key={`gallery-${idx}`} className="h-full shrink-0 flex items-center pointer-events-none select-none">
-              <div className="relative h-full flex items-center justify-center" style={{ height: '70vh', minWidth: 'min(75vw,500px)' }}>
-                <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.5 + idx * 0.1 }} className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center">
-                  {block.url && (
-                    <Image 
-                      src={block.url} 
-                      alt={block.caption || `Gallery ${idx + 1}`} 
-                      width={0} 
-                      height={0} 
-                      sizes="100vh"
-                      style={{ width: 'auto', height: '100%' }} 
-                      draggable={false} 
-                      className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto" 
-                    />
-                  )}
-                  {block.caption && (
-                    <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">{block.caption}</div>
-                  )}
-                </motion.div>
-              </div>
+          {galleryImageBlocks.slice(0, 6).map((block, idx) => (
+            <div 
+              key={`gallery-${idx}`} 
+              className="h-full shrink-0 flex items-center justify-center"
+              style={{ width: 'min(80vw, 600px)', minWidth: 'min(60vw, 300px)' }}
+            >
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                transition={{ delay: 0.4 + idx * 0.1 }}
+                className="relative z-0 shrink-0 w-auto h-full shadow-sm overflow-hidden flex items-center justify-center"
+              >
+                {block.url && (
+                  <Image 
+                    src={block.url} 
+                    alt={block.caption || `Gallery ${idx + 1}`} 
+                    width={0} 
+                    height={0} 
+                    sizes="100vh"
+                    style={{ width: 'auto', height: '80vh', maxHeight: '100%' }} 
+                    draggable={false} 
+                    className="object-contain select-none pointer-events-none" 
+                  />
+                )}
+                {block.caption && (
+                  <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">{block.caption}</div>
+                )}
+              </motion.div>
             </div>
           ))}
 
           {/* Slider Images */}
           {sliderImages.length > 0 && (
-            <div className="h-full shrink-0 w-[min(75vw,340px)] lg:w-[500px] shadow-sm bg-gray-50 pointer-events-auto cursor-pointer" onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}>
-              <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.5 }} className="relative z-0 shrink-0 w-auto h-full shadow-sm overflow-hidden flex items-center justify-center" style={{ height: '70vh' }}>
+            <div 
+              className="h-full shrink-0 w-[min(80vw,500px)] lg:w-[min(60vw,400px)] pointer-events-auto cursor-pointer pr-[20px] lg:pr-[35px]" 
+              onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
+            >
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                transition={{ delay: 0.5 }}
+                className="relative z-0 shrink-0 w-auto h-full shadow-sm overflow-hidden flex items-center justify-center" 
+                style={{ height: '80vh' }}
+              >
                 <AnimatePresence mode="wait">
-                  <motion.div key={activeSlide} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }} className="relative w-auto h-full flex items-center justify-center">
-                    <Image src={sliderImages[activeSlide]} alt={`Slide ${activeSlide + 1}`} width={0} height={0} sizes="100vh" style={{ width: 'auto', height: '100%' }} draggable={false} className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full mx-auto" />
+                  <motion.div 
+                    key={activeSlide} 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }} 
+                    transition={{ duration: 0.6 }} 
+                    className="relative w-auto h-full flex items-center justify-center"
+                  >
+                    <Image 
+                      src={sliderImages[activeSlide]} 
+                      alt={`Slide ${activeSlide + 1}`} 
+                      width={0} 
+                      height={0} 
+                      sizes="100vh"
+                      style={{ width: 'auto', height: '80vh', maxHeight: '100%' }} 
+                      draggable={false} 
+                      className="object-contain select-none pointer-events-none" 
+                    />
                   </motion.div>
                 </AnimatePresence>
-                <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase">{activeSlide + 1} / {sliderImages.length}</div>
+                <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase">
+                  {activeSlide + 1} / {sliderImages.length}
+                </div>
               </motion.div>
             </div>
           )}
 
-          {/* Status + Year */}
-          <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.7 }} className="h-[70vh] flex flex-col justify-center shrink-0 w-[min(180px,45vw)] lg:w-[240px] gap-8 pointer-events-none select-none">
-            <div>
-              <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Status</h4>
-              <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
-            </div>
-            <div>
-              <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Year</h4>
-              <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
-            </div>
-          </motion.div>
-
+          {/* Spacer at the end */}
           <div className="shrink-0 w-[5vw]" />
+
         </div>
       </div>
     </div>
@@ -327,6 +394,8 @@ export default function ProjectsFeed() {
   const [projectsCache, setProjectsCache] = useState({});
   const [selectedProject, setSelectedProject] = useState(null);
   const selectedProjectRef = useRef(null);
+
+  const touchState = useRef({ startY: 0, startX: 0, startTime: 0 });
 
   const prefetchAllProjects = useCallback(async (projectsList) => {
     if (!projectsList || projectsList.length === 0) return;
@@ -399,12 +468,8 @@ export default function ProjectsFeed() {
       gsap.killTweensOf('.velocity-card');
       gsap.set('.velocity-card', { scale: 1, y: 0 });
 
-      // Render InlineProjectDetail TRƯỚC, rồi scroll window SAU 1 frame
-      // Điều này đảm bảo Framer Motion đo vị trí thumbnail ở vị trí CŨ,
-      // sau đó mới scroll window, animation sẽ bay từ vị trí cũ đến vị trí mới
       setSelectedProject(project);
 
-      // Scroll window đến vị trí project row sau 1 frame
       requestAnimationFrame(() => {
         const el = document.getElementById(`project-${project._id}`);
         if (el) el.scrollIntoView({ behavior: 'instant', block: 'center' });
@@ -415,35 +480,74 @@ export default function ProjectsFeed() {
     }
   }, []);
 
-  // LOGIC MỚI: Đóng project khi cuộn chuột
+  // LOGIC: Đóng project khi cuộn dọc (wheel hoặc touch swipe)
   useEffect(() => {
     if (!selectedProject) return;
 
-    const handleUserScroll = (e) => {
-      // 1. Kiểm tra xem người dùng có đang cuộn bên trong nội dung chi tiết không
-      if (e.target.closest('.img-sync-height')) {
-        if (e instanceof WheelEvent) {
-          // Cho phép cuộn ngang (xem gallery), đóng khi cuộn dọc
-          if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-        } else {
-          return; // Touchmove bên trong gallery thì không đóng
-        }
+    const handleWheel = (e) => {
+      // 1. Kiểm tra xem người dùng có đang cuộn bên trong gallery không
+      // Nếu event target nằm trong phần tử có class 'gallery-scroll' (phần col-span-3)
+      const galleryContainer = document.querySelector('.gallery-scroll-area');
+      if (galleryContainer && galleryContainer.contains(e.target)) {
+        // Cho phép cuộn ngang bên trong gallery
+        // Chỉ đóng nếu người dùng cố tình cuộn dọc với lực mạnh hơn nhiều so với cuộn ngang
+        const isVerticalScroll = Math.abs(e.deltaY) > Math.abs(e.deltaX) + 5;
+        if (!isVerticalScroll) return;
       }
 
-      // 2. Đóng project và quay lại danh sách
-      setSelectedProject(null);
+      // 2. Kiểm tra xem có phải cuộn dọc chủ đạo không (giống BIG studio)
+      // deltaY là cuộn dọc, deltaX là cuộn ngang
+      // Nếu |deltaY| >> |deltaX|, đó là cuộn dọc -> đóng
+      const isVerticalScroll = Math.abs(e.deltaY) > Math.abs(e.deltaX) + 5;
+      if (isVerticalScroll) {
+        e.preventDefault();
+        setSelectedProject(null);
+      }
     };
 
-    // Đợi 500ms sau khi mở để tránh đóng ngay lập tức
+    const handleTouchStart = (e) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      touchState.current = {
+        startY: touch.clientY,
+        startX: touch.clientX,
+        startTime: Date.now()
+      };
+    };
+
+    const handleTouchMove = (e) => {
+      if (e.touches.length !== 1) return;
+      
+      // Kiểm tra xem touch có đang ở trong gallery không
+      const galleryContainer = document.querySelector('.gallery-scroll-area');
+      if (galleryContainer && galleryContainer.contains(e.target)) {
+        return; // Không xử lý touchmove bên trong gallery
+      }
+
+      const touch = e.touches[0];
+      const deltaY = touch.clientY - touchState.current.startY;
+      const deltaX = touch.clientX - touchState.current.startX;
+
+      // Vuốt dọc (swipe up/down) với lực đủ lớn -> đóng
+      // |deltaY| > |deltaX| có nghĩa là vuốt dọc là chính
+      if (Math.abs(deltaY) > Math.abs(deltaX) + 30) {
+        e.preventDefault();
+        setSelectedProject(null);
+      }
+    };
+
+    // Đợi 500ms sau khi mở để tránh đóng ngay lập tức do quán tính cuộn chuột
     const timer = setTimeout(() => {
-      window.addEventListener('wheel', handleUserScroll, { passive: true });
-      window.addEventListener('touchmove', handleUserScroll, { passive: true });
+      window.addEventListener('wheel', handleWheel, { passive: false });
+      window.addEventListener('touchstart', handleTouchStart, { passive: true });
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
     }, 500);
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('wheel', handleUserScroll);
-      window.removeEventListener('touchmove', handleUserScroll);
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
     };
   }, [selectedProject]);
 
@@ -471,7 +575,7 @@ export default function ProjectsFeed() {
       start: 'top bottom',
       end: 'bottom top',
       onUpdate: (self) => {
-        if (selectedProjectRef.current) return; // Disallow velocity when expanding
+        if (selectedProjectRef.current) return;
 
         const rawVelocity = typeof self.getVelocity === 'function' ? self.getVelocity() : 0;
         const velocity = Math.abs(rawVelocity);
@@ -492,12 +596,6 @@ export default function ProjectsFeed() {
     items.forEach((item) => {
       const imageBlock = item.querySelector('.project-image');
       const infoWrapper = item.querySelector('.project-info');
-
-      const st = {
-        trigger: item,
-        start: 'top 95%',
-        toggleActions: 'play none none reverse',
-      };
 
       if (imageBlock) {
         gsap.fromTo(imageBlock,
@@ -544,20 +642,6 @@ export default function ProjectsFeed() {
       <style jsx global>{`
         .scrollbar-hidden::-webkit-scrollbar { display: none; }
         .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
-        .img-sync-height {
-          /* Loại bỏ chiều cao cố định, cho phép container giãn theo nội dung */
-          --img-h: auto;
-        }
-        .img-sync-height > div {
-          height: 100%;
-        }
-        /* Đảm bảo các ảnh trong gallery có chiều cao bằng nhau */
-        .img-sync-height img {
-          max-height: 70vh; /* Giới hạn chiều cao tối đa để không tràn màn hình dọc */
-          width: auto;
-          height: 100%;
-          object-fit: contain;
-        }
       `}</style>
 
       <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
@@ -573,15 +657,11 @@ export default function ProjectsFeed() {
                     key={project._id || index}
                     id={`project-${project._id}`}
                     layout
-                    className={`relative w-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSelected
-                        ? 'h-[55vh] md:h-[60vh] max-w-none z-50 my-0'
-                        : 'flex justify-center items-center max-w-[1600px] h-auto my-2'
+                    className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSelected
+                        ? 'relative w-full h-[50vh] md:h-[60vh] z-50 my-0'
+                        : 'relative w-full flex justify-center items-center max-w-[1600px] h-auto my-2'
                       }`}
-                    transition={
-                      isSelected
-                        ? { type: 'spring', stiffness: 100, damping: 20, mass: 1 }
-                        : { type: 'spring', stiffness: 50, damping: 18, mass: 1, duration: 1.2 }
-                    }
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
                   >
                     {!isSelected ? (
                       <div className="project-row w-full flex justify-center items-center group">
