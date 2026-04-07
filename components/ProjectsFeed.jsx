@@ -227,15 +227,15 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           {/* Không dùng px trên hàng: padding chỉ ở cột Meta / Description để cột ảnh 60% không bị thụt trái */}
           <div
             ref={introSlideRef}
-            className="shrink-0 h-full flex flex-col lg:flex-row items-center lg:items-stretch justify-start gap-0 lg:gap-0 min-w-0"
+            className="shrink-0 h-full flex flex-col lg:flex-row items-center lg:items-stretch justify-center min-w-0 overflow-x-clip"
           >
             
-            {/* Cột Meta (20%) - Right aligned — flex-basis cố định để cột Description trống vẫn giữ 20-60-20 */}
+            {/* Cột Meta (Bên trái) — flex-1 để luôn chiếm hết khoảng trống còn lại, pr-6 tạo gap cố định với ảnh */}
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               transition={{ delay: 0.3 }}
-              className="w-full lg:flex-[0_0_20%] lg:max-w-[20%] lg:min-w-0 order-2 lg:order-1 flex flex-col items-center lg:items-end text-center lg:text-right shrink-0 select-none pointer-events-none pl-4 lg:pl-12 pr-2 lg:pr-3"
+              className="w-full lg:flex-1 lg:min-w-0 order-2 lg:order-1 flex flex-col items-center lg:items-end text-center lg:text-right shrink-0 select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6 relative z-10"
             >
               <div className="mb-4 lg:mb-6"></div>
               <h1 className="text-xl lg:text-2xl xl:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0">
@@ -264,31 +264,31 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               </div>
             </motion.div>
 
-            {/* Cột Ảnh Chính (60%) — full width cột, ảnh scale theo chiều ngang trước (tránh khoảng trắng do width:auto + height:80vh) */}
-            <div className="w-full lg:flex-[0_0_60%] lg:max-w-[60%] h-full order-1 lg:order-2 flex min-w-0 justify-center items-center shrink-0 px-0">
+            {/* Cột Ảnh Chính — w-fit + max-w-[70vw] giúp khung co lại vừa khít ảnh */}
+            <div className="w-full lg:w-fit max-w-[70vw] lg:max-w-none h-full order-1 lg:order-2 flex min-w-0 justify-center items-center shrink-0 relative z-0 overflow-hidden">
               <motion.div
                 layoutId={layoutId}
-                className="relative w-full h-full max-h-full flex items-center justify-center min-w-0"
+                className="relative w-auto h-full max-h-full flex items-center justify-center min-w-0 max-w-full"
               >
                 <Image
                   src={coverImageUrl}
                   alt="Cover"
                   width={1920}
                   height={1080}
-                  sizes="60vw"
+                  sizes="70vw"
                   priority
                   draggable={false}
-                  className="object-contain select-none pointer-events-none w-full h-auto max-h-[min(80vh,100%)] max-w-full"
+                  className="object-contain select-none pointer-events-none w-auto h-auto max-h-[95vh] max-w-full"
                 />
               </motion.div>
             </div>
 
-            {/* Cột Description (20%) - Left aligned */}
+            {/* Cột Description — flex-1 để chiếm hết khoảng trống còn lại, pl-6 tạo gap cố định với ảnh */}
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               transition={{ delay: 0.3 }}
-              className="w-full lg:flex-[0_0_20%] lg:max-w-[20%] lg:min-w-0 order-3 flex flex-col items-center lg:items-start text-center lg:text-left shrink-0 select-none pointer-events-none pl-2 lg:pl-3 pr-4 lg:pr-12"
+              className="w-full lg:flex-1 lg:min-w-0 order-3 flex flex-col items-center lg:items-start text-center lg:text-left shrink-0 select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8 relative z-10"
             >
               {description && (
                 <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
@@ -307,14 +307,13 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           {galleryImageBlocks.slice(0, 6).map((block, idx) => (
             <div 
               key={`gallery-${idx}`} 
-              className="h-full shrink-0 flex items-center justify-center"
-              style={{ width: 'min(80vw, 600px)', minWidth: 'min(60vw, 300px)' }}
+              className="h-full shrink-0 min-w-0 overflow-hidden flex items-center justify-center relative z-0"
             >
               <motion.div 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 transition={{ delay: 0.4 + idx * 0.1 }}
-                className="relative z-0 shrink-0 w-auto h-full shadow-sm overflow-hidden flex items-center justify-center"
+                className="relative z-0 shrink-0 w-auto h-auto shadow-sm overflow-hidden flex items-center justify-center"
               >
                 {block.url && (
                   <Image 
@@ -323,7 +322,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
                     width={0} 
                     height={0} 
                     sizes="100vh"
-                    style={{ width: 'auto', height: '80vh', maxHeight: '100%' }} 
+                    style={{ width: 'auto', height: '95vh' }} 
                     draggable={false} 
                     className="object-contain select-none pointer-events-none" 
                   />
@@ -338,15 +337,14 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           {/* Slider Images */}
           {sliderImages.length > 0 && (
             <div 
-              className="h-full shrink-0 w-[min(80vw,500px)] lg:w-[min(60vw,400px)] pointer-events-auto cursor-pointer pr-[20px] lg:pr-[35px]" 
+              className="h-full shrink-0 min-w-0 w-auto overflow-hidden pointer-events-auto cursor-pointer pr-[20px] lg:pr-[35px] relative z-0" 
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <motion.div 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 transition={{ delay: 0.5 }}
-                className="relative z-0 shrink-0 w-auto h-full shadow-sm overflow-hidden flex items-center justify-center" 
-                style={{ height: '80vh' }}
+                className="relative z-0 shrink-0 w-auto h-auto shadow-sm overflow-hidden flex items-center justify-center" 
               >
                 <AnimatePresence mode="wait">
                   <motion.div 
@@ -355,7 +353,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
                     animate={{ opacity: 1 }} 
                     exit={{ opacity: 0 }} 
                     transition={{ duration: 0.6 }} 
-                    className="relative w-auto h-full flex items-center justify-center"
+                    className="relative w-auto h-auto flex items-center justify-center"
                   >
                     <Image 
                       src={sliderImages[activeSlide]} 
@@ -363,7 +361,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
                       width={0} 
                       height={0} 
                       sizes="100vh"
-                      style={{ width: 'auto', height: '80vh', maxHeight: '100%' }} 
+                      style={{ width: 'auto', height: '95vh' }} 
                       draggable={false} 
                       className="object-contain select-none pointer-events-none" 
                     />
@@ -658,7 +656,7 @@ export default function ProjectsFeed() {
                     id={`project-${project._id}`}
                     layout
                     className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSelected
-                        ? 'relative w-full h-[50vh] md:h-[60vh] z-50 my-0'
+                        ? 'relative w-full h-[75vh] md:h-[75vh] z-50 my-0'
                         : 'relative w-full flex justify-center items-center max-w-[1600px] h-auto my-2'
                       }`}
                     transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
@@ -685,7 +683,7 @@ export default function ProjectsFeed() {
                           </div>
 
                           {/* Cover Image Wrapper with LayoutID */}
-                          <div className="shrink-0 project-image overflow-hidden w-[90vw] sm:w-[350px] lg:w-[64vh] relative">
+                          <div className="shrink-0 project-image overflow-hidden w-[80vw] sm:w-[300px] lg:w-[56vh] relative">
                             <motion.div
                               layoutId={`img-container-${project._id}`}
                               onClick={() => handleSelectProject(project)}
