@@ -5,9 +5,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon, Loader2 } from 'lucide-react';
 
-const IconMap = {
-
-// Helper to get text blocks
+const IconMap = {};
 function getTextBlock(project) {
   const textBlock = project.blocks?.find(b => b.type === 'text');
   return textBlock?.content || '';
@@ -43,6 +41,7 @@ function getProjectYear(project) {
 export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
   const scrollRef = useRef(null);
   const mainImageCardRef = useRef(null);
+  const mainImageSizerRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
   
   // Mouse drag state
@@ -97,6 +96,9 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
 
   const normalizeDescriptionText = (text) =>
     String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
+
+  const hasRightGalleryOrSlider =
+    galleryImageBlocks.length > 0 || sliderImages.length > 0;
 
   // Stop inertia animation
   const stopInertia = useCallback(() => {
@@ -336,6 +338,24 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
 
   const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
 
+  // Đồng bộ chiều cao ảnh gallery/slider với ảnh bìa (thay hardcoded --img-h)
+  useLayoutEffect(() => {
+    const root = scrollRef.current;
+    const sizer = mainImageSizerRef.current;
+    if (!root || !sizer) return;
+    const apply = () => {
+      const h = Math.round(sizer.getBoundingClientRect().height);
+      if (h > 0) root.style.setProperty('--img-h', `${h}px`);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(sizer);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty('--img-h');
+    };
+  }, [project?._id, coverImageUrl]);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -407,6 +427,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
             style={{ height: 'var(--img-h)', aspectRatio: 'auto' }}
           >
             <motion.div
+              ref={mainImageSizerRef}
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -432,7 +453,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="relative h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[290px] pointer-events-none select-none"
+              className={`relative h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[290px] pointer-events-none select-none${hasRightGalleryOrSlider ? ' ml-[20px] lg:ml-[30px]' : ''}`}
             >
               <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
@@ -481,7 +502,7 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
           {/* CARD 5: Slider */}
           {sliderImages.length > 0 && (
             <div
-              className="h-full flex items-center shrink-0 w-[min(75vw,340px)] lg:w-[500px] shadow-sm bg-gray-50 pointer-events-auto cursor-pointer"
+              className="flex items-center shrink-0 w-[min(75vw,340px)] lg:w-[500px] shadow-sm pointer-events-auto cursor-pointer"
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <motion.div

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -49,6 +49,7 @@ export default function ProjectDetailPage({ params }) {
   
   const scrollRef = useRef(null);
   const mainImageCardRef = useRef(null);
+  const mainImageSizerRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [projectData, setProjectData] = useState(null);
   const [prevProject, setPrevProject] = useState(null);
@@ -131,6 +132,9 @@ export default function ProjectDetailPage({ params }) {
 
   const normalizeDescriptionText = (text) =>
     String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
+
+  const hasRightGalleryOrSlider =
+    galleryImageBlocks.length > 0 || sliderImages.length > 0;
 
   // Stop inertia animation
   const stopInertia = useCallback(() => {
@@ -339,6 +343,24 @@ export default function ProjectDetailPage({ params }) {
     });
   }, [projectId, isLoading, centerMainImageInViewport]);
 
+  // Đồng bộ chiều cao ảnh gallery/slider với ảnh bìa (thay hardcoded --img-h)
+  useLayoutEffect(() => {
+    const root = scrollRef.current;
+    const sizer = mainImageSizerRef.current;
+    if (!root || !sizer) return;
+    const apply = () => {
+      const h = Math.round(sizer.getBoundingClientRect().height);
+      if (h > 0) root.style.setProperty('--img-h', `${h}px`);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(sizer);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty('--img-h');
+    };
+  }, [projectId]);
+
   if (isLoading || !projectData) {
     if (!isLoading && error) {
       return (
@@ -426,22 +448,24 @@ export default function ProjectDetailPage({ params }) {
             className="relative shrink-0 shadow-sm self-center pointer-events-none select-none"
             style={{ height: 'var(--img-h)', aspectRatio: 'auto' }}
           >
-            <Image
-              src={projectData.general?.coverImage || '/placeholder.jpg'}
-              alt="Cover"
-              width={0}
-              height={0}
-              sizes="(max-width: 1024px) 70vw, 500px"
-              style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
-              priority
-              draggable={false}
-              className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full"
-            />
+            <div ref={mainImageSizerRef} className="relative w-auto h-full flex items-center justify-center">
+              <Image
+                src={projectData.general?.coverImage || '/placeholder.jpg'}
+                alt="Cover"
+                width={0}
+                height={0}
+                sizes="(max-width: 1024px) 70vw, 500px"
+                style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
+                priority
+                draggable={false}
+                className="object-contain select-none pointer-events-none max-h-full w-auto max-w-full"
+              />
+            </div>
           </div>
 
           {/* CARD 3: INDEPENDENT DESCRIPTION */}
           {description && (
-            <div className="relative h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[290px] pointer-events-none select-none">
+            <div className={`relative h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[290px] pointer-events-none select-none${hasRightGalleryOrSlider ? ' ml-[20px] lg:ml-[30px]' : ''}`}>
               <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
                 <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
@@ -486,7 +510,7 @@ export default function ProjectDetailPage({ params }) {
           {/* CARD 5: Slider */}
           {sliderImages.length > 0 && (
             <div
-              className="h-full flex items-center shrink-0 w-[min(75vw,340px)] lg:w-[500px] shadow-sm bg-gray-50 pointer-events-auto cursor-pointer"
+              className="flex items-center shrink-0 w-[min(75vw,340px)] lg:w-[500px] shadow-sm pointer-events-auto cursor-pointer"
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <div

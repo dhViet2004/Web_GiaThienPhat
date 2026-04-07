@@ -49,7 +49,9 @@ function getProjectYear(project) {
 const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const scrollRef = useRef(null);
   const introSlideRef = useRef(null);
+  const mainImageSizerRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [mainImageLoaded, setMainImageLoaded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragState = useRef({ startX: 0, scrollLeft: 0, velocity: 0, lastX: 0, lastTime: 0 });
   const animationRef = useRef(null);
@@ -197,6 +199,27 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const normalizeDescriptionText = (text) => String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
   const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
 
+  const hasRightGalleryOrSlider =
+    galleryImageBlocks.length > 0 || sliderImages.length > 0;
+
+  // Đồng bộ chiều cao ảnh gallery/slider với ảnh bìa (không dùng 95vh cố định)
+  useLayoutEffect(() => {
+    const root = scrollRef.current;
+    const sizer = mainImageSizerRef.current;
+    if (!root || !sizer) return;
+    const apply = () => {
+      const h = Math.round(sizer.getBoundingClientRect().height);
+      if (h > 0) root.style.setProperty('--intro-sync-img-h', `${h}px`);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(sizer);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty('--intro-sync-img-h');
+    };
+  }, [project?._id, coverImageUrl, mainImageLoaded]);
+
   return (
     <div className="relative w-full h-full bg-white text-black font-sans flex flex-col overflow-hidden">
       {isLoading && (
@@ -268,6 +291,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
             <div className="w-full lg:w-fit max-w-[70vw] lg:max-w-none h-full order-1 lg:order-2 flex min-w-0 justify-center items-center shrink-0 relative z-0 overflow-hidden">
               <motion.div
                 layoutId={layoutId}
+                ref={mainImageSizerRef}
                 className="relative w-auto h-full max-h-full flex items-center justify-center min-w-0 max-w-full"
               >
                 <Image
@@ -278,17 +302,18 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
                   sizes="70vw"
                   priority
                   draggable={false}
+                  onLoad={() => setMainImageLoaded(prev => !prev)}
                   className="object-contain select-none pointer-events-none w-auto h-auto max-h-[95vh] max-w-full"
                 />
               </motion.div>
             </div>
 
-            {/* Cột Description — flex-1 để chiếm hết khoảng trống còn lại, pl-6 tạo gap cố định với ảnh */}
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
+            {/* Cột Description — flex-1 để chiếm hết khoảng trống còn lại, pl-6 tạo gap cố định với ảnh; có ảnh phụ/slider bên phải thì thêm ml tạo khoảng cách */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="w-full lg:flex-1 lg:min-w-0 order-3 flex flex-col items-center lg:items-start text-center lg:text-left shrink-0 select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8 relative z-10"
+              className={`w-full lg:flex-1 lg:min-w-0 order-3 flex flex-col items-center lg:items-start text-center lg:text-left shrink-0 select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8 relative z-10${hasRightGalleryOrSlider ? ' lg:ml-4' : ''}`}
             >
               {description && (
                 <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
@@ -305,26 +330,27 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
 
           {/* Gallery Images */}
           {galleryImageBlocks.slice(0, 6).map((block, idx) => (
-            <div 
-              key={`gallery-${idx}`} 
+            <div
+              key={`gallery-${idx}`}
               className="h-full shrink-0 min-w-0 overflow-hidden flex items-center justify-center relative z-0"
             >
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 + idx * 0.1 }}
-                className="relative z-0 shrink-0 w-auto h-auto shadow-sm overflow-hidden flex items-center justify-center"
+                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center"
+                style={{ height: 'var(--intro-sync-img-h, 95vh)' }}
               >
                 {block.url && (
-                  <Image 
-                    src={block.url} 
-                    alt={block.caption || `Gallery ${idx + 1}`} 
-                    width={0} 
-                    height={0} 
+                  <Image
+                    src={block.url}
+                    alt={block.caption || `Gallery ${idx + 1}`}
+                    width={0}
+                    height={0}
                     sizes="100vh"
-                    style={{ width: 'auto', height: '95vh' }} 
-                    draggable={false} 
-                    className="object-contain select-none pointer-events-none" 
+                    style={{ width: 'auto', height: 'var(--intro-sync-img-h, 95vh)' }}
+                    draggable={false}
+                    className="object-contain select-none pointer-events-none"
                   />
                 )}
                 {block.caption && (
@@ -336,34 +362,35 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
 
           {/* Slider Images */}
           {sliderImages.length > 0 && (
-            <div 
-              className="h-full shrink-0 min-w-0 w-auto overflow-hidden pointer-events-auto cursor-pointer pr-[20px] lg:pr-[35px] relative z-0" 
+            <div
+              className="h-full shrink-0 min-w-0 w-auto overflow-hidden pointer-events-auto cursor-pointer pr-[20px] lg:pr-[35px] relative z-0"
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="relative z-0 shrink-0 w-auto h-auto shadow-sm overflow-hidden flex items-center justify-center" 
+                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center"
+                style={{ height: 'var(--intro-sync-img-h, 95vh)' }}
               >
                 <AnimatePresence mode="wait">
-                  <motion.div 
-                    key={activeSlide} 
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }} 
-                    exit={{ opacity: 0 }} 
-                    transition={{ duration: 0.6 }} 
+                  <motion.div
+                    key={activeSlide}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.6 }}
                     className="relative w-auto h-auto flex items-center justify-center"
                   >
-                    <Image 
-                      src={sliderImages[activeSlide]} 
-                      alt={`Slide ${activeSlide + 1}`} 
-                      width={0} 
-                      height={0} 
+                    <Image
+                      src={sliderImages[activeSlide]}
+                      alt={`Slide ${activeSlide + 1}`}
+                      width={0}
+                      height={0}
                       sizes="100vh"
-                      style={{ width: 'auto', height: '95vh' }} 
-                      draggable={false} 
-                      className="object-contain select-none pointer-events-none" 
+                      style={{ width: 'auto', height: 'var(--intro-sync-img-h, 95vh)' }}
+                      draggable={false}
+                      className="object-contain select-none pointer-events-none"
                     />
                   </motion.div>
                 </AnimatePresence>
