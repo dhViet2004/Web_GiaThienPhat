@@ -271,7 +271,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
               className="shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[320px] lg:flex-1 lg:min-w-0 lg:max-w-[340px] order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6"
             >
               <div className="mb-4 lg:mb-6"></div>
@@ -306,6 +306,12 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
             <div ref={mainImageRef} className="shrink-0 h-full order-1 lg:order-2 flex min-w-0 justify-center items-center w-[85vw] sm:w-auto">
               <motion.div
                 layoutId={layoutId}
+                transition={{
+                  type: "spring",
+                  stiffness: 80,
+                  damping: 35,
+                  mass: 1,
+                }}
                 className="relative w-auto h-full flex items-center justify-center min-w-0 max-w-full"
               >
                 <Image
@@ -773,6 +779,12 @@ export default function ProjectsFeed() {
                             <motion.div
                               layoutId={`img-container-${project._id}`}
                               onClick={() => handleSelectProject(project)}
+                              transition={{
+                                type: "spring",
+                                stiffness: 80,
+                                damping: 35,
+                                mass: 1,
+                              }}
                               className="relative w-full cursor-pointer group"
                             >
                               <Image
