@@ -49,9 +49,8 @@ function getProjectYear(project) {
 const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const scrollRef = useRef(null);
   const introSlideRef = useRef(null);
-  const mainImageSizerRef = useRef(null);
+  const mainImageRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
-  const [mainImageLoaded, setMainImageLoaded] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragState = useRef({ startX: 0, scrollLeft: 0, velocity: 0, lastX: 0, lastTime: 0 });
   const animationRef = useRef(null);
@@ -160,12 +159,44 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
 
   useEffect(() => { return () => stopInertia(); }, [stopInertia]);
 
+  // Desktop: Đồng bộ chiều cao ảnh gallery/slider với ảnh chính (BIG.DK style)
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth < 1024) return;
+
+    const scrollEl = scrollRef.current;
+    const mainImg = mainImageRef.current;
+    if (!scrollEl || !mainImg) return;
+
+    const applyMainImageHeight = () => {
+      const h = mainImg.getBoundingClientRect().height;
+      if (h > 0) {
+        scrollEl.style.setProperty('--gallery-img-h', `${h}px`);
+      }
+    };
+
+    applyMainImageHeight();
+
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(applyMainImageHeight);
+    });
+    ro.observe(mainImg);
+
+    return () => {
+      ro.disconnect();
+      if (scrollEl) scrollEl.style.removeProperty('--gallery-img-h');
+    };
+  }, [project?._id]);
+
   // Chiều rộng slide intro = vùng cuộn (trùng với max-w + px của feed/menu), không dùng 100vw để khỏi lệch so với header
   useLayoutEffect(() => {
     const scrollEl = scrollRef.current;
     const introEl = introSlideRef.current;
     if (!scrollEl || !introEl) return;
+
+    // Desktop only: đồng bộ chiều rộng intro slide
     const sync = () => {
+      // Chỉ sync trên desktop, mobile dùng fixed sizes
+      if (window.innerWidth < 1024) return;
       const w = scrollEl.clientWidth;
       if (w > 0) introEl.style.width = `${w}px`;
     };
@@ -202,26 +233,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const hasRightGalleryOrSlider =
     galleryImageBlocks.length > 0 || sliderImages.length > 0;
 
-  // Đồng bộ chiều cao ảnh gallery/slider với ảnh bìa (không dùng 95vh cố định)
-  useLayoutEffect(() => {
-    const root = scrollRef.current;
-    const sizer = mainImageSizerRef.current;
-    if (!root || !sizer) return;
-    const apply = () => {
-      const h = Math.round(sizer.getBoundingClientRect().height);
-      if (h > 0) root.style.setProperty('--intro-sync-img-h', `${h}px`);
-    };
-    apply();
-    const ro = new ResizeObserver(apply);
-    ro.observe(sizer);
-    return () => {
-      ro.disconnect();
-      root.style.removeProperty('--intro-sync-img-h');
-    };
-  }, [project?._id, coverImageUrl, mainImageLoaded]);
-
   return (
-    <div className="relative w-full h-full bg-white text-black font-sans flex flex-col overflow-hidden">
+    <div className="relative w-full h-[100dvh] lg:h-full bg-white text-black font-sans flex flex-col overflow-hidden mobile-detail-layout">
       {isLoading && (
         <div className="absolute inset-0 z-[200] bg-white flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
@@ -247,21 +260,22 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
         <div className="h-full flex flex-nowrap items-center">
 
           {/* ===== PHẦN 1: KHỐI INTRO SLIDE (100% màn hình) - Flexbox 20-60-20 ===== */}
-          {/* Không dùng px trên hàng: padding chỉ ở cột Meta / Description để cột ảnh 60% không bị thụt trái */}
+          {/* Mobile: Tách Info, Ảnh, Description thành 3 cards ngang riêng biệt (BIG.DK style) */}
+          {/* Desktop: Giữ layout flex-row 3 cột */}
           <div
             ref={introSlideRef}
-            className="shrink-0 h-full flex flex-col lg:flex-row items-center lg:items-stretch justify-center min-w-0 overflow-x-clip"
+            data-intro-slide
+            className="shrink-0 h-full flex flex-nowrap items-center justify-center min-w-0"
           >
-            
-            {/* Cột Meta (Bên trái) — flex-1 để luôn chiếm hết khoảng trống còn lại, pr-6 tạo gap cố định với ảnh */}
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
+            {/* ====== CARD 1: PROJECT INFO (Mobile: 85vw, Desktop: flex-1) ====== */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="w-full lg:flex-1 lg:min-w-0 order-2 lg:order-1 flex flex-col items-center lg:items-end text-center lg:text-right shrink-0 select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6 relative z-10"
+              className="shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[320px] lg:flex-1 lg:min-w-0 lg:max-w-[340px] order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6"
             >
               <div className="mb-4 lg:mb-6"></div>
-              <h1 className="text-xl lg:text-2xl xl:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0">
+              <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0">
                 {project.general?.title || 'Untitled Project'}
               </h1>
               <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-8 lg:mb-12">
@@ -287,33 +301,33 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               </div>
             </motion.div>
 
-            {/* Cột Ảnh Chính — w-fit + max-w-[70vw] giúp khung co lại vừa khít ảnh */}
-            <div className="w-full lg:w-fit max-w-[70vw] lg:max-w-none h-full order-1 lg:order-2 flex min-w-0 justify-center items-center shrink-0 relative z-0 overflow-hidden">
+            {/* ====== CARD 2: ẢNH CHÍNH (Mobile: 85vw, Desktop: max-w-[60%]) ====== */}
+            {/* Mobile: width cố định 85vw, Desktop: tự động theo nội dung */}
+            <div ref={mainImageRef} className="shrink-0 h-full order-1 lg:order-2 flex min-w-0 justify-center items-center w-[85vw] sm:w-auto">
               <motion.div
                 layoutId={layoutId}
-                ref={mainImageSizerRef}
-                className="relative w-auto h-full max-h-full flex items-center justify-center min-w-0 max-w-full"
+                className="relative w-auto h-full flex items-center justify-center min-w-0 max-w-full"
               >
                 <Image
                   src={coverImageUrl}
                   alt="Cover"
                   width={1920}
                   height={1080}
-                  sizes="70vw"
+                  sizes="(max-width: 1024px) 85vw, 60vw"
                   priority
                   draggable={false}
-                  onLoad={() => setMainImageLoaded(prev => !prev)}
-                  className="object-contain select-none pointer-events-none w-auto h-auto max-h-[95vh] max-w-full"
+                  className="object-contain select-none pointer-events-none w-auto h-full max-w-full max-h-full"
+                  style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
                 />
               </motion.div>
             </div>
 
-            {/* Cột Description — flex-1 để chiếm hết khoảng trống còn lại, pl-6 tạo gap cố định với ảnh; có ảnh phụ/slider bên phải thì thêm ml tạo khoảng cách */}
+            {/* ====== CARD 3: DESCRIPTION (Mobile: 85vw, Desktop: flex-1) ====== */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className={`w-full lg:flex-1 lg:min-w-0 order-3 flex flex-col items-center lg:items-start text-center lg:text-left shrink-0 select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8 relative z-10${hasRightGalleryOrSlider ? ' lg:ml-4' : ''}`}
+              className={`shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[280px] lg:flex-1 lg:min-w-0 lg:max-w-[300px] order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:ml-4' : ''}`}
             >
               {description && (
                 <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
@@ -326,20 +340,21 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           </div>
 
           {/* ===== PHẦN 2: KHỐI GALLERY IMAGES SLIDES ===== */}
-          {/* Các ảnh phụ nằm tiếp nối bên phải, sẽ hiện ra khi user cuộn ngang */}
+          {/* Mobile: clamp height cố định. Desktop: đồng bộ với ảnh chính qua CSS variable */}
 
           {/* Gallery Images */}
           {galleryImageBlocks.slice(0, 6).map((block, idx) => (
             <div
               key={`gallery-${idx}`}
-              className="h-full shrink-0 min-w-0 overflow-hidden flex items-center justify-center relative z-0"
+              className="h-full shrink-0 min-w-0 overflow-hidden flex items-center justify-center relative z-0 w-[85vw] sm:w-auto lg:flex lg:items-center"
             >
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 + idx * 0.1 }}
-                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center"
-                style={{ height: 'var(--intro-sync-img-h, 95vh)' }}
+                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none lg:max-w-none"
+                style={{ height: 'clamp(200px, 45vh, 380px)', maxHeight: '45vh' }}
+                data-gallery-card
               >
                 {block.url && (
                   <Image
@@ -347,8 +362,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
                     alt={block.caption || `Gallery ${idx + 1}`}
                     width={0}
                     height={0}
-                    sizes="100vh"
-                    style={{ width: 'auto', height: 'var(--intro-sync-img-h, 95vh)' }}
+                    sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
+                    style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: '45vh' }}
                     draggable={false}
                     className="object-contain select-none pointer-events-none"
                   />
@@ -363,15 +378,16 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           {/* Slider Images */}
           {sliderImages.length > 0 && (
             <div
-              className="h-full shrink-0 min-w-0 w-auto overflow-hidden pointer-events-auto cursor-pointer pr-[20px] lg:pr-[35px] relative z-0"
+              className="h-full shrink-0 min-w-0 overflow-hidden pointer-events-auto cursor-pointer pr-[20px] lg:pr-[35px] relative z-0 w-[85vw] sm:w-auto lg:flex lg:items-center"
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center"
-                style={{ height: 'var(--intro-sync-img-h, 95vh)' }}
+                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none lg:max-w-none"
+                style={{ height: 'clamp(200px, 45vh, 380px)', maxHeight: '45vh' }}
+                data-gallery-card
               >
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -387,8 +403,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
                       alt={`Slide ${activeSlide + 1}`}
                       width={0}
                       height={0}
-                      sizes="100vh"
-                      style={{ width: 'auto', height: 'var(--intro-sync-img-h, 95vh)' }}
+                      sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
+                      style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: '45vh' }}
                       draggable={false}
                       className="object-contain select-none pointer-events-none"
                     />
@@ -667,6 +683,49 @@ export default function ProjectsFeed() {
       <style jsx global>{`
         .scrollbar-hidden::-webkit-scrollbar { display: none; }
         .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Mobile detail layout - BIG.DK style horizontal scroll */
+        @media (max-width: 1023px) {
+          .mobile-detail-layout {
+            position: fixed !important;
+            inset: 0 !important;
+            height: 100dvh !important;
+            width: 100vw !important;
+            z-index: 100 !important;
+          }
+          .mobile-detail-layout .gallery-scroll-area {
+            height: 100dvh !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+          }
+          .mobile-detail-layout [data-intro-slide] {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            height: 100% !important;
+          }
+          /* Ensure images maintain aspect ratio on mobile */
+          .mobile-detail-layout img {
+            object-fit: contain !important;
+            max-width: 85vw !important;
+            height: auto !important;
+            max-height: 50vh !important;
+          }
+        }
+
+        /* Desktop: Use CSS variable for gallery image height sync */
+        @media (min-width: 1024px) {
+          .gallery-scroll-area {
+            --gallery-img-h: min(52vh, 440px);
+          }
+          .gallery-scroll-area [data-gallery-card] {
+            height: var(--gallery-img-h) !important;
+            max-height: var(--gallery-img-h) !important;
+          }
+          .gallery-scroll-area [data-gallery-card] img {
+            height: var(--gallery-img-h) !important;
+            max-height: var(--gallery-img-h) !important;
+          }
+        }
       `}</style>
 
       <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">

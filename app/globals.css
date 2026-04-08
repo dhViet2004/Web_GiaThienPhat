@@ -4,10 +4,50 @@ html {
 
 @import "tailwindcss";
 
+/* ============================================
+   CSS Variable Image Sync Height
+   - Thay thế ResizeObserver thủ công
+   - Đảm bảo đồng bộ tuyệt đối ngay cả khi trang đang load
+   ============================================ */
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 255, 255, 255;
   --background-end-rgb: 255, 255, 255;
+  --img-sync-h: 40vh; /* Mobile cực nhỏ */
+}
+
+@media (min-width: 640px) {
+  :root {
+    --img-sync-h: 45vh; /* Mobile lớn / Tablet nhỏ */
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --img-sync-h: 55vh; /* Tablet */
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --img-sync-h: 65vh; /* Desktop nhỏ */
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --img-sync-h: 70vh; /* Desktop */
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --img-sync-h: 75vh; /* Desktop lớn */
+  }
+}
+
+@utility img-sync-height {
+  height: var(--img-sync-h);
 }
 
 @utility grid-background {
