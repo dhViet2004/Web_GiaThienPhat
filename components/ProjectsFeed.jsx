@@ -352,7 +352,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           {galleryImageBlocks.slice(0, 6).map((block, idx) => (
             <div
               key={`gallery-${idx}`}
-              className="h-full shrink-0 min-w-0 overflow-hidden flex items-center justify-center relative z-0 w-[85vw] sm:w-auto lg:flex lg:items-center"
+              className="h-full shrink-0 min-w-0 overflow-hidden flex items-center justify-center relative z-0 w-[85vw] sm:w-auto lg:flex lg:items-center mr-[20px] lg:mr-[35px]"
             >
               <motion.div
                 initial={{ opacity: 0 }}
