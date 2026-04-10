@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect, useLayoutEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -13,6 +14,279 @@ import { apiGet } from '@/lib/api';
 
 gsap.registerPlugin(ScrollTrigger, CustomEase);
 CustomEase.create('customBIG', 'M0,0 C0.45,0 0.55,1 1,1');
+
+// --- Mobile Project Detail (Không có animation phóng to ảnh) ---
+const MobileProjectDetail = ({ project, onClose }) => {
+  const [activeSlide, setActiveSlide] = useState(0);
+  const scrollRef = useRef(null);
+  const mainImageRef = useRef(null);
+  const [galleryHeight, setGalleryHeight] = useState('clamp(200px, 45vh, 380px)');
+  const [isDragging, setIsDragging] = useState(false);
+  const dragState = useRef({ startX: 0, scrollLeft: 0, velocity: 0, lastX: 0, lastTime: 0 });
+  const animationRef = useRef(null);
+
+  const stopInertia = useCallback(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+  }, []);
+
+  const applyInertia = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container || Math.abs(dragState.current.velocity) < 0.5) {
+      dragState.current.velocity = 0;
+      return;
+    }
+    container.scrollLeft -= dragState.current.velocity;
+    dragState.current.velocity *= 0.95;
+    animationRef.current = requestAnimationFrame(applyInertia);
+  }, []);
+
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length !== 1) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    stopInertia();
+    setIsDragging(true);
+    const touch = e.touches[0];
+    dragState.current = {
+      startX: touch.clientX,
+      scrollLeft: container.scrollLeft,
+      velocity: 0,
+      lastX: touch.clientX,
+      lastTime: Date.now()
+    };
+  }, [stopInertia]);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    const container = scrollRef.current;
+    if (!container) return;
+    const touch = e.touches[0];
+    const walk = (touch.clientX - dragState.current.startX) * 1.5;
+    container.scrollLeft = dragState.current.scrollLeft - walk;
+    const now = Date.now();
+    const dt = now - dragState.current.lastTime;
+    if (dt > 0) {
+      const dx = touch.clientX - dragState.current.lastX;
+      dragState.current.velocity = dx / dt * 16;
+    }
+    dragState.current.lastX = touch.clientX;
+    dragState.current.lastTime = now;
+  }, [isDragging]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!isDragging) return;
+    const container = scrollRef.current;
+    if (container) {
+      container.style.cursor = 'grab';
+      container.style.userSelect = '';
+    }
+    setIsDragging(false);
+    if (Math.abs(dragState.current.velocity) > 1) applyInertia();
+  }, [isDragging, applyInertia]);
+
+  useEffect(() => { return () => stopInertia(); }, [stopInertia]);
+
+  // Đồng bộ chiều cao gallery/slider với ảnh chính — ref phải bao quanh khối có kích thước đúng của ảnh (không dùng h-full của cột viewport)
+  useLayoutEffect(() => {
+    const el = mainImageRef.current;
+    if (!el) return;
+
+    const applyHeight = () => {
+      const h = el.getBoundingClientRect().height;
+      if (h > 0) {
+        setGalleryHeight(`${Math.round(h)}px`);
+      }
+    };
+
+    applyHeight();
+
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(applyHeight);
+    });
+    ro.observe(el);
+
+    return () => ro.disconnect();
+  }, [project?._id, project?.general?.coverImage]);
+
+  const description = getTextBlock(project);
+  const sliderImages = getSliderImages(project);
+  const projectYear = getProjectYear(project);
+
+  let allImageUrls = [];
+  if (project.blocks && Array.isArray(project.blocks)) {
+    project.blocks.forEach(block => {
+      if (block.type === 'image' && block.url) allImageUrls.push({ url: block.url, caption: block.caption });
+    });
+  }
+  if (project.sliderGallery && Array.isArray(project.sliderGallery)) {
+    project.sliderGallery.forEach(url => { if (url) allImageUrls.push({ url: url, caption: '' }); });
+  }
+
+  const seenUrls = new Set();
+  const galleryImageBlocks = allImageUrls.filter(img => {
+    if (seenUrls.has(img.url)) return false;
+    seenUrls.add(img.url);
+    return true;
+  });
+
+  const normalizeDescriptionText = (text) => String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
+  const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-white flex flex-col overflow-hidden">
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-50 w-10 h-10 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full shadow-md"
+      >
+        <X className="w-5 h-5" />
+      </button>
+
+      {/* Horizontal scroll container - lướt ngang để xem chi tiết */}
+      <div
+        ref={scrollRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden"
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      >
+        <div className="h-full flex flex-nowrap items-center">
+
+          {/* ===== PHẦN 1: THÔNG TIN PROJECT ===== */}
+          <div className="shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[320px] min-w-0 px-4">
+            <h1 className="text-lg sm:text-xl font-bold uppercase tracking-tighter leading-none break-words mb-1">
+              {project.general?.title || 'Untitled Project'}
+            </h1>
+            <p className="text-[10px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-6">
+              {project.general?.location || ''}
+            </p>
+            <div className="flex flex-col gap-3 items-start">
+              <div>
+                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
+                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
+              </div>
+              <div>
+                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
+                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
+              </div>
+              <div>
+                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Status</h4>
+                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
+              </div>
+              <div>
+                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Year</h4>
+                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
+              </div>
+            </div>
+            {description && (
+              <div className="mt-6 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-2">DESCRIPTION</h3>
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
+              </div>
+            )}
+          </div>
+
+          {/* ===== PHẦN 2: ẢNH CHÍNH ===== */}
+          <div className="shrink-0 h-full flex items-center justify-center min-w-0 w-[85vw] sm:w-auto">
+            <div
+              ref={mainImageRef}
+              className="relative inline-flex w-fit max-w-full items-center justify-center shadow-sm overflow-hidden"
+              style={{ maxHeight: 'min(85dvh, 80vh)' }}
+            >
+              <Image
+                src={coverImageUrl}
+                alt="Cover"
+                width={1920}
+                height={1080}
+                sizes="85vw"
+                priority
+                draggable={false}
+                className="object-contain select-none pointer-events-none block h-auto w-auto max-w-full"
+                style={{ maxHeight: 'min(85dvh, 80vh)', width: 'auto', height: 'auto' }}
+              />
+            </div>
+          </div>
+
+          {/* ===== PHẦN 3: GALLERY IMAGES ===== */}
+          {galleryImageBlocks.slice(0, 6).map((block, idx) => (
+            <div
+              key={`gallery-${idx}`}
+              className="shrink-0 h-full flex items-center justify-center min-w-0 mr-[20px]"
+            >
+              <div
+                className="relative inline-flex w-fit max-w-[85vw] items-center justify-center shadow-sm overflow-hidden"
+                style={{ height: galleryHeight }}
+              >
+                {block.url && (
+                  <Image
+                    src={block.url}
+                    alt={block.caption || `Gallery ${idx + 1}`}
+                    width={0}
+                    height={0}
+                    sizes="85vw"
+                    className="block object-contain select-none pointer-events-none h-full w-auto max-w-[85vw]"
+                    style={{ height: galleryHeight, width: 'auto', maxWidth: '85vw' }}
+                    draggable={false}
+                  />
+                )}
+                {block.caption && (
+                  <div className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">
+                    {block.caption}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* ===== PHẦN 4: SLIDER IMAGES ===== */}
+          {sliderImages.length > 0 && (
+            <div
+              className="shrink-0 h-full flex items-center justify-center min-w-0 mr-[20px]"
+              onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
+            >
+              <div
+                className="relative inline-flex w-fit max-w-[85vw] items-center justify-center shadow-sm overflow-hidden"
+                style={{ height: galleryHeight }}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeSlide}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="relative inline-flex h-full w-fit max-w-[85vw] items-center justify-center"
+                  >
+                    <Image
+                      src={sliderImages[activeSlide]}
+                      alt={`Slide ${activeSlide + 1}`}
+                      width={0}
+                      height={0}
+                      sizes="85vw"
+                      className="block object-contain select-none pointer-events-none h-full w-auto max-w-[85vw]"
+                      style={{ height: galleryHeight, width: 'auto', maxWidth: '85vw' }}
+                      draggable={false}
+                    />
+                  </motion.div>
+                </AnimatePresence>
+                <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase shadow-sm">
+                  {activeSlide + 1} / {sliderImages.length}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Spacer */}
+          <div className="shrink-0 w-[5vw]" />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // --- Helpers ---
 function getTextBlock(project) {
@@ -440,9 +714,18 @@ export default function ProjectsFeed() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [projectsCache, setProjectsCache] = useState({});
   const [selectedProject, setSelectedProject] = useState(null);
+  const [isMobileView, setIsMobileView] = useState(false);
   const selectedProjectRef = useRef(null);
 
   const touchState = useRef({ startY: 0, startX: 0, startTime: 0 });
+
+  // Detect mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => setIsMobileView(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const prefetchAllProjects = useCallback(async (projectsList) => {
     if (!projectsList || projectsList.length === 0) return;
@@ -684,8 +967,21 @@ export default function ProjectsFeed() {
 
   if (!isInitialized) return <div className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10" />;
 
+  const mobileDetailPortal =
+    typeof document !== 'undefined' &&
+    selectedProject &&
+    isMobileView &&
+    createPortal(
+      <MobileProjectDetail
+        project={getProjectData(selectedProject._id) || selectedProject}
+        onClose={() => handleSelectProject(null)}
+      />,
+      document.body
+    );
+
   return (
     <>
+      {mobileDetailPortal}
       <style jsx global>{`
         .scrollbar-hidden::-webkit-scrollbar { display: none; }
         .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
@@ -742,14 +1038,18 @@ export default function ProjectsFeed() {
                 const isSelected = selectedProject?._id === project._id;
                 const fullData = isSelected ? getProjectData(project._id) : project;
 
+                const isMobileSelected = isSelected && isMobileView;
+
                 return (
                   <motion.div
                     key={project._id || index}
                     id={`project-${project._id}`}
-                    layout
-                    className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isSelected
-                        ? 'relative w-full h-[75vh] md:h-[75vh] z-50 my-0'
-                        : 'relative w-full flex justify-center items-center max-w-[1600px] h-auto my-2'
+                    layout={!isMobileSelected}
+                    className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileSelected
+                        ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
+                        : isSelected
+                          ? 'relative w-full h-[75vh] md:h-[75vh] z-50 my-0'
+                          : 'relative w-full flex justify-center items-center max-w-[1600px] h-auto my-2'
                       }`}
                     transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
                   >
@@ -813,7 +1113,7 @@ export default function ProjectsFeed() {
 
                         </div>
                       </div>
-                    ) : (
+                    ) : isMobileView ? null : (
                       <InlineProjectDetail
                         project={fullData}
                         onClose={() => handleSelectProject(null)}
