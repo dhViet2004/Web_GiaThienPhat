@@ -17,6 +17,10 @@ export default function EditProjectPage({ params }) {
   
   // Complex State Management
   const [project, setProject] = useState({
+    // category 字段：Landscape, Engineering, Architecture, Products
+    category: 'Architecture',
+    // subcategory: Public Space, Parks, Planning, Structural, BIM, Green Tech, Cultural, Residential, Office, Hospitality, Furniture, Lighting, Installation
+    subcategory: '',
     general: {
       title: '',
       location: '',
@@ -28,6 +32,16 @@ export default function EditProjectPage({ params }) {
     },
     blocks: []
   });
+
+  const CATEGORIES = [
+    { label: 'Landscape', value: 'Landscape', sub: ['Public Space', 'Parks', 'Planning'] },
+    { label: 'Engineering', value: 'Engineering', sub: ['Structural', 'BIM', 'Green Tech'] },
+    { label: 'Architecture', value: 'Architecture', sub: ['Cultural', 'Residential', 'Office', 'Hospitality'] },
+    { label: 'Products', value: 'Products', sub: ['Furniture', 'Lighting', 'Installation'] },
+  ];
+
+  const [selectedCategory, setSelectedCategory] = useState('Architecture');
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
 
   // Load existing project data
   useEffect(() => {
@@ -44,6 +58,8 @@ export default function EditProjectPage({ params }) {
         // Transform data to match form structure
         const projectData = data.project || data;
         setProject({
+          category: projectData.category || 'Architecture',
+          subcategory: projectData.subcategory || '',
           general: {
             title: projectData.general?.title || '',
             location: projectData.general?.location || '',
@@ -55,6 +71,9 @@ export default function EditProjectPage({ params }) {
           },
           blocks: projectData.blocks || []
         });
+        // Sync selected states
+        setSelectedCategory(projectData.category || 'Architecture');
+        setSelectedSubcategory(projectData.subcategory || null);
         setLoading(false);
       })
       .catch(err => {
@@ -296,6 +315,65 @@ export default function EditProjectPage({ params }) {
               </div>
               
               <div className="flex flex-col gap-8">
+                {/* Category Selection */}
+                <div>
+                  <label className="text-[10px] text-gray-500 uppercase tracking-[0.2em] mb-2 block">Danh Mục Dự Án</label>
+                  
+                  {/* Main Categories */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory(cat.value);
+                          setSelectedSubcategory(null);
+                          setProject(prev => ({ ...prev, category: cat.value, subcategory: '' }));
+                        }}
+                        className={`px-4 py-2 text-[11px] font-bold uppercase tracking-wider transition-all border ${
+                          selectedCategory === cat.value 
+                            ? 'bg-black text-white border-black' 
+                            : 'bg-white text-black border-gray-300 hover:border-black'
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Sub Categories - Hiện khi đã chọn category */}
+                  {selectedCategory && CATEGORIES.find(c => c.value === selectedCategory)?.sub && (
+                    <div className="flex flex-wrap gap-2 pl-4 border-l-2 border-gray-200">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-[0.15em] self-center mr-2">Danh Mục Con:</span>
+                      {CATEGORIES.find(c => c.value === selectedCategory).sub.map((sub) => (
+                        <button
+                          key={sub}
+                          type="button"
+                          onClick={() => {
+                            setSelectedSubcategory(sub);
+                            setProject(prev => ({ ...prev, subcategory: sub }));
+                          }}
+                          className={`px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider transition-all border ${
+                            selectedSubcategory === sub 
+                              ? 'bg-gray-800 text-white border-gray-800' 
+                              : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400 hover:text-gray-800'
+                          }`}
+                        >
+                          {sub}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Hiển thị giá trị đã chọn */}
+                  {(selectedCategory || selectedSubcategory) && (
+                    <div className="mt-3 text-[9px] text-gray-400 uppercase tracking-[0.1em]">
+                      Đã chọn: <span className="font-bold text-black">{selectedCategory}</span>
+                      {selectedSubcategory && <span> / <span className="font-bold text-black">{selectedSubcategory}</span></span>}
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="text-[10px] text-gray-500 uppercase tracking-[0.2em] mb-1 block">Tên Dự Án</label>
                   <input

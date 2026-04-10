@@ -715,6 +715,9 @@ export default function ProjectsFeed() {
   const [projectsCache, setProjectsCache] = useState({});
   const [selectedProject, setSelectedProject] = useState(null);
   const [isMobileView, setIsMobileView] = useState(false);
+  // 筛选状态：根据 URL hash 筛选分类（Landscape, Engineering, Architecture, Products）和子分类
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeSubcategory, setActiveSubcategory] = useState(null);
   const selectedProjectRef = useRef(null);
 
   const touchState = useRef({ startY: 0, startX: 0, startTime: 0 });
@@ -725,6 +728,42 @@ export default function ProjectsFeed() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 监听 URL hash 变化来更新筛选分类和子分类
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (!hash || hash === '#all') {
+        setActiveCategory(null);
+        setActiveSubcategory(null);
+        return;
+      }
+      // Hash format: #category-subcategory hoặc #category
+      const parts = hash.replace('#', '').split('-');
+      const categoryMap = {
+        'landscape': 'Landscape',
+        'engineering': 'Engineering',
+        'architecture': 'Architecture',
+        'products': 'Products'
+      };
+      const category = categoryMap[parts[0]] || null;
+      setActiveCategory(category);
+      // Subcategory là phần còn lại của hash, viết hoa chữ cái đầu
+      if (parts.length > 1) {
+        const sub = parts.slice(1).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+        setActiveSubcategory(sub);
+      } else {
+        setActiveSubcategory(null);
+      }
+    };
+
+    // 初始化时读取 hash
+    handleHashChange();
+
+    // 监听 hash 变化
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   const prefetchAllProjects = useCallback(async (projectsList) => {
@@ -1034,7 +1073,14 @@ export default function ProjectsFeed() {
         <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
           <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
             <div className="flex flex-col items-center w-full transition-all duration-500 gap-1 lg:gap-1">
-              {projects.map((project, index) => {
+              {/* 根据 activeCategory 和 activeSubcategory 筛选项目 */}
+              {projects
+                .filter(p => {
+                  if (activeCategory && p.category !== activeCategory) return false;
+                  if (activeSubcategory && p.subcategory !== activeSubcategory) return false;
+                  return true;
+                })
+                .map((project, index) => {
                 const isSelected = selectedProject?._id === project._id;
                 const fullData = isSelected ? getProjectData(project._id) : project;
 

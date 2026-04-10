@@ -55,21 +55,26 @@ export async function PUT(req, { params }) {
   try {
     await dbConnect();
 
-    // FIX TẠI ĐÂY
     const { id } = await params;
     const payload = await req.json();
 
+    console.log('📥 PUT payload nhận được:', JSON.stringify(payload, null, 2));
+    console.log('📥 category:', payload.category);
+
     const updatedProject = await Project.findByIdAndUpdate(id, payload, {
-      new: true, // Return updated document
-      runValidators: true // Enforce schema validations on update
+      new: true,
+      runValidators: true
     });
 
     if (!updatedProject) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
+    console.log('✅ Project sau khi update:', JSON.stringify(updatedProject.toObject(), null, 2));
+
     return NextResponse.json({ success: true, project: updatedProject });
   } catch (error) {
+    console.error('❌ Lỗi PUT:', error);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

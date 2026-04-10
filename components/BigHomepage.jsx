@@ -15,6 +15,9 @@ export default function BigHomepage() {
   const [navVisible, setNavVisible] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState(null);
+  // 当前选中的分类和子分类（从 URL hash 同步）
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeSubcategory, setActiveSubcategory] = useState(null);
 
   useEffect(() => {
     const handleIntroComplete = () => setNavVisible(true);
@@ -28,12 +31,80 @@ export default function BigHomepage() {
     };
   }, []);
 
+  // 监听 URL hash 变化来同步 activeCategory 和 activeSubcategory
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (!hash || hash === '#all') {
+        setActiveCategory(null);
+        setActiveSubcategory(null);
+        return;
+      }
+      // Hash format: #category-subcategory hoặc #category
+      const parts = hash.replace('#', '').split('-');
+      const categoryMap = {
+        'landscape': 'Landscape',
+        'engineering': 'Engineering',
+        'architecture': 'Architecture',
+        'products': 'Products'
+      };
+      const category = categoryMap[parts[0]] || null;
+      setActiveCategory(category);
+      // Subcategory là phần còn lại của hash, viết hoa chữ cái đầu
+      if (parts.length > 1) {
+        const sub = parts.slice(1).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+        setActiveSubcategory(sub);
+      } else {
+        setActiveSubcategory(null);
+      }
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const navigation = [
     { title: 'Landscape', sub: ['Public Space', 'Parks', 'Planning'] },
     { title: 'Engineering', sub: ['Structural', 'BIM', 'Green Tech'] },
     { title: 'Architecture', sub: ['Cultural', 'Residential', 'Office', 'Hospitality'] },
     { title: 'Products', sub: ['Furniture', 'Lighting', 'Installation'] },
   ];
+
+  // 点击导航分类链接的处理函数
+  const handleCategoryClick = (e, title) => {
+    e.preventDefault();
+    // 点击 category 本身 -> chỉ lọc theo category, clear subcategory
+    window.history.pushState(null, '', `#${title.toLowerCase()}`);
+    window.dispatchEvent(new Event('hashchange'));
+    setActiveCategory(title);
+    setActiveSubcategory(null);
+  };
+
+  // 点击 submenu item 的处理函数
+  const handleSubcategoryClick = (e, categoryTitle, subcategory) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const subSlug = subcategory.toLowerCase().replace(/ /g, '-');
+    window.history.pushState(null, '', `#${categoryTitle.toLowerCase()}-${subSlug}`);
+    window.dispatchEvent(new Event('hashchange'));
+    setActiveCategory(categoryTitle);
+    setActiveSubcategory(subcategory);
+    setHoveredCategory(null);
+  };
+
+  // Click outside to close submenu
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      // Kiểm tra nếu click không nằm trong nav menu
+      const nav = document.querySelector('nav');
+      if (nav && !nav.contains(e.target)) {
+        setHoveredCategory(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white text-black font-sans selection:bg-black selection:text-white pb-32">
@@ -65,26 +136,34 @@ export default function BigHomepage() {
               <div 
                 key={cat.title}
                 className="group relative px-5 py-1"
-                onMouseEnter={() => setHoveredCategory(cat.title)}
-                onMouseLeave={() => setHoveredCategory(null)}
               >
-                <Link 
-                  href={`#${cat.title.toLowerCase()}`} 
-                  className={`text-[11px] lg:text-[14.5px] font-medium tracking-widest uppercase transition-colors duration-200 ${hoveredCategory === cat.title ? 'text-black' : 'text-[#6b6b6b] hover:text-black'}`}
+                {/* Menu Item - Click để toggle submenu */}
+                <button
+                  onClick={() => {
+                    // Toggle: nếu đang hover category này thì đóng, không thì mở
+                    setHoveredCategory(hoveredCategory === cat.title ? null : cat.title);
+                  }}
+                  className={`text-[11px] lg:text-[14.5px] font-medium tracking-widest uppercase transition-colors duration-200 bg-transparent border-none cursor-pointer p-0 ${hoveredCategory === cat.title ? 'text-black' : 'text-[#6b6b6b] hover:text-black'}`}
                 >
                   {cat.title}
-                </Link>
+                </button>
 
-                {/* Sub-menu Reveal */}
-                <div className={`hidden group-hover:flex lg:absolute lg:top-[44px] left-0 right-0 z-30 bg-white flex-row justify-center pb-2 pointer-events-auto w-screen lg:w-max lg:left-1/2 lg:-translate-x-1/2`}>
+                {/* Sub-menu - Hiện khi hoveredCategory === cat.title */}
+                <div 
+                  className={`absolute top-[42px] left-1/2 -translate-x-1/2 z-30 bg-white flex-row justify-center pb-2 pointer-events-auto ${
+                    hoveredCategory === cat.title ? 'flex' : 'hidden'
+                  }`}
+                >
                    {cat.sub.map((subItem) => (
-                     <Link 
+                     <button
                        key={subItem}
-                       href={`#${subItem.toLowerCase().replace(' ', '-')}`}
-                       className="text-[10px] lg:text-[12px] text-[#6b6b6b] hover:text-black uppercase tracking-widest px-4 py-1 transition-colors whitespace-nowrap"
+                       onClick={(e) => handleSubcategoryClick(e, cat.title, subItem)}
+                       className={`text-[10px] lg:text-[12px] uppercase tracking-widest px-4 py-2 transition-colors whitespace-nowrap bg-transparent border-none cursor-pointer ${
+                         activeSubcategory === subItem ? 'text-black font-bold' : 'text-[#6b6b6b] hover:text-black'
+                       }`}
                      >
                        {subItem}
-                     </Link>
+                     </button>
                    ))}
                 </div>
               </div>

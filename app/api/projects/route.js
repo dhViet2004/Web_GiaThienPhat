@@ -18,12 +18,17 @@ export async function POST(req) {
     await dbConnect();
     const payload = await req.json();
     
+    console.log('📥 Server nhận được payload:', JSON.stringify(payload, null, 2));
+    console.log('📥 category field:', payload.category);
+    
     // Create new project document
     const project = await Project.create(payload);
     
+    console.log('✅ Project đã được tạo:', project);
+    
     return NextResponse.json({ success: true, project }, { status: 201 });
   } catch (error) {
-    console.error('Lỗi khi tạo dự án DB:', error);
+    console.error('❌ Lỗi khi tạo dự án DB:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 400 });
   }
 }
