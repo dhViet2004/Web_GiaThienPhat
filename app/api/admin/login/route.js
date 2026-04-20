@@ -14,15 +14,15 @@ export async function POST(req) {
       );
     }
 
-    let admin = await Admin.findOne({ email: email.toLowerCase().trim() });
+    const emailLower = email.toLowerCase().trim();
+    let admin = await Admin.findOne({ email: emailLower });
 
-    // Auto-create default admin if none exists
     if (!admin) {
       const count = await Admin.countDocuments();
       if (count === 0) {
         admin = await Admin.create({
-          email: 'phamchanhthienn@gmail.com',
-          password: 'Thien12@',
+          email: emailLower,
+          password: password,
           name: 'Admin'
         });
       } else {
@@ -46,7 +46,7 @@ export async function POST(req) {
     });
   } catch (error) {
     return NextResponse.json(
-      { error: 'Lỗi server' },
+      { error: 'Lỗi server: ' + error.message },
       { status: 500 }
     );
   }
