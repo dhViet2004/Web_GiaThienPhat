@@ -3,7 +3,7 @@ name: Deploy to VPS
 on:
   push:
     branches:
-      - master # <--- SỬA 1: Đổi main thành master
+      - master
 
 jobs:
   deploy:
@@ -20,34 +20,32 @@ jobs:
           script: |
             cd /var/www/web_giathienphat
 
-            # Tạo thư mục backup nếu chưa có
+            # BƯỚC 1: Backup Database
             mkdir -p mongo_backup
-
-            # Backup MongoDB trước khi deploy (giữ 7 ngày gần nhất)
-            docker-compose exec -T mongodb mongodump \
+            docker compose exec -T mongodb mongodump \
               --archive=/backup/backup_$(date +%Y%m%d_%H%M%S).archive.gz \
               --gzip \
               --quiet || echo "Backup failed, continuing..."
-
-            # Dọn backup cũ hơn 7 ngày
             find mongo_backup -name "backup_*.archive.gz" -mtime +7 -delete
 
-            # Pull code mới
-            git pull origin master # <--- SỬA 2: Đổi main thành master
+            # BƯỚC 2: Cập nhật code mới (Ép ghi đè để không bao giờ bị kẹt code cũ)
+            git fetch --all
+            git reset --hard origin/master
+            git pull origin master
 
-            # Tạo file .env nếu chưa có
             if [ ! -f .env ]; then
               cp .env.example .env 2>/dev/null || touch .env
             fi
 
-            # Build và chạy lại containers
-            docker-compose up -d --build
+            # BƯỚC 3: Xóa cache và Build Image ngầm (Lúc này web cũ vẫn đang hoạt động phục vụ khách)
+            docker compose build --no-cache nextjs
 
-            # Chờ MongoDB sẵn sàng
+            # BƯỚC 4: Tráo đổi Container mới (Quá trình này diễn ra chớp nhoáng, hạn chế tối đa 502)
+            docker compose up -d
+
+            # BƯỚC 5: Đợi hệ thống ổn định và chạy các script phụ trợ
             sleep 5
+            docker compose exec -T nextjs node scripts/seed-admin.js || echo "Seed admin skipped"
 
-            # Seed admin mặc định nếu chưa có
-            docker-compose exec -T nextjs node scripts/seed-admin.js || echo "Seed admin skipped"
-
-            # Dọn image rác
+            # BƯỚC 6: Dọn dẹp rác (Xóa các image cũ để tránh đầy ổ cứng VPS)
             docker image prune -f
