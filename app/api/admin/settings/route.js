@@ -37,7 +37,7 @@ export async function PUT(req) {
 
     const admin = await Admin.findOneAndUpdate(
       {},
-      { email, password, name },
+      { email: email.toLowerCase().trim(), password, name },
       { new: true, upsert: true }
     );
 

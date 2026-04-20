@@ -14,13 +14,23 @@ export async function POST(req) {
       );
     }
 
-    let admin = await Admin.findOne({ email });
+    let admin = await Admin.findOne({ email: email.toLowerCase().trim() });
 
+    // Auto-create default admin if none exists
     if (!admin) {
-      return NextResponse.json(
-        { error: 'Sai thông tin đăng nhập' },
-        { status: 401 }
-      );
+      const count = await Admin.countDocuments();
+      if (count === 0) {
+        admin = await Admin.create({
+          email: 'phamchanhthienn@gmail.com',
+          password: 'Thien12@',
+          name: 'Admin'
+        });
+      } else {
+        return NextResponse.json(
+          { error: 'Sai thông tin đăng nhập' },
+          { status: 401 }
+        );
+      }
     }
 
     if (admin.password !== password) {

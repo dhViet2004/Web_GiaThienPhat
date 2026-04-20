@@ -3,7 +3,7 @@ name: Deploy to VPS
 on:
   push:
     branches:
-      - main
+      - master # <--- SỬA 1: Đổi main thành master
 
 jobs:
   deploy:
@@ -33,7 +33,7 @@ jobs:
             find mongo_backup -name "backup_*.archive.gz" -mtime +7 -delete
 
             # Pull code mới
-            git pull origin main
+            git pull origin master # <--- SỬA 2: Đổi main thành master
 
             # Tạo file .env nếu chưa có
             if [ ! -f .env ]; then
