@@ -712,15 +712,12 @@ export default function ProjectsFeed() {
 
   const [projects, setProjects] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [projectsCache, setProjectsCache] = useState({});
-  const [selectedProject, setSelectedProject] = useState(null);
+  // Dùng Set để lưu danh sách các ID dự án đã được click mở rộng — giữ nguyên trạng thái khi cuộn dọc
+  const [expandedProjectIds, setExpandedProjectIds] = useState(new Set());
   const [isMobileView, setIsMobileView] = useState(false);
-  // 筛选状态：根据 URL hash 筛选分类（Landscape, Engineering, Architecture, Products）和子分类
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeSubcategory, setActiveSubcategory] = useState(null);
-  const selectedProjectRef = useRef(null);
-
-  const touchState = useRef({ startY: 0, startX: 0, startTime: 0 });
+  const expandedRef = useRef(new Set());
 
   // Detect mobile on mount and resize
   useEffect(() => {
@@ -766,24 +763,7 @@ export default function ProjectsFeed() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const prefetchAllProjects = useCallback(async (projectsList) => {
-    if (!projectsList || projectsList.length === 0) return;
-    const cache = {};
-    const batchSize = 5;
-    for (let i = 0; i < projectsList.length; i += batchSize) {
-      const batch = projectsList.slice(i, i + batchSize);
-      const promises = batch.map(project =>
-        apiGet(`/api/projects/${project._id}`)
-          .then(data => {
-            if (!data.error && (data.project || data)) cache[project._id] = data.project || data;
-          })
-          .catch(err => { cache[project._id] = project; })
-      );
-      await Promise.all(promises);
-    }
-    setProjectsCache(cache);
-  }, []);
-
+  // Lấy data trực tiếp từ projects array (API đã trả đầy đủ blocks, general...)
   useEffect(() => {
     let mounted = true;
     const init = async () => {
@@ -793,136 +773,77 @@ export default function ProjectsFeed() {
 
         if (!data.error && Array.isArray(data)) {
           setProjects(data);
+          // Khởi tạo project từ URL nếu có
           const pathParts = window.location.pathname.split('/');
           const projectUrlId = pathParts[pathParts.length - 1];
           const found = data.find(p => p._id === projectUrlId);
-          if (found) setSelectedProject(found);
+          if (found) {
+            setExpandedProjectIds(prev => {
+              const next = new Set(prev);
+              next.add(found._id);
+              return next;
+            });
+          }
         }
         setIsInitialized(true);
-
-        const startPrefetch = () => prefetchAllProjects(data);
-        window.addEventListener('introStarted', startPrefetch, { once: true });
-        const fallback = setTimeout(startPrefetch, 100);
-
-        return () => {
-          window.removeEventListener('introStarted', startPrefetch);
-          clearTimeout(fallback);
-        };
       } catch (err) {
         setIsInitialized(true);
       }
     };
     init();
     return () => { mounted = false; };
-  }, [prefetchAllProjects]);
+  }, []);
 
+  // Giữ ref đồng bộ với state để GSAP ScrollTrigger không bị stale closure
   useEffect(() => {
-    selectedProjectRef.current = selectedProject;
-  }, [selectedProject]);
+    expandedRef.current = expandedProjectIds;
+  }, [expandedProjectIds]);
 
   useEffect(() => {
     const handlePopState = () => {
       const pathParts = window.location.pathname.split('/');
       const projectUrlId = pathParts[pathParts.length - 1];
-      const found = projects.find(p => p._id === projectUrlId);
-      setSelectedProject(found || null);
+      if (projectUrlId && projects.find(p => p._id === projectUrlId)) {
+        setExpandedProjectIds(prev => {
+          const next = new Set(prev);
+          next.add(projectUrlId);
+          return next;
+        });
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [projects]);
 
+  // Click vào project → thêm ID vào Set (mở vĩnh viễn, không tự đóng khi cuộn)
   const handleSelectProject = useCallback((project) => {
-    if (project) {
-      window.history.pushState(null, '', `/projects/${project._id}`);
-      gsap.killTweensOf('.velocity-card');
-      gsap.set('.velocity-card', { scale: 1, y: 0 });
+    if (!project) return;
 
-      setSelectedProject(project);
+    window.history.pushState(null, '', `/projects/${project._id}`);
+    gsap.killTweensOf('.velocity-card');
+    gsap.set('.velocity-card', { scale: 1, y: 0 });
 
-      requestAnimationFrame(() => {
-        const el = document.getElementById(`project-${project._id}`);
-        if (el) el.scrollIntoView({ behavior: 'instant', block: 'center' });
-      });
-    } else {
-      window.history.pushState(null, '', '/');
-      setSelectedProject(null);
-    }
+    setExpandedProjectIds(prev => {
+      const next = new Set(prev);
+      next.add(project._id);
+      return next;
+    });
+
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`project-${project._id}`);
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'center' });
+    });
   }, []);
 
-  // LOGIC: Đóng project khi cuộn dọc (wheel hoặc touch swipe)
-  useEffect(() => {
-    if (!selectedProject) return;
-
-    const handleWheel = (e) => {
-      // 1. Kiểm tra xem người dùng có đang cuộn bên trong gallery không
-      // Nếu event target nằm trong phần tử có class 'gallery-scroll' (phần col-span-3)
-      const galleryContainer = document.querySelector('.gallery-scroll-area');
-      if (galleryContainer && galleryContainer.contains(e.target)) {
-        // Cho phép cuộn ngang bên trong gallery
-        // Chỉ đóng nếu người dùng cố tình cuộn dọc với lực mạnh hơn nhiều so với cuộn ngang
-        const isVerticalScroll = Math.abs(e.deltaY) > Math.abs(e.deltaX) + 5;
-        if (!isVerticalScroll) return;
-      }
-
-      // 2. Kiểm tra xem có phải cuộn dọc chủ đạo không (giống BIG studio)
-      // deltaY là cuộn dọc, deltaX là cuộn ngang
-      // Nếu |deltaY| >> |deltaX|, đó là cuộn dọc -> đóng
-      const isVerticalScroll = Math.abs(e.deltaY) > Math.abs(e.deltaX) + 5;
-      if (isVerticalScroll) {
-        e.preventDefault();
-        setSelectedProject(null);
-      }
-    };
-
-    const handleTouchStart = (e) => {
-      if (e.touches.length !== 1) return;
-      const touch = e.touches[0];
-      touchState.current = {
-        startY: touch.clientY,
-        startX: touch.clientX,
-        startTime: Date.now()
-      };
-    };
-
-    const handleTouchMove = (e) => {
-      if (e.touches.length !== 1) return;
-      
-      // Kiểm tra xem touch có đang ở trong gallery không
-      const galleryContainer = document.querySelector('.gallery-scroll-area');
-      if (galleryContainer && galleryContainer.contains(e.target)) {
-        return; // Không xử lý touchmove bên trong gallery
-      }
-
-      const touch = e.touches[0];
-      const deltaY = touch.clientY - touchState.current.startY;
-      const deltaX = touch.clientX - touchState.current.startX;
-
-      // Vuốt dọc (swipe up/down) với lực đủ lớn -> đóng
-      // |deltaY| > |deltaX| có nghĩa là vuốt dọc là chính
-      if (Math.abs(deltaY) > Math.abs(deltaX) + 30) {
-        e.preventDefault();
-        setSelectedProject(null);
-      }
-    };
-
-    // Đợi 500ms sau khi mở để tránh đóng ngay lập tức do quán tính cuộn chuột
-    const timer = setTimeout(() => {
-      window.addEventListener('wheel', handleWheel, { passive: false });
-      window.addEventListener('touchstart', handleTouchStart, { passive: true });
-      window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    }, 500);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [selectedProject]);
-
-  const getProjectData = useCallback((projectId) => {
-    return projectsCache[projectId] || projects.find(p => p._id === projectId) || null;
-  }, [projectsCache, projects]);
+  // Xóa project khỏi Set khi user click nút đóng (mobile / nút close inline)
+  const handleCloseProject = useCallback((projectId) => {
+    setExpandedProjectIds(prev => {
+      const next = new Set(prev);
+      next.delete(projectId);
+      return next;
+    });
+    window.history.pushState(null, '', '/');
+  }, []);
 
   useGSAP(() => {
     if (!isInitialized || projects.length === 0) return;
@@ -944,7 +865,8 @@ export default function ProjectsFeed() {
       start: 'top bottom',
       end: 'bottom top',
       onUpdate: (self) => {
-        if (selectedProjectRef.current) return;
+        // Chỉ chạy velocity-card effect khi KHÔNG có project nào được mở rộng
+        if (expandedRef.current.size > 0) return;
 
         const rawVelocity = typeof self.getVelocity === 'function' ? self.getVelocity() : 0;
         const velocity = Math.abs(rawVelocity);
@@ -1006,14 +928,18 @@ export default function ProjectsFeed() {
 
   if (!isInitialized) return <div className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10" />;
 
+  // Mobile: lấy project đầu tiên trong Set để hiển thị portal
+  const mobileExpandedId = Array.from(expandedProjectIds)[0] || null;
+  const mobileProject = mobileExpandedId ? projects.find(p => p._id === mobileExpandedId) : null;
+
   const mobileDetailPortal =
     typeof document !== 'undefined' &&
-    selectedProject &&
+    mobileProject &&
     isMobileView &&
     createPortal(
       <MobileProjectDetail
-        project={getProjectData(selectedProject._id) || selectedProject}
-        onClose={() => handleSelectProject(null)}
+        project={mobileProject}
+        onClose={() => handleCloseProject(mobileProject._id)}
       />,
       document.body
     );
@@ -1073,7 +999,7 @@ export default function ProjectsFeed() {
         <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
           <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
             <div className="flex flex-col items-center w-full transition-all duration-500 gap-1 lg:gap-1">
-              {/* 根据 activeCategory 和 activeSubcategory 筛选项目 */}
+              {/* Theo activeCategory và activeSubcategory để lọc */}
               {projects
                 .filter(p => {
                   if (activeCategory && p.category !== activeCategory) return false;
@@ -1081,95 +1007,96 @@ export default function ProjectsFeed() {
                   return true;
                 })
                 .map((project, index) => {
-                const isSelected = selectedProject?._id === project._id;
-                const fullData = isSelected ? getProjectData(project._id) : project;
+                  // Kiểm tra project có trong Set mở rộng không
+                  const isExpanded = expandedProjectIds.has(project._id);
+                  // Mobile: portal hiển thị, nên không render inline
+                  const isMobilePortal = isExpanded && isMobileView;
 
-                const isMobileSelected = isSelected && isMobileView;
+                  return (
+                    <motion.div
+                      key={project._id || index}
+                      id={`project-${project._id}`}
+                      layout={!isMobilePortal}
+                      className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobilePortal
+                          ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
+                          : isExpanded
+                            ? 'relative w-full h-[75vh] md:h-[75vh] z-50 my-0'
+                            : 'relative w-full flex justify-center items-center max-w-[1600px] h-auto my-2'
+                        }`}
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
+                    >
+                      {!isExpanded ? (
+                        <div className="project-row w-full flex justify-center items-center group">
+                          <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
 
-                return (
-                  <motion.div
-                    key={project._id || index}
-                    id={`project-${project._id}`}
-                    layout={!isMobileSelected}
-                    className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileSelected
-                        ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
-                        : isSelected
-                          ? 'relative w-full h-[75vh] md:h-[75vh] z-50 my-0'
-                          : 'relative w-full flex justify-center items-center max-w-[1600px] h-auto my-2'
-                      }`}
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
-                  >
-                    {!isSelected ? (
-                      <div className="project-row w-full flex justify-center items-center group">
-                        <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
-
-                          {/* Left Info Desktop */}
-                          <div className="hidden md:flex absolute top-0 right-full mr-[4px] lg:mr-[6px] w-[324px] project-info justify-end z-20">
-                            <div className="relative w-full text-right flex flex-col items-end origin-right">
-                              <div onClick={(e) => { e.preventDefault(); handleSelectProject(project); }} className="group/link cursor-pointer flex flex-col items-end">
-                                <div className="relative pr-2 lg:pr-5">
-                                  <h2 className="text-[14px] lg:text-[18px] font-normal uppercase text-black m-0 p-0 leading-tight whitespace-nowrap">
-                                    {project.general?.title}
-                                  </h2>
-                                  <span className="absolute -bottom-1 right-2 lg:right-5 h-px bg-black w-0 group-hover/link:w-full transition-all duration-400" style={{ left: 'auto' }}></span>
+                            {/* Left Info Desktop */}
+                            <div className="hidden md:flex absolute top-0 right-full mr-[4px] lg:mr-[6px] w-[324px] project-info justify-end z-20">
+                              <div className="relative w-full text-right flex flex-col items-end origin-right">
+                                <div onClick={(e) => { e.preventDefault(); handleSelectProject(project); }} className="group/link cursor-pointer flex flex-col items-end">
+                                  <div className="relative pr-2 lg:pr-5">
+                                    <h2 className="text-[14px] lg:text-[18px] font-normal uppercase text-black m-0 p-0 leading-tight whitespace-nowrap">
+                                      {project.general?.title}
+                                    </h2>
+                                    <span className="absolute -bottom-1 right-2 lg:right-5 h-px bg-black w-0 group-hover/link:w-full transition-all duration-400" style={{ left: 'auto' }}></span>
+                                  </div>
+                                  <p className="text-[#797979] text-[11px] lg:text-[12px] uppercase mt-[4px] lg:mt-[6px] pr-2 lg:pr-5">
+                                    {project.general?.location}
+                                  </p>
                                 </div>
-                                <p className="text-[#797979] text-[11px] lg:text-[12px] uppercase mt-[4px] lg:mt-[6px] pr-2 lg:pr-5">
-                                  {project.general?.location}
-                                </p>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Cover Image Wrapper with LayoutID */}
-                          <div className="shrink-0 project-image overflow-hidden w-[80vw] sm:w-[300px] lg:w-[56vh] relative">
-                            <motion.div
-                              layoutId={`img-container-${project._id}`}
-                              onClick={() => handleSelectProject(project)}
-                              transition={{
-                                type: "spring",
-                                stiffness: 80,
-                                damping: 35,
-                                mass: 1,
-                              }}
-                              className="relative w-full cursor-pointer group"
-                            >
-                              <Image
-                                src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
-                                alt={project.general?.title || 'Preview'}
-                                width={800}
-                                height={0}
-                                style={{ width: '100%', height: 'auto' }}
-                                priority={index < 4}
-                                sizes="(max-width: 768px) 90vw, 64vh"
-                                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                              />
-                              <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                            </motion.div>
-                          </div>
+                            {/* Cover Image Wrapper with LayoutID */}
+                            <div className="shrink-0 project-image overflow-hidden w-[80vw] sm:w-[300px] lg:w-[56vh] relative">
+                              <motion.div
+                                layoutId={`img-container-${project._id}`}
+                                onClick={() => handleSelectProject(project)}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 80,
+                                  damping: 35,
+                                  mass: 1,
+                                }}
+                                className="relative w-full cursor-pointer group"
+                              >
+                                <Image
+                                  src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
+                                  alt={project.general?.title || 'Preview'}
+                                  width={800}
+                                  height={0}
+                                  style={{ width: '100%', height: 'auto' }}
+                                  priority={index < 4}
+                                  sizes="(max-width: 768px) 90vw, 64vh"
+                                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                              </motion.div>
+                            </div>
 
-                          {/* Mobile Info */}
-                          <div className="flex md:hidden flex-col w-full mt-4 project-info px-2" onClick={() => handleSelectProject(project)}>
-                            <div className="flex items-start gap-4 cursor-pointer">
-                              <div>
-                                <h2 className="text-[15px] font-normal uppercase text-black leading-none">{project.general?.title}</h2>
-                                <p className="text-[#797979] text-[11px] uppercase mt-1">{project.general?.location}</p>
+                            {/* Mobile Info */}
+                            <div className="flex md:hidden flex-col w-full mt-4 project-info px-2" onClick={() => handleSelectProject(project)}>
+                              <div className="flex items-start gap-4 cursor-pointer">
+                                <div>
+                                  <h2 className="text-[15px] font-normal uppercase text-black leading-none">{project.general?.title}</h2>
+                                  <p className="text-[#797979] text-[11px] uppercase mt-1">{project.general?.location}</p>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
+                          </div>
                         </div>
-                      </div>
-                    ) : isMobileView ? null : (
-                      <InlineProjectDetail
-                        project={fullData}
-                        onClose={() => handleSelectProject(null)}
-                        layoutId={`img-container-${project._id}`}
-                        isLoading={!projectsCache[project._id]}
-                      />
-                    )}
-                  </motion.div>
-                );
-              })}
+                      ) : isMobileView ? null : (
+                        // Desktop inline detail: data đã có sẵn từ projects array → isLoading={false}
+                        <InlineProjectDetail
+                          project={project}
+                          onClose={() => handleCloseProject(project._id)}
+                          layoutId={`img-container-${project._id}`}
+                          isLoading={false}
+                        />
+                      )}
+                    </motion.div>
+                  );
+                })}
             </div>
           </div>
         </div>
