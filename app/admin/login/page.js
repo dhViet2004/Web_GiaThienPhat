@@ -10,18 +10,29 @@ export default function AdminLogin() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     
-    // Simulate API Call Auth
-    if (username === 'admin' && password === 'admin') {
-      // Set simple cookie valid for 1 day
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: username, password })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Sai thông tin đăng nhập');
+        return;
+      }
+
       document.cookie = "admin_token=true; path=/; max-age=86400";
       router.push('/admin');
-      router.refresh(); // Refresh root to ensure Layout UI updates (like sidebar links, though not strictly required here)
-    } else {
-      setError('SAI THÔNG TIN ĐĂNG NHẬP');
+      router.refresh();
+    } catch (err) {
+      setError('Lỗi kết nối server');
     }
   };
 
@@ -69,7 +80,7 @@ export default function AdminLogin() {
           <form onSubmit={handleLogin} className="flex flex-col gap-8">
             <div className="group relative">
               <label className="text-[9px] uppercase tracking-[0.2em] text-gray-400 mb-2 block font-bold transition-colors group-focus-within:text-black">
-                Tên tài khoản
+                Tài khoản email
               </label>
               <div className="relative">
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-black transition-colors">

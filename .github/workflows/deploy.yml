@@ -35,8 +35,19 @@ jobs:
             # Pull code mới
             git pull origin main
 
+            # Tạo file .env nếu chưa có
+            if [ ! -f .env ]; then
+              cp .env.example .env 2>/dev/null || touch .env
+            fi
+
             # Build và chạy lại containers
             docker-compose up -d --build
+
+            # Chờ MongoDB sẵn sàng
+            sleep 5
+
+            # Seed admin mặc định nếu chưa có
+            docker-compose exec -T nextjs node scripts/seed-admin.js || echo "Seed admin skipped"
 
             # Dọn image rác
             docker image prune -f
