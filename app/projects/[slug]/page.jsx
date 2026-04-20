@@ -424,7 +424,7 @@ export default function ProjectDetailPage({ params }) {
           {/* BLOCK 1A: PROJECT INFO — independent sibling, self-padded */}
           <div className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]">
             <div className="mb-6"></div>
-            <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0">
+            <h1 className="text-xl lg:text-3xl font-bold tracking-tighter leading-none break-words w-full m-0 p-0">
               {projectData.general?.title || 'Untitled Project'}
             </h1>
             <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-12">

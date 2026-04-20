@@ -158,7 +158,7 @@ const MobileProjectDetail = ({ project, onClose }) => {
 
           {/* ===== PHẦN 1: THÔNG TIN PROJECT ===== */}
           <div className="shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[320px] min-w-0 px-4">
-            <h1 className="text-lg sm:text-xl font-bold uppercase tracking-tighter leading-none break-words mb-1">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tighter leading-none break-words mb-1">
               {project.general?.title || 'Untitled Project'}
             </h1>
             <p className="text-[10px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-6">
@@ -549,7 +549,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               className="shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[320px] lg:flex-1 lg:min-w-0 lg:max-w-[340px] order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6"
             >
               <div className="mb-4 lg:mb-6"></div>
-              <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0">
+              <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold tracking-tighter leading-none break-words w-full m-0 p-0">
                 {project.general?.title || 'Untitled Project'}
               </h1>
               <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-8 lg:mb-12">
@@ -1034,7 +1034,7 @@ export default function ProjectsFeed() {
                               <div className="relative w-full text-right flex flex-col items-end origin-right">
                                 <div onClick={(e) => { e.preventDefault(); handleSelectProject(project); }} className="group/link cursor-pointer flex flex-col items-end">
                                   <div className="relative pr-2 lg:pr-5">
-                                    <h2 className="text-[14px] lg:text-[18px] font-normal uppercase text-black m-0 p-0 leading-tight whitespace-nowrap">
+                                    <h2 className="text-[14px] lg:text-[18px] font-normal text-black m-0 p-0 leading-tight whitespace-nowrap">
                                       {project.general?.title}
                                     </h2>
                                     <span className="absolute -bottom-1 right-2 lg:right-5 h-px bg-black w-0 group-hover/link:w-full transition-all duration-400" style={{ left: 'auto' }}></span>
@@ -1077,7 +1077,7 @@ export default function ProjectsFeed() {
                             <div className="flex md:hidden flex-col w-full mt-4 project-info px-2" onClick={() => handleSelectProject(project)}>
                               <div className="flex items-start gap-4 cursor-pointer">
                                 <div>
-                                  <h2 className="text-[15px] font-normal uppercase text-black leading-none">{project.general?.title}</h2>
+                                  <h2 className="text-[15px] font-normal text-black leading-none">{project.general?.title}</h2>
                                   <p className="text-[#797979] text-[11px] uppercase mt-1">{project.general?.location}</p>
                                 </div>
                               </div>

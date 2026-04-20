@@ -212,7 +212,7 @@ export default function AdminDashboard() {
                 <div className="mt-4 border-t border-gray-200 pt-4 flex-1 flex flex-col justify-between">
                   <div className="flex justify-between items-start mb-4">
                     <div className="pr-4">
-                      <h3 className="text-2xl font-black uppercase tracking-tighter leading-none break-words max-w-full text-balance overflow-visible">
+                      <h3 className="text-2xl font-black tracking-tighter leading-none break-words max-w-full text-balance overflow-visible">
                         {project.general?.title}
                       </h3>
                       <p className="text-xs text-gray-500 font-medium uppercase tracking-[0.2em] mt-3">
@@ -256,7 +256,7 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-sm font-bold uppercase tracking-tight truncate">{project.general?.title}</h3>
+                    <h3 className="text-sm font-bold tracking-tight truncate">{project.general?.title}</h3>
                     <p className="text-[10px] text-gray-500 uppercase tracking-wider truncate">{project.general?.location}</p>
                   </div>
                 </div>
