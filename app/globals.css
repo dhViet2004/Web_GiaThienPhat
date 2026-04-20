@@ -81,3 +81,13 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #333;
 }
+
+/* ============================================
+   Admin Panel - Fix Auto Uppercase Input
+   ============================================ */
+.admin-input,
+.admin-input:focus,
+.admin-input::placeholder {
+  text-transform: none !important;
+  font-variant: normal !important;
+}

@@ -102,8 +102,8 @@ export default function AdminSettings() {
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full bg-transparent border-b border-gray-200 focus:border-black transition-all rounded-none outline-none py-3 pl-8 text-lg text-black font-bold placeholder:text-gray-200"
-              placeholder="TÊN CỦA BẠN"
+              className="admin-input w-full bg-transparent border-b border-gray-200 focus:border-black transition-all rounded-none outline-none py-3 pl-8 text-lg text-black font-bold placeholder:text-gray-200"
+              placeholder="Tên của bạn"
             />
           </div>
         </div>
@@ -120,8 +120,8 @@ export default function AdminSettings() {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full bg-transparent border-b border-gray-200 focus:border-black transition-all rounded-none outline-none py-3 pl-8 text-lg text-black font-bold placeholder:text-gray-200"
-              placeholder="EMAIL@EXAMPLE.COM"
+              className="admin-input w-full bg-transparent border-b border-gray-200 focus:border-black transition-all rounded-none outline-none py-3 pl-8 text-lg text-black font-bold placeholder:text-gray-200"
+              placeholder="email@example.com"
               required
             />
           </div>

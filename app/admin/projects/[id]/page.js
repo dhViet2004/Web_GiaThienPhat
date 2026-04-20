@@ -381,8 +381,8 @@ export default function EditProjectPage({ params }) {
                     name="title"
                     value={project.general.title}
                     onChange={handleGeneralChange}
-                    placeholder="VD: TOÀ THÁP SEN BĂNG"
-                    className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-xl font-bold uppercase placeholder:text-gray-200"
+                    placeholder="VD: Toà Tháp Sen Băng"
+                    className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-xl font-bold placeholder:text-gray-200"
                   />
                 </div>
 
@@ -395,7 +395,7 @@ export default function EditProjectPage({ params }) {
                       value={project.general.location}
                       onChange={handleGeneralChange}
                       placeholder="Hà Nội, Việt Nam"
-                      className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
+                      className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
                     />
                   </div>
                   <div>
@@ -406,7 +406,7 @@ export default function EditProjectPage({ params }) {
                       value={project.general.client}
                       onChange={handleGeneralChange}
                       placeholder="Gia Thien Phat Group"
-                      className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
+                      className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
                     />
                   </div>
                   <div>
@@ -417,7 +417,7 @@ export default function EditProjectPage({ params }) {
                       value={project.general.typology}
                       onChange={handleGeneralChange}
                       placeholder="Biệt Thự Vườn"
-                      className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
+                      className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
                     />
                   </div>
                   <div>
@@ -428,7 +428,7 @@ export default function EditProjectPage({ params }) {
                       value={project.general.status}
                       onChange={handleGeneralChange}
                       placeholder="Đã Hoàn Thành"
-                      className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
+                      className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
                     />
                   </div>
                 </div>
@@ -489,7 +489,7 @@ export default function EditProjectPage({ params }) {
                         onChange={(e) => updateBlock(block.id, 'content', e.target.value)}
                         placeholder="Nhập nội dung văn bản cho mục này..."
                         rows={5}
-                        className="w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-4 text-sm placeholder:text-gray-300 resize-y"
+                        className="admin-input w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-4 text-sm placeholder:text-gray-300 resize-y"
                       />
                     )}
 
@@ -502,7 +502,7 @@ export default function EditProjectPage({ params }) {
                             value={block.url}
                             onChange={(e) => updateBlock(block.id, 'url', e.target.value)}
                             placeholder="https://images.unsplash.com/..."
-                            className="w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-3 text-sm placeholder:text-gray-300"
+                            className="admin-input w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-3 text-sm placeholder:text-gray-300"
                           />
                         </div>
                         {/* Image Preview */}
@@ -530,7 +530,7 @@ export default function EditProjectPage({ params }) {
                             value={block.caption}
                             onChange={(e) => updateBlock(block.id, 'caption', e.target.value)}
                             placeholder="VD: Hình ảnh phối cảnh tổng thể"
-                            className="w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-3 text-sm placeholder:text-gray-300"
+                            className="admin-input w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-3 text-sm placeholder:text-gray-300"
                           />
                         </div>
                       </div>
@@ -550,7 +550,7 @@ export default function EditProjectPage({ params }) {
                                   value={slide.url}
                                   onChange={(e) => updateSlide(block.id, sIdx, 'url', e.target.value)}
                                   placeholder="https://images.unsplash.com/..."
-                                  className="w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
+                                  className="admin-input w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
                                 />
                               </div>
                               <div>
@@ -560,7 +560,7 @@ export default function EditProjectPage({ params }) {
                                   value={slide.caption}
                                   onChange={(e) => updateSlide(block.id, sIdx, 'caption', e.target.value)}
                                   placeholder="VD: Hình ảnh nội thất"
-                                  className="w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
+                                  className="admin-input w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
                                 />
                               </div>
                             </div>
@@ -592,7 +592,7 @@ export default function EditProjectPage({ params }) {
                                   value={role.roleName}
                                   onChange={(e) => updateRole(block.id, rIdx, 'roleName', e.target.value)}
                                   placeholder="VD: Kiến Trúc Sư Chính"
-                                  className="w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
+                                  className="admin-input w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
                                 />
                               </div>
                               <div>
@@ -602,7 +602,7 @@ export default function EditProjectPage({ params }) {
                                   value={role.people}
                                   onChange={(e) => updateRole(block.id, rIdx, 'people', e.target.value)}
                                   placeholder="VD: Nguyễn Văn A, Trần Thị B"
-                                  className="w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
+                                  className="admin-input w-full bg-gray-50 border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-2.5 text-sm placeholder:text-gray-300"
                                 />
                               </div>
                             </div>

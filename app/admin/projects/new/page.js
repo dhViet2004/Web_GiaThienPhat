@@ -303,8 +303,8 @@ export default function CreateNewProjectPage() {
                   name="title"
                   value={project.general.title}
                   onChange={handleGeneralChange}
-                  placeholder="VD: TOÀ THÁP SEN BĂNG"
-                  className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-xl font-bold uppercase placeholder:text-gray-200"
+                  placeholder="VD: Toà Tháp Sen Băng"
+                  className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-xl font-bold placeholder:text-gray-200"
                 />
               </div>
 
@@ -317,7 +317,7 @@ export default function CreateNewProjectPage() {
                     value={project.general.location}
                     onChange={handleGeneralChange}
                     placeholder="Hà Nội, Việt Nam"
-                    className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
+                    className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
                   />
                 </div>
                 <div>
@@ -328,7 +328,7 @@ export default function CreateNewProjectPage() {
                     value={project.general.client}
                     onChange={handleGeneralChange}
                     placeholder="Gia Thien Phat Group"
-                    className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
+                    className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
                   />
                 </div>
                 <div>
@@ -339,7 +339,7 @@ export default function CreateNewProjectPage() {
                     value={project.general.typology}
                     onChange={handleGeneralChange}
                     placeholder="Biệt Thự Vườn"
-                    className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
+                    className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
                   />
                 </div>
                 <div>
@@ -350,7 +350,7 @@ export default function CreateNewProjectPage() {
                     value={project.general.status}
                     onChange={handleGeneralChange}
                     placeholder="Đã Hoàn Thành"
-                    className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
+                    className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
                   />
                 </div>
               </div>
@@ -363,7 +363,7 @@ export default function CreateNewProjectPage() {
                   value={project.general.coverImage}
                   onChange={handleGeneralChange}
                   placeholder="https://images.unsplash.com/..."
-                  className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
+                  className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
                 />
               </div>
             </div>
@@ -405,7 +405,7 @@ export default function CreateNewProjectPage() {
                       onChange={(e) => updateBlock(block.id, 'content', e.target.value)}
                       placeholder="Nhập nội dung văn bản cho mục này..."
                       rows={4}
-                      className="w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-3 text-sm placeholder:text-gray-300 resize-y"
+                      className="admin-input w-full bg-white border border-gray-300 focus:border-black transition-colors rounded-none outline-none p-3 text-sm placeholder:text-gray-300 resize-y"
                     />
                   )}
 
@@ -416,14 +416,14 @@ export default function CreateNewProjectPage() {
                         value={block.url}
                         onChange={(e) => updateBlock(block.id, 'url', e.target.value)}
                         placeholder="Đường dẫn URL Hình Ảnh"
-                        className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-300"
+                        className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-300"
                       />
                       <input
                         type="text"
                         value={block.caption}
                         onChange={(e) => updateBlock(block.id, 'caption', e.target.value)}
                         placeholder="Chú thích ảnh phía dưới (Tùy chọn)"
-                        className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-300"
+                        className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-300"
                       />
                     </div>
                   )}
@@ -439,14 +439,14 @@ export default function CreateNewProjectPage() {
                               value={slide.url}
                               onChange={(e) => updateSlide(block.id, sIdx, 'url', e.target.value)}
                               placeholder="Link Hình Ảnh cho Khung Chiếu Này"
-                              className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-sm placeholder:text-gray-300"
+                              className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-sm placeholder:text-gray-300"
                             />
                             <input
                               type="text"
                               value={slide.caption}
                               onChange={(e) => updateSlide(block.id, sIdx, 'caption', e.target.value)}
                               placeholder="Ghi nhận Chú Thích"
-                              className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-xs placeholder:text-gray-300 text-gray-500"
+                              className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-xs placeholder:text-gray-300 text-gray-500"
                             />
                           </div>
                           <button type="button" onClick={() => removeSlide(block.id, sIdx)} className="mt-2 text-gray-400 hover:text-red-500">
@@ -475,7 +475,7 @@ export default function CreateNewProjectPage() {
                               value={role.roleName}
                               onChange={(e) => updateRole(block.id, rIdx, 'roleName', e.target.value)}
                               placeholder="VD: Đối Tác Dự Án"
-                              className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-sm placeholder:text-gray-200"
+                              className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-sm placeholder:text-gray-200"
                             />
                           </div>
                           <div className="flex-[2]">
@@ -485,7 +485,7 @@ export default function CreateNewProjectPage() {
                               value={role.people}
                               onChange={(e) => updateRole(block.id, rIdx, 'people', e.target.value)}
                               placeholder="Bjarke Ingels, Thomas Christoffersen"
-                              className="w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-sm placeholder:text-gray-200"
+                              className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-1 text-sm placeholder:text-gray-200"
                             />
                           </div>
                           <button type="button" onClick={() => removeRole(block.id, rIdx)} className="mb-2 text-gray-400 hover:text-red-500">

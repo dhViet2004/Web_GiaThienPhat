@@ -90,9 +90,10 @@ export default function AdminLogin() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-transparent border-b border-gray-200 focus:border-black transition-all rounded-none outline-none py-3 pl-8 text-lg text-black font-bold placeholder:text-gray-200"
-                  placeholder="EMAIL@EXAMPLE.COM"
+                  className="admin-input w-full bg-transparent border-b border-gray-200 focus:border-black transition-all rounded-none outline-none py-3 pl-8 text-lg text-black font-bold placeholder:text-gray-200"
+                  placeholder="email@example.com"
                   required
+                  autoComplete="username"
                 />
               </div>
             </div>
