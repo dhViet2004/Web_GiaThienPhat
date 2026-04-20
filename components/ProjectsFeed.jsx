@@ -607,7 +607,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className={`shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[280px] lg:flex-1 lg:min-w-0 lg:max-w-[300px] order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:ml-4' : ''}`}
+              className={`shrink-0 h-full flex flex-col justify-start w-[85vw] sm:w-[280px] lg:flex-1 lg:min-w-0 lg:max-w-[300px] order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:ml-4' : ''}`}
             >
               {description && (
                 <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">

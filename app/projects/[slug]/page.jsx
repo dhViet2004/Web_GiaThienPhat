@@ -465,7 +465,7 @@ export default function ProjectDetailPage({ params }) {
 
           {/* CARD 3: INDEPENDENT DESCRIPTION */}
           {description && (
-            <div className={`relative h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[290px] pointer-events-none select-none${hasRightGalleryOrSlider ? ' ml-[20px] lg:ml-[30px]' : ''}`}>
+            <div className={`relative h-full flex flex-col justify-start shrink-0 w-[85vw] sm:w-[290px] pointer-events-none select-none${hasRightGalleryOrSlider ? ' ml-[20px] lg:ml-[30px]' : ''}`}>
               <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
                 <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
                 <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
