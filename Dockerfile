@@ -10,6 +10,9 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED 1
 
+ARG MONGODB_URI
+ENV MONGODB_URI=$MONGODB_URI
+
 RUN npm run build
 
 # Production stage
