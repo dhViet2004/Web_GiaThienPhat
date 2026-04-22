@@ -434,14 +434,18 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   useEffect(() => { return () => stopInertia(); }, [stopInertia]);
 
   // Desktop: Đồng bộ chiều cao ảnh gallery/slider với ảnh chính (BIG.DK style)
+  // FIX: ResizeObserver xóa CSS var khi về Mobile thay vì chỉ skip
   useLayoutEffect(() => {
-    if (typeof window === 'undefined' || window.innerWidth < 1024) return;
-
     const scrollEl = scrollRef.current;
     const mainImg = mainImageRef.current;
     if (!scrollEl || !mainImg) return;
 
     const applyMainImageHeight = () => {
+      // Khi về mobile: xóa CSS var để CSS fallback của stylesheet có hiệu lực
+      if (window.innerWidth < 1024) {
+        scrollEl.style.removeProperty('--gallery-img-h');
+        return;
+      }
       const h = mainImg.getBoundingClientRect().height;
       if (h > 0) {
         scrollEl.style.setProperty('--gallery-img-h', `${h}px`);
@@ -462,22 +466,29 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   }, [project?._id]);
 
   // Chiều rộng slide intro = vùng cuộn (trùng với max-w + px của feed/menu), không dùng 100vw để khỏi lệch so với header
+  // FIX: Xóa inline width khi về Mobile thay vì chỉ return
   useLayoutEffect(() => {
     const scrollEl = scrollRef.current;
     const introEl = introSlideRef.current;
     if (!scrollEl || !introEl) return;
 
-    // Desktop only: đồng bộ chiều rộng intro slide
     const sync = () => {
-      // Chỉ sync trên desktop, mobile dùng fixed sizes
-      if (window.innerWidth < 1024) return;
+      if (window.innerWidth < 1024) {
+        // Xóa inline style để Mobile dùng CSS classes tự nhiên (không bị width cố định của Desktop)
+        introEl.style.width = '';
+        return;
+      }
       const w = scrollEl.clientWidth;
       if (w > 0) introEl.style.width = `${w}px`;
     };
     sync();
     const ro = new ResizeObserver(sync);
     ro.observe(scrollEl);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      // Cleanup: xóa inline style khi component unmount
+      if (introEl) introEl.style.width = '';
+    };
   }, [project?._id]);
 
   const description = getTextBlock(project);
@@ -535,48 +546,48 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
 
           {/* ===== PHẦN 1: KHỐI INTRO SLIDE (100% màn hình) - Flexbox 20-60-20 ===== */}
           {/* Mobile: Tách Info, Ảnh, Description thành 3 cards ngang riêng biệt (BIG.DK style) */}
-          {/* Desktop: Giữ layout flex-row 3 cột */}
+          {/* Desktop: Giữ layout flex-row 3 cột cân bằng: flex-1 | auto | flex-1 */}
           <div
             ref={introSlideRef}
             data-intro-slide
             className="shrink-0 h-full flex flex-nowrap items-center justify-center min-w-0"
           >
-            {/* ====== CARD 1: PROJECT INFO (Mobile: 85vw, Desktop: flex-1) ====== */}
+            {/* ====== CARD 1: PROJECT INFO ====== */}
+            {/* Mobile: card 85vw riêng | Desktop: flex-1 cột trái, text-right, nở theo chiều sâu */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
-              className="shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[320px] lg:flex-1 lg:min-w-0 lg:max-w-[340px] order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6"
+              className="shrink-0 h-full flex flex-col justify-start w-[85vw] sm:w-[320px] lg:flex-1 lg:min-w-0 lg:max-w-[380px] order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6"
             >
-              <div className="mb-4 lg:mb-6"></div>
-              <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold tracking-tighter leading-none break-words w-full m-0 p-0">
+              <h1 className="text-lg sm:text-xl lg:text-[18px] xl:text-[22px] font-normal text-black m-0 p-0 leading-[1.3] whitespace-normal w-full">
                 {project.general?.title || 'Untitled Project'}
               </h1>
-              <p className="mt-2 text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-8 lg:mb-12">
+              <p className="mt-2 text-[10px] lg:text-[11px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-8 lg:mb-12">
                 {project.general?.location || ''}
               </p>
               <div className="flex flex-col gap-3 lg:gap-4 items-center lg:items-end">
                 <div>
-                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
-                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
+                  <h4 className="text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
+                  <p className="text-[10px] lg:text-[14px] text-black uppercase tracking-wider leading-none lg:max-w-[180px] break-words whitespace-normal">{project.general?.client || 'N/A'}</p>
                 </div>
                 <div>
-                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
-                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
+                  <h4 className="text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
+                  <p className="text-[10px] lg:text-[14px] text-black uppercase tracking-wider leading-none lg:max-w-[180px] break-words whitespace-normal">{project.general?.typology || 'N/A'}</p>
                 </div>
                 <div>
-                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Status</h4>
-                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
+                  <h4 className="text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-widest mb-1">Status</h4>
+                  <p className="text-[10px] lg:text-[14px] text-black uppercase tracking-wider leading-none lg:max-w-[180px] break-words whitespace-normal">{project.general?.status || 'Completed'}</p>
                 </div>
                 <div>
-                  <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Year</h4>
-                  <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
+                  <h4 className="text-[10px] lg:text-[12px] text-[#797979] uppercase tracking-widest mb-1">Year</h4>
+                  <p className="text-[10px] lg:text-[14px] text-black uppercase tracking-wider leading-none lg:max-w-[180px] break-words whitespace-normal">{projectYear}</p>
                 </div>
               </div>
             </motion.div>
 
-            {/* ====== CARD 2: ẢNH CHÍNH (Mobile: 85vw, Desktop: max-w-[60%]) ====== */}
-            {/* Mobile: width cố định 85vw, Desktop: tự động theo nội dung */}
+            {/* ====== CARD 2: ẢNH CHÍNH ====== */}
+            {/* Mobile: 85vw | Desktop: auto (ảnh tự co theo tỉ lệ, căn giữa bởi flex-1 hai bên) */}
             <div ref={mainImageRef} className="shrink-0 h-full order-1 lg:order-2 flex min-w-0 justify-center items-center w-[85vw] sm:w-auto">
               <motion.div
                 layoutId={layoutId}
@@ -602,22 +613,22 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               </motion.div>
             </div>
 
-            {/* ====== CARD 3: DESCRIPTION (Mobile: 85vw, Desktop: flex-1) ====== */}
+            {/* ====== CARD 3: DESCRIPTION (Mobile: 85vw, Desktop: flex-1 cột phải) ====== */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className={`shrink-0 h-full flex flex-col justify-start w-[85vw] sm:w-[280px] lg:flex-1 lg:min-w-0 lg:max-w-[300px] order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:ml-4' : ''}`}
+              transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
+              className={`shrink-0 h-full flex flex-col justify-start w-[85vw] sm:w-[280px] lg:flex-1 lg:min-w-0 lg:max-w-[380px] order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:mr-[35px]' : ''}`}
             >
               {description && (
-                <div className="text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
-                  <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-3">DESCRIPTION</h3>
+                <div className="text-[13px] leading-[1.6] text-black tracking-tight opacity-80">
                   <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
                 </div>
               )}
             </motion.div>
 
           </div>
+
 
           {/* ===== PHẦN 2: KHỐI GALLERY IMAGES SLIDES ===== */}
           {/* Mobile: clamp height cố định. Desktop: đồng bộ với ảnh chính qua CSS variable */}
@@ -714,7 +725,12 @@ export default function ProjectsFeed() {
   const [isInitialized, setIsInitialized] = useState(false);
   // Dùng Set để lưu danh sách các ID dự án đã được click mở rộng — giữ nguyên trạng thái khi cuộn dọc
   const [expandedProjectIds, setExpandedProjectIds] = useState(new Set());
-  const [isMobileView, setIsMobileView] = useState(false);
+  // Lazy initializer: đọc window.innerWidth ngay từ đầu (SSR-safe)
+  // Tránh hydration mismatch và flash layout sai khi load trên Mobile
+  const [isMobileView, setIsMobileView] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 1024;
+  });
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeSubcategory, setActiveSubcategory] = useState(null);
   const expandedRef = useRef(new Set());
@@ -926,6 +942,41 @@ export default function ProjectsFeed() {
 
   }, { scope: containerRef, dependencies: [isInitialized, projects.length] });
 
+  // FIX: Refresh GSAP ScrollTrigger khi resize để recalculate tọa độ trigger points
+  useEffect(() => {
+    const handleResize = () => {
+      ScrollTrigger.refresh();
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // FIX ROOT CAUSE #1+3: Khi cross ngưỡng Mobile ↔ Desktop
+  // - Xóa GSAP inline styles (clearProps) để Tailwind CSS có thể override (nguyên nhân chính phải reload)
+  // - Đóng expanded projects để tránh layout conflict portal vs inline
+  // - Dùng null sentinel để không trigger sai lúc mount đầu
+  const prevIsMobileRef = useRef(null);
+  useEffect(() => {
+    if (prevIsMobileRef.current === null) {
+      // Lần mount đầu: chỉ ghi nhận, không làm gì
+      prevIsMobileRef.current = isMobileView;
+      return;
+    }
+    if (prevIsMobileRef.current !== isMobileView) {
+      prevIsMobileRef.current = isMobileView;
+      // Xóa sạch GSAP inline styles để Tailwind CSS classes hoạt động đúng sau resize
+      gsap.set('.velocity-card', { clearProps: 'all' });
+      gsap.set('.project-image', { clearProps: 'all' });
+      gsap.set('.project-info', { clearProps: 'all' });
+      gsap.set('.projects-scaler', { clearProps: 'all' });
+      ScrollTrigger.refresh();
+      if (expandedProjectIds.size > 0) {
+        setExpandedProjectIds(new Set());
+        window.history.pushState(null, '', '/');
+      }
+    }
+  }, [isMobileView, expandedProjectIds.size]);
+
   if (!isInitialized) return <div className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10" />;
 
   // Mobile: lấy project đầu tiên trong Set để hiển thị portal
@@ -996,108 +1047,95 @@ export default function ProjectsFeed() {
       `}</style>
 
       <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
-        <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
-          <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
-            <div className="flex flex-col items-center w-full transition-all duration-500 gap-1 lg:gap-1">
-              {/* Theo activeCategory và activeSubcategory để lọc */}
-              {projects
-                .filter(p => {
-                  if (activeCategory && p.category !== activeCategory) return false;
-                  if (activeSubcategory && p.subcategory !== activeSubcategory) return false;
-                  return true;
-                })
-                .map((project, index) => {
-                  // Kiểm tra project có trong Set mở rộng không
-                  const isExpanded = expandedProjectIds.has(project._id);
-                  // Mobile: portal hiển thị, nên không render inline
-                  const isMobilePortal = isExpanded && isMobileView;
+        <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
+          <div className="flex flex-col items-center w-full transition-all duration-500 gap-1 lg:gap-1">
+            {projects
+              .filter(p => {
+                if (activeCategory && p.category !== activeCategory) return false;
+                if (activeSubcategory && p.subcategory !== activeSubcategory) return false;
+                return true;
+              })
+              .map((project, index) => {
+                const isExpanded = expandedProjectIds.has(project._id);
+                const isMobilePortal = isExpanded && isMobileView;
+                // Desktop expanded: w-full của containerRef (không bị max-w/px constraint)
+                // Mobile expanded: placeholder vô hình (portal đảm nhận)
+                // Collapsed: max-w + px + mx-auto được áp dụng trực tiếp trên item
+                return (
+                  <motion.div
+                    key={project._id || index}
+                    id={`project-${project._id}`}
+                    layout={!isExpanded}  // Tắt layout animation khi expanded để tránh FLIP counteract w-full
+                    className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                      isMobilePortal
+                        ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
+                        : isExpanded
+                          ? 'relative w-full h-[75vh] md:h-[75vh] z-50 my-0'  // w-full = 100% containerRef = 100vw
+                          : 'relative w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] flex justify-center items-center max-w-[1600px] h-auto my-2'
+                    }`}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
+                  >
+                    {!isExpanded ? (
+                      <div className="project-row w-full flex justify-center items-center group">
+                        <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
 
-                  return (
-                    <motion.div
-                      key={project._id || index}
-                      id={`project-${project._id}`}
-                      layout={!isMobilePortal}
-                      className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobilePortal
-                          ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
-                          : isExpanded
-                            ? 'relative w-full h-[75vh] md:h-[75vh] z-50 my-0'
-                            : 'relative w-full flex justify-center items-center max-w-[1600px] h-auto my-2'
-                        }`}
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
-                    >
-                      {!isExpanded ? (
-                        <div className="project-row w-full flex justify-center items-center group">
-                          <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
-
-                            {/* Left Info Desktop */}
-                            <div className="hidden md:flex absolute top-0 right-full mr-[4px] lg:mr-[6px] w-[324px] project-info justify-end z-20">
-                              <div className="relative w-full text-right flex flex-col items-end origin-right">
-                                <div onClick={(e) => { e.preventDefault(); handleSelectProject(project); }} className="group/link cursor-pointer flex flex-col items-end">
-                                  <div className="relative pr-2 lg:pr-5">
-                                    <h2 className="text-[14px] lg:text-[18px] font-normal text-black m-0 p-0 leading-tight whitespace-nowrap">
-                                      {project.general?.title}
-                                    </h2>
-                                    <span className="absolute -bottom-1 right-2 lg:right-5 h-px bg-black w-0 group-hover/link:w-full transition-all duration-400" style={{ left: 'auto' }}></span>
-                                  </div>
-                                  <p className="text-[#797979] text-[11px] lg:text-[12px] uppercase mt-[4px] lg:mt-[6px] pr-2 lg:pr-5">
-                                    {project.general?.location}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Cover Image Wrapper with LayoutID */}
-                            <div className="shrink-0 project-image overflow-hidden w-[80vw] sm:w-[300px] lg:w-[56vh] relative">
-                              <motion.div
-                                layoutId={`img-container-${project._id}`}
-                                onClick={() => handleSelectProject(project)}
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 80,
-                                  damping: 35,
-                                  mass: 1,
-                                }}
-                                className="relative w-full cursor-pointer group"
-                              >
-                                <Image
-                                  src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
-                                  alt={project.general?.title || 'Preview'}
-                                  width={800}
-                                  height={0}
-                                  style={{ width: '100%', height: 'auto' }}
-                                  priority={index < 4}
-                                  sizes="(max-width: 768px) 90vw, 64vh"
-                                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                />
-                                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                              </motion.div>
-                            </div>
-
-                            {/* Mobile Info */}
-                            <div className="flex md:hidden flex-col w-full mt-4 project-info px-2" onClick={() => handleSelectProject(project)}>
-                              <div className="flex items-start gap-4 cursor-pointer">
-                                <div>
-                                  <h2 className="text-[15px] font-normal text-black leading-none">{project.general?.title}</h2>
-                                  <p className="text-[#797979] text-[11px] uppercase mt-1">{project.general?.location}</p>
-                                </div>
-                              </div>
-                            </div>
-
+                          {/* 1. COVER IMAGE WRAPPER */}
+                          <div className="shrink-0 project-image overflow-hidden w-[80vw] sm:w-[300px] lg:w-[56vh] relative">
+                            <motion.div
+                              layoutId={`img-container-${project._id}`}
+                              onClick={() => handleSelectProject(project)}
+                              transition={{ type: "spring", stiffness: 80, damping: 35, mass: 1 }}
+                              className="relative w-full cursor-pointer group"
+                            >
+                              <Image
+                                src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
+                                alt={project.general?.title || 'Preview'}
+                                width={800}
+                                height={0}
+                                style={{ width: '100%', height: 'auto' }}
+                                priority={index < 4}
+                                sizes="(max-width: 768px) 90vw, 64vh"
+                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                            </motion.div>
                           </div>
+
+                          {/* 1. KHỐI THÔNG TIN (Info Block) */}
+                          <div
+                            onClick={(e) => { e.preventDefault(); handleSelectProject(project); }}
+                            // Đổi thành items-start để text và icon bằng nhau ở mép trên
+                            className="project-info bottom-0 mt-[14px] flex items-start shrink-0 bg-white z-20 cursor-pointer w-[90vw] sm:w-auto md:absolute md:top-0 md:-left-[14px] md:mt-0 md:mr-[14px] md:max-w-[324px] md:-translate-x-full md:flex-col md:items-end md:text-right lg:-left-[20px] lg:mr-[20px]"
+                          >
+                            {/* Container chứa Tên và Địa điểm - Xóa bỏ justify-center */}
+                            <div className="md:mt-[18px] md:ml-0 lg:mt-[24px]">
+                              
+                              {/* TITLE: Thêm leading-[15px] và font-normal để ép sát khoảng cách dòng */}
+                              <h3 className="text-[15px] leading-[15px] font-normal break-words m-0 p-0 text-black sm:text-[13px] sm:max-w-[30vw] md:text-[14px] md:max-w-[170px] lg:text-[18px] lg:leading-[20px] lg:max-w-none transition-opacity hover:opacity-70">
+                                {project.general?.title}
+                              </h3>
+                              
+                              {/* LOCATION: Chỉnh lại margin-top và tracking */}
+                              <p className="mt-[4px] text-[11px] text-[#797979] uppercase tracking-wider font-medium md:mt-[4px] md:text-[12px] lg:mt-[6px] lg:text-[15px]">
+                                {project.general?.location}
+                              </p>
+                            </div>
+                          </div>
+
                         </div>
-                      ) : isMobileView ? null : (
-                        // Desktop inline detail: data đã có sẵn từ projects array → isLoading={false}
-                        <InlineProjectDetail
-                          project={project}
-                          onClose={() => handleCloseProject(project._id)}
-                          layoutId={`img-container-${project._id}`}
-                          isLoading={false}
-                        />
-                      )}
-                    </motion.div>
-                  );
-                })}
-            </div>
+                      </div>
+                    ) : isMobileView ? null : (
+                      // Desktop: inline trong feed, w-full = 100% containerRef = full viewport width
+                      <InlineProjectDetail
+                        project={project}
+                        onClose={() => handleCloseProject(project._id)}
+                        layoutId={`img-container-${project._id}`}
+                        isLoading={false}
+                      />
+                    )}
+                  </motion.div>
+                );
+              })}
           </div>
         </div>
       </div>

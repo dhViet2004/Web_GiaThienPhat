@@ -143,7 +143,7 @@ export default function BigHomepage() {
                     // Toggle: nếu đang hover category này thì đóng, không thì mở
                     setHoveredCategory(hoveredCategory === cat.title ? null : cat.title);
                   }}
-                  className={`text-[11px] lg:text-[14.5px] font-medium tracking-widest uppercase transition-colors duration-200 bg-transparent border-none cursor-pointer p-0 ${hoveredCategory === cat.title ? 'text-black' : 'text-[#6b6b6b] hover:text-black'}`}
+                  className={`text-[11px] md:text-[14.5px] font-medium tracking-widest uppercase transition-colors duration-200 bg-transparent border-none cursor-pointer p-0 ${hoveredCategory === cat.title ? 'text-black' : 'text-[#6b6b6b] hover:text-black'}`}
                 >
                   {cat.title}
                 </button>
@@ -158,7 +158,7 @@ export default function BigHomepage() {
                      <button
                        key={subItem}
                        onClick={(e) => handleSubcategoryClick(e, cat.title, subItem)}
-                       className={`text-[10px] lg:text-[12px] uppercase tracking-widest px-4 py-2 transition-colors whitespace-nowrap bg-transparent border-none cursor-pointer ${
+                       className={`text-[10px] md:text-[12px] tracking-widest px-4 py-2 transition-colors whitespace-nowrap bg-transparent border-none cursor-pointer ${
                          activeSubcategory === subItem ? 'text-black font-bold' : 'text-[#6b6b6b] hover:text-black'
                        }`}
                      >
@@ -187,7 +187,7 @@ export default function BigHomepage() {
                 placeholder="SEARCH"
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
-                className="w-[110px] xl:w-[200px] text-[11px] lg:text-[13px] text-black uppercase tracking-widest placeholder:text-[#9e9e9e] placeholder:uppercase focus:outline-none bg-transparent mr-4 transition-all"
+                className="w-[110px] xl:w-[200px] text-[11px] md:text-[13px] text-black uppercase tracking-widest placeholder:text-[#9e9e9e] placeholder:uppercase focus:outline-none bg-transparent mr-4 transition-all"
               />
 
               {/* Suggestion Box (Slide-in) */}
