@@ -530,7 +530,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
       )}
 
       {/* Horizontal Scroll Container */}
-      <div 
+      <div
         ref={scrollRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -644,7 +644,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 + idx * 0.1 }}
                 className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none lg:max-w-none"
-                style={{ height: 'clamp(200px, 45vh, 380px)', maxHeight: '45vh' }}
+                style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                 data-gallery-card
               >
                 {block.url && (
@@ -654,7 +654,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
                     width={0}
                     height={0}
                     sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
-                    style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: '45vh' }}
+                    style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                     draggable={false}
                     className="object-contain select-none pointer-events-none"
                   />
@@ -677,7 +677,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
                 className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none lg:max-w-none"
-                style={{ height: 'clamp(200px, 45vh, 380px)', maxHeight: '45vh' }}
+                style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                 data-gallery-card
               >
                 <AnimatePresence mode="wait">
@@ -695,7 +695,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
                       width={0}
                       height={0}
                       sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
-                      style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: '45vh' }}
+                      style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                       draggable={false}
                       className="object-contain select-none pointer-events-none"
                     />
@@ -1046,7 +1046,7 @@ export default function ProjectsFeed() {
         }
       `}</style>
 
-      <div ref={containerRef} className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10">
+      <div ref={containerRef} className="w-full bg-white relative pt-24 md:pt-[90px] pb-[20vh] overflow-hidden z-10">
         <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
           <div className="flex flex-col items-center w-full transition-all duration-500 gap-1 lg:gap-1">
             {projects
@@ -1066,13 +1066,12 @@ export default function ProjectsFeed() {
                     key={project._id || index}
                     id={`project-${project._id}`}
                     layout={!isExpanded}  // Tắt layout animation khi expanded để tránh FLIP counteract w-full
-                    className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                      isMobilePortal
-                        ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
-                        : isExpanded
-                          ? 'relative w-full h-[75vh] md:h-[75vh] z-50 my-0'  // w-full = 100% containerRef = 100vw
-                          : 'relative w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] flex justify-center items-center max-w-[1600px] h-auto my-2'
-                    }`}
+                    className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobilePortal
+                      ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
+                      : isExpanded
+                        ? 'relative w-full h-[75vh] md:h-[75vh] z-50 my-0'  // w-full = 100% containerRef = 100vw
+                        : 'relative w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] flex justify-center items-center max-w-[1600px] h-auto my-2'
+                      }`}
                     transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
                   >
                     {!isExpanded ? (
@@ -1109,12 +1108,12 @@ export default function ProjectsFeed() {
                           >
                             {/* Container chứa Tên và Địa điểm - Xóa bỏ justify-center */}
                             <div className="md:mt-[18px] md:ml-0 lg:mt-[24px]">
-                              
+
                               {/* TITLE: Thêm leading-[15px] và font-normal để ép sát khoảng cách dòng */}
                               <h3 className="text-[15px] leading-[15px] font-normal break-words m-0 p-0 text-black sm:text-[13px] sm:max-w-[30vw] md:text-[14px] md:max-w-[170px] lg:text-[18px] lg:leading-[20px] lg:max-w-none transition-opacity hover:opacity-70">
                                 {project.general?.title}
                               </h3>
-                              
+
                               {/* LOCATION: Chỉnh lại margin-top và tracking */}
                               <p className="mt-[4px] text-[11px] text-[#797979] uppercase tracking-wider font-medium md:mt-[4px] md:text-[12px] lg:mt-[6px] lg:text-[15px]">
                                 {project.general?.location}

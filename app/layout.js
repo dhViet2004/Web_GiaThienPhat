@@ -4,7 +4,7 @@ import { SmoothScroll } from '../components/SmoothScroll';
 
 const inter = Inter({ subsets: ['latin'] });
 const tabLogoUrl =
-  'https://res.cloudinary.com/dh1o42tjk/image/upload/v1774340283/LOgo_evvhb5.png';
+  'https://res.cloudinary.com/dh1o42tjk/image/upload/v1776845819/LOgo_hrzqlc.png';
 
 export const metadata = {
   title: 'Gia Thien Phat',
