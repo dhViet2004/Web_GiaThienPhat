@@ -1,38 +1,196 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText, Download, ExternalLink, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function CredentialsDetail() {
-  const params = useParams();
-  const router = useRouter();
-  const id = params?.id;
-  const [item, setItem] = useState(null);
+function PdfViewerModal({ pdfPath, onClose }) {
+  const [scale, setScale] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const iframeRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    if (!id) return;
+    const handleMessage = (event) => {
+      if (event.data.type === 'pdfLoaded') {
+        setLoading(false);
+        setTotalPages(event.data.totalPages || 1);
+      }
+      if (event.data.type === 'pageChanged') {
+        setCurrentPage(event.data.page);
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    
+    // Fallback: set loading to false after timeout
+    const timeout = setTimeout(() => setLoading(false), 3000);
+    
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      clearTimeout(timeout);
+    };
+  }, []);
 
-    fetch('/api/admin/credentials')
-      .then(res => res.json())
-      .then(data => {
-        if (data.items) {
-          const found = data.items.find(i => i.id === id);
-          if (found) {
-            setItem(found);
+  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.25, 3));
+  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.25, 0.5));
+  
+  const handlePrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+  const handleNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+
+  const handleFullscreen = () => {
+    if (containerRef.current) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        containerRef.current.requestFullscreen();
+      }
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 z-[100] flex flex-col"
+      onClick={onClose}
+    >
+      {/* Header Controls */}
+      <div 
+        className="flex items-center justify-between px-4 py-3 bg-gray-900 text-white"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleZoomOut}
+            className="p-2 hover:bg-gray-700 rounded transition-colors"
+            title="Zoom Out"
+          >
+            <ZoomOut size={18} />
+          </button>
+          <span className="text-sm font-mono min-w-[60px] text-center">
+            {Math.round(scale * 100)}%
+          </span>
+          <button
+            onClick={handleZoomIn}
+            className="p-2 hover:bg-gray-700 rounded transition-colors"
+            title="Zoom In"
+          >
+            <ZoomIn size={18} />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrevPage}
+            disabled={currentPage <= 1}
+            className="p-2 hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <span className="text-sm font-mono min-w-[60px] text-center">
+            {currentPage} / {totalPages}
+          </span>
+          <button
+            onClick={handleNextPage}
+            disabled={currentPage >= totalPages}
+            className="p-2 hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleFullscreen}
+            className="p-2 hover:bg-gray-700 rounded transition-colors"
+            title="Fullscreen"
+          >
+            <ExternalLink size={18} />
+          </button>
+          <a
+            href={pdfPath}
+            download
+            className="p-2 hover:bg-gray-700 rounded transition-colors"
+            title="Download"
+          >
+            <Download size={18} />
+          </a>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-red-600 rounded transition-colors ml-2"
+            title="Close"
+          >
+            <span className="text-xl font-bold">×</span>
+          </button>
+        </div>
+      </div>
+
+      {/* PDF Container */}
+      <div 
+        ref={containerRef}
+        className="flex-1 overflow-auto bg-gray-800 flex items-start justify-center p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-800 z-10">
+            <Loader2 className="w-8 h-8 animate-spin text-white" />
+          </div>
+        )}
+        <iframe
+          ref={iframeRef}
+          src={`${pdfPath}#page=${currentPage}&zoom=${Math.round(scale * 100)}`}
+          className="bg-white shadow-2xl"
+          style={{
+            width: `${Math.round(595 * scale)}px`,
+            height: `${Math.round(842 * scale)}px`,
+          }}
+          title="PDF Viewer"
+          onLoad={() => setLoading(false)}
+        />
+      </div>
+    </motion.div>
+  );
+}
+
+export default function CredentialsDetail({ credential: initialCredential }) {
+  const router = useRouter();
+  const [item, setItem] = useState(initialCredential);
+  const [loading, setLoading] = useState(!initialCredential);
+  const [error, setError] = useState(null);
+  const [showPdf, setShowPdf] = useState(false);
+
+  useEffect(() => {
+    if (!initialCredential && !item) {
+      const id = window.location.pathname.split('/').pop();
+      
+      fetch('/api/admin/credentials')
+        .then(res => res.json())
+        .then(data => {
+          if (data.items) {
+            const found = data.items.find(i => i.id === id);
+            if (found) {
+              setItem(found);
+              setShowPdf(true);
+            } else {
+              setError('Item not found');
+            }
           }
           setLoading(false);
-        }
-      })
-      .catch(err => {
-        console.error('Failed to fetch:', err);
-        setError('Failed to load credential');
-        setLoading(false);
-      });
-  }, [id]);
+        })
+        .catch(err => {
+          console.error('Failed to fetch:', err);
+          setError('Failed to load credential');
+          setLoading(false);
+        });
+    } else if (initialCredential) {
+      setShowPdf(true);
+    }
+  }, [initialCredential, item]);
 
   if (loading) {
     return (
@@ -47,7 +205,12 @@ export default function CredentialsDetail() {
       <div className="min-h-screen flex items-center justify-center bg-white font-sans">
         <div className="text-center">
           <h1 className="text-2xl font-serif italic mb-4">Item not found</h1>
-          <button onClick={() => router.push('/credentials')} className="text-sm underline">Return to Credentials</button>
+          <button 
+            onClick={() => router.push('/credentials')} 
+            className="text-sm underline hover:text-gray-600"
+          >
+            Return to Credentials
+          </button>
         </div>
       </div>
     );
@@ -56,15 +219,42 @@ export default function CredentialsDetail() {
   return (
     <div className="bg-white min-h-screen flex flex-col font-sans text-gray-900 selection:bg-black selection:text-white">
       {/* Header */}
-      <header className="fixed top-0 left-0 w-full p-8 flex justify-between items-center z-50 mix-blend-difference text-white pointer-events-none">
-        <div 
+      <header className="fixed top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+        <button 
             onClick={() => router.push('/credentials')}
-            className="group flex items-center gap-2 cursor-pointer pointer-events-auto"
+            className="group flex items-center gap-2 cursor-pointer"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           <span className="text-sm font-medium tracking-widest uppercase">Back to Credentials</span>
-        </div>
+        </button>
+        
+        {item.pdfPath && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-gray-400 hidden md:inline">
+              {item.pdfPath.split('/').pop()}
+            </span>
+            <button
+              onClick={() => setShowPdf(true)}
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${
+                showPdf 
+                  ? 'bg-black text-white' 
+                  : 'bg-green-100 text-green-800 hover:bg-green-200'
+              }`}
+            >
+              <FileText size={14} />
+              View PDF
+            </button>
+          </div>
+        )}
       </header>
+
+      {/* PDF Modal */}
+      {showPdf && item.pdfPath && (
+        <PdfViewerModal 
+          pdfPath={item.pdfPath} 
+          onClose={() => setShowPdf(false)} 
+        />
+      )}
 
       {/* Hero Section */}
       <div className="relative w-full h-[70vh] md:h-[80vh] overflow-hidden">
@@ -82,19 +272,26 @@ export default function CredentialsDetail() {
             <div className="absolute inset-0 bg-black/20" />
         </motion.div>
         
+        {/* Medal Badge */}
+        {item.medal && (
+          <div className="absolute top-20 md:top-24 left-6 md:left-12 bg-gradient-to-b from-[#B8860B] to-[#DAA520] text-white px-3 py-2 text-xs font-bold uppercase tracking-wider shadow-lg">
+            ★ Medal Award
+          </div>
+        )}
+
         {/* Title Block over Hero */}
         <motion.div 
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-            className="absolute bottom-0 left-0 p-8 md:p-16 w-full text-white"
+            className="absolute bottom-0 left-0 p-6 md:p-12 w-full text-white"
         >
             <div className="flex items-center gap-4 text-xs font-mono tracking-widest text-white/80 mb-4 max-w-lg">
               <span>{item.num}</span>
               <div className="h-px bg-white/40 flex-1" />
               <span>{item.brand}</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-serif italic tracking-tight">{item.title}</h1>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif italic tracking-tight">{item.title}</h1>
         </motion.div>
       </div>
 
@@ -103,9 +300,9 @@ export default function CredentialsDetail() {
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
-        className="max-w-4xl mx-auto px-8 md:px-16 py-16 w-full"
+        className="max-w-4xl mx-auto px-6 md:px-16 py-12 md:py-16 w-full"
       >
-        <p className="text-xl md:text-2xl font-light text-gray-500 leading-relaxed mb-12">
+        <p className="text-lg md:text-2xl font-light text-gray-500 leading-relaxed mb-12">
             {item.subtitle}
         </p>
 
@@ -125,6 +322,60 @@ export default function CredentialsDetail() {
                 </ul>
             </div>
         </div>
+
+        {/* PDF Section in Content */}
+        {item.pdfPath && (
+          <div className="mt-16 pt-12 border-t border-gray-200">
+            <div className="flex items-center gap-3 mb-6">
+              <FileText size={24} className="text-gray-400" />
+              <h3 className="text-lg font-bold tracking-widest uppercase">Project Document</h3>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <FileText size={24} className="text-red-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-800">{item.pdfPath.split('/').pop()}</p>
+                    <p className="text-xs text-gray-500">PDF Document</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowPdf(true)}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-black text-white text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors"
+                  >
+                    <FileText size={16} />
+                    View PDF
+                  </button>
+                  <a
+                    href={item.pdfPath}
+                    download
+                    className="flex items-center gap-2 px-5 py-2.5 border-2 border-black text-black text-sm font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-colors"
+                  >
+                    <Download size={16} />
+                    Download
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* No PDF Message */}
+        {!item.pdfPath && (
+          <div className="mt-16 pt-12 border-t border-gray-200">
+            <div className="flex items-center gap-3 mb-6">
+              <FileText size={24} className="text-gray-300" />
+              <h3 className="text-lg font-bold tracking-widest uppercase text-gray-400">Project Document</h3>
+            </div>
+            <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-8 text-center">
+              <FileText size={32} className="mx-auto mb-4 text-gray-300" />
+              <p className="text-gray-400 text-sm">Chưa cập nhật file PDF</p>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

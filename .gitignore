@@ -23,3 +23,7 @@ yarn-error.log*
 # env files
 .env*.local
 .env
+
+# uploaded files (keep directory but ignore contents)
+public/pdf/*
+!public/pdf/.gitkeep

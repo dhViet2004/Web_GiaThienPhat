@@ -7,7 +7,8 @@ const CredentialSchema = new mongoose.Schema({
   title: { type: String, default: '' },
   subtitle: { type: String, default: '' },
   num: { type: String, default: '' },
-  medal: { type: Boolean, default: false }
+  medal: { type: Boolean, default: false },
+  pdfPath: { type: String, default: '' }
 }, { timestamps: true });
 
 if (mongoose.models.Credential) {

@@ -1,6 +1,48 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Credential from '@/models/Credential';
+import { promises as fs } from 'fs';
+import path from 'path';
+
+const PDF_UPLOAD_DIR = path.join(process.cwd(), 'public', 'pdf');
+
+async function ensureUploadDir() {
+  try {
+    await fs.access(PDF_UPLOAD_DIR);
+  } catch {
+    await fs.mkdir(PDF_UPLOAD_DIR, { recursive: true });
+  }
+}
+
+async function savePdfFile(pdfFile) {
+  if (!pdfFile || pdfFile.size === 0) {
+    return '';
+  }
+
+  await ensureUploadDir();
+
+  const timestamp = Date.now();
+  const originalName = pdfFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+  const fileName = `${timestamp}-${originalName}`;
+  const filePath = path.join(PDF_UPLOAD_DIR, fileName);
+
+  const arrayBuffer = await pdfFile.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  await fs.writeFile(filePath, buffer);
+
+  return `/pdf/${fileName}`;
+}
+
+async function deletePdfFile(pdfPath) {
+  if (!pdfPath) return;
+  
+  const filePath = path.join(process.cwd(), 'public', pdfPath);
+  try {
+    await fs.unlink(filePath);
+  } catch (error) {
+    console.error('Error deleting PDF file:', error);
+  }
+}
 
 const DEFAULT_CREDENTIALS = [
   {
@@ -10,7 +52,8 @@ const DEFAULT_CREDENTIALS = [
     title: "SK Telecom : AI Help you?",
     subtitle: "한국디지털광고협회 크리에이티브 디지털영상부문 은상",
     num: "(01)",
-    medal: false
+    medal: false,
+    pdfPath: ''
   },
   {
     id: "sk-telecom-2",
@@ -19,7 +62,8 @@ const DEFAULT_CREDENTIALS = [
     title: "SK Telecom : AI Help you?",
     subtitle: "한국디지털광고협회 크리에이티브 디지털영상부문 은상",
     num: "(02)",
-    medal: true
+    medal: true,
+    pdfPath: ''
   },
   {
     id: "aestura-popup",
@@ -28,7 +72,8 @@ const DEFAULT_CREDENTIALS = [
     title: "Aestura Pop-Up Store",
     subtitle: "Beauty and cosmetics experience",
     num: "(03)",
-    medal: false
+    medal: false,
+    pdfPath: ''
   },
   {
     id: "nike-just-do-it",
@@ -37,7 +82,8 @@ const DEFAULT_CREDENTIALS = [
     title: "Just Do It",
     subtitle: "Inspirational campaign 2024",
     num: "(04)",
-    medal: true
+    medal: true,
+    pdfPath: ''
   },
   {
     id: "apple-vision-pro",
@@ -46,7 +92,8 @@ const DEFAULT_CREDENTIALS = [
     title: "Vision Pro",
     subtitle: "Spatial computing era",
     num: "(05)",
-    medal: false
+    medal: false,
+    pdfPath: ''
   },
   {
     id: "google-gemini",
@@ -55,7 +102,8 @@ const DEFAULT_CREDENTIALS = [
     title: "Gemini AI",
     subtitle: "Next gen intelligence",
     num: "(06)",
-    medal: true
+    medal: true,
+    pdfPath: ''
   },
   {
     id: "tesla-model-3",
@@ -64,7 +112,8 @@ const DEFAULT_CREDENTIALS = [
     title: "Model 3 Highland",
     subtitle: "The electric revolution",
     num: "(07)",
-    medal: false
+    medal: false,
+    pdfPath: ''
   },
   {
     id: "sk-telecom-3",
@@ -73,7 +122,8 @@ const DEFAULT_CREDENTIALS = [
     title: "SK Telecom : AI Help you?",
     subtitle: "한국디지털광고협회 크리에이티브 디지털영상부문 은상",
     num: "(08)",
-    medal: true
+    medal: true,
+    pdfPath: ''
   },
   {
     id: "samsung-innovation",
@@ -82,7 +132,8 @@ const DEFAULT_CREDENTIALS = [
     title: "Innovation Forward",
     subtitle: "Technology excellence award 2024",
     num: "(09)",
-    medal: true
+    medal: true,
+    pdfPath: ''
   },
   {
     id: "meta-metaverse",
@@ -91,9 +142,23 @@ const DEFAULT_CREDENTIALS = [
     title: "Metaverse Experience",
     subtitle: "Digital world innovation",
     num: "(10)",
-    medal: false
+    medal: false,
+    pdfPath: ''
   },
 ];
+
+function formatCredential(c) {
+  return {
+    id: c.id,
+    src: c.src,
+    brand: c.brand,
+    title: c.title,
+    subtitle: c.subtitle,
+    num: c.num,
+    medal: c.medal,
+    pdfPath: c.pdfPath || ''
+  };
+}
 
 export async function GET() {
   try {
@@ -105,16 +170,7 @@ export async function GET() {
       credentials = await Credential.find({}).sort({ createdAt: 1 }).lean();
     }
 
-    const formattedCredentials = credentials.map(c => ({
-      id: c.id,
-      src: c.src,
-      brand: c.brand,
-      title: c.title,
-      subtitle: c.subtitle,
-      num: c.num,
-      medal: c.medal
-    }));
-
+    const formattedCredentials = credentials.map(formatCredential);
     return NextResponse.json({ items: formattedCredentials });
   } catch (error) {
     console.error('Error fetching credentials:', error);
@@ -132,15 +188,7 @@ export async function DELETE(request) {
       await Credential.deleteMany({});
       await Credential.insertMany(DEFAULT_CREDENTIALS);
       const credentials = await Credential.find({}).sort({ createdAt: 1 }).lean();
-      const formattedCredentials = credentials.map(c => ({
-        id: c.id,
-        src: c.src,
-        brand: c.brand,
-        title: c.title,
-        subtitle: c.subtitle,
-        num: c.num,
-        medal: c.medal
-      }));
+      const formattedCredentials = credentials.map(formatCredential);
       return NextResponse.json({ 
         success: true, 
         message: 'Credentials reset successfully',
@@ -160,6 +208,10 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'Credential not found' }, { status: 404 });
     }
 
+    if (deleted.pdfPath) {
+      await deletePdfFile(deleted.pdfPath);
+    }
+
     return NextResponse.json({ success: true, message: 'Credential deleted' });
   } catch (error) {
     console.error('Error deleting credential:', error);
@@ -170,34 +222,40 @@ export async function DELETE(request) {
 export async function POST(request) {
   try {
     await dbConnect();
-    const body = await request.json();
-    const { id, brand, title, subtitle, src, num, medal } = body;
+    const formData = await request.formData();
+    
+    const id = formData.get('id') || `credential-${Date.now()}`;
+    const brand = formData.get('brand');
+    const title = formData.get('title');
+    const subtitle = formData.get('subtitle') || '';
+    const src = formData.get('src') || '';
+    const num = formData.get('num');
+    const medal = formData.get('medal') === 'true';
+    const pdfFile = formData.get('pdf');
 
     if (!brand || !title || !num) {
       return NextResponse.json({ error: 'Brand, title, and num are required' }, { status: 400 });
     }
 
+    let pdfPath = '';
+    if (pdfFile && pdfFile.size > 0) {
+      pdfPath = await savePdfFile(pdfFile);
+    }
+
     const newCredential = await Credential.create({
-      id: id || `credential-${Date.now()}`,
+      id,
       brand,
       title,
-      subtitle: subtitle || '',
-      src: src || '',
+      subtitle,
+      src,
       num,
-      medal: medal || false
+      medal,
+      pdfPath
     });
 
     return NextResponse.json({
       success: true,
-      item: {
-        id: newCredential.id,
-        src: newCredential.src,
-        brand: newCredential.brand,
-        title: newCredential.title,
-        subtitle: newCredential.subtitle,
-        num: newCredential.num,
-        medal: newCredential.medal
-      }
+      item: formatCredential(newCredential)
     });
   } catch (error) {
     console.error('Error creating credential:', error);
@@ -208,15 +266,38 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     await dbConnect();
-    const body = await request.json();
-    const { id, index, field, value } = body;
+    const formData = await request.formData();
+    
+    const id = formData.get('id');
+    const index = formData.get('index') !== null ? parseInt(formData.get('index')) : null;
+    const field = formData.get('field');
+    const value = formData.get('value');
+    const pdfFile = formData.get('pdf');
+    const pdfPathFromClient = formData.get('pdfPath');
+    const keepExistingPdf = formData.get('keepExistingPdf') === 'true';
 
     let credential;
     
     if (id) {
+      const updateData = {};
+      
+      if (field && value !== null) {
+        updateData[field] = value;
+      }
+      
+      if (pdfFile && pdfFile.size > 0) {
+        const existing = await Credential.findOne({ id });
+        if (existing?.pdfPath) {
+          await deletePdfFile(existing.pdfPath);
+        }
+        updateData.pdfPath = await savePdfFile(pdfFile);
+      } else if (keepExistingPdf && pdfPathFromClient !== undefined) {
+        updateData.pdfPath = pdfPathFromClient;
+      }
+      
       credential = await Credential.findOneAndUpdate(
         { id },
-        { $set: { [field]: value } },
+        { $set: updateData },
         { new: true, runValidators: true }
       );
     } else if (typeof index === 'number') {
@@ -224,9 +305,26 @@ export async function PUT(request) {
       if (index < 0 || index >= allCredentials.length) {
         return NextResponse.json({ error: 'Invalid index' }, { status: 400 });
       }
+      
+      const updateData = {};
+      
+      if (field && value !== null) {
+        updateData[field] = value;
+      }
+      
+      if (pdfFile && pdfFile.size > 0) {
+        const existing = allCredentials[index];
+        if (existing?.pdfPath) {
+          await deletePdfFile(existing.pdfPath);
+        }
+        updateData.pdfPath = await savePdfFile(pdfFile);
+      } else if (keepExistingPdf && pdfPathFromClient !== undefined) {
+        updateData.pdfPath = pdfPathFromClient;
+      }
+      
       credential = await Credential.findOneAndUpdate(
         { _id: allCredentials[index]._id },
-        { $set: { [field]: value } },
+        { $set: updateData },
         { new: true, runValidators: true }
       );
     } else {
@@ -239,15 +337,7 @@ export async function PUT(request) {
 
     return NextResponse.json({ 
       success: true, 
-      item: {
-        id: credential.id,
-        src: credential.src,
-        brand: credential.brand,
-        title: credential.title,
-        subtitle: credential.subtitle,
-        num: credential.num,
-        medal: credential.medal
-      }
+      item: formatCredential(credential)
     });
   } catch (error) {
     console.error('Error updating credential:', error);

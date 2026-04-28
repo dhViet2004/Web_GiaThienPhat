@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Award, Image as ImageIcon, X, RotateCcw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, Edit2, Trash2, Award, Image as ImageIcon, X, RotateCcw, FileText } from 'lucide-react';
 
 export default function CredentialsAdmin() {
+  const router = useRouter();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [editModal, setEditModal] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newItem, setNewItem] = useState({
-    id: '', brand: '', title: '', subtitle: '', src: '', num: '', medal: false
+    id: '', brand: '', title: '', subtitle: '', src: '', num: '', medal: false, pdf: null
   });
 
   useEffect(() => {
@@ -53,16 +54,27 @@ export default function CredentialsAdmin() {
     }
     setSaving(true);
     try {
+      const formData = new FormData();
+      formData.append('id', newItem.id || `credential-${Date.now()}`);
+      formData.append('brand', newItem.brand);
+      formData.append('title', newItem.title);
+      formData.append('subtitle', newItem.subtitle);
+      formData.append('src', newItem.src);
+      formData.append('num', newItem.num);
+      formData.append('medal', String(newItem.medal));
+      if (newItem.pdf) {
+        formData.append('pdf', newItem.pdf);
+      }
+
       const res = await fetch('/api/admin/credentials', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newItem),
+        body: formData,
       });
       const data = await res.json();
       if (data.success) {
         fetchData();
         setShowAddModal(false);
-        setNewItem({ id: '', brand: '', title: '', subtitle: '', src: '', num: '', medal: false });
+        setNewItem({ id: '', brand: '', title: '', subtitle: '', src: '', num: '', medal: false, pdf: null });
       }
     } catch (error) {
       console.error('Failed to add:', error);
@@ -89,13 +101,27 @@ export default function CredentialsAdmin() {
     setSaving(false);
   };
 
-  const updateField = async (index, field, value) => {
+  const updateField = async (index, field, value, extraData = {}) => {
     setSaving(true);
     try {
+      const formData = new FormData();
+      formData.append('index', String(index));
+      formData.append('field', field);
+      formData.append('value', String(value));
+      
+      Object.entries(extraData).forEach(([key, val]) => {
+        if (val !== undefined && val !== null) {
+          if (val instanceof File) {
+            formData.append(key, val);
+          } else {
+            formData.append(key, String(val));
+          }
+        }
+      });
+
       const res = await fetch('/api/admin/credentials', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ index, field, value }),
+        body: formData,
       });
       const result = await res.json();
       if (result.success) {
@@ -114,23 +140,12 @@ export default function CredentialsAdmin() {
     }
   };
 
-  const openEditModal = (index) => {
-    setEditModal({ index, ...items[index] });
+  const handlePdfUpload = (index, file) => {
+    updateField(index, 'pdfPath', '', { pdf: file, keepExistingPdf: 'false' });
   };
 
-  const closeEditModal = () => {
-    setEditModal(null);
-  };
-
-  const saveEditModal = () => {
-    if (editModal) {
-      updateField(editModal.index, 'brand', editModal.brand);
-      updateField(editModal.index, 'title', editModal.title);
-      updateField(editModal.index, 'subtitle', editModal.subtitle);
-      updateField(editModal.index, 'src', editModal.src);
-      updateField(editModal.index, 'medal', editModal.medal);
-      closeEditModal();
-    }
+  const handleEditClick = (id) => {
+    router.push(`/admin/credentials/edit?id=${id}`);
   };
 
   if (loading) {
@@ -162,6 +177,7 @@ export default function CredentialsAdmin() {
             <p className="text-gray-500 font-light mt-4 uppercase tracking-widest text-sm flex gap-4 flex-wrap">
               <span>TỔNG SỐ: {items.length}</span>
               <span>MEDAL: {items.filter(i => i.medal).length}</span>
+              <span>PDF: {items.filter(i => i.pdfPath).length}</span>
             </p>
           </div>
 
@@ -213,6 +229,14 @@ export default function CredentialsAdmin() {
                     </div>
                   )}
 
+                  {/* PDF Badge */}
+                  {item.pdfPath && (
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-green-600 text-white px-2 py-1 text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
+                      <FileText size={10} />
+                      PDF
+                    </div>
+                  )}
+
                   {/* Number Badge */}
                   <div className="absolute top-3 right-3 bg-black text-white px-2 py-1 text-[10px] font-mono">
                     {item.num}
@@ -221,7 +245,7 @@ export default function CredentialsAdmin() {
                   {/* Hover Actions */}
                   <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={(e) => { e.stopPropagation(); openEditModal(index); }}
+                      onClick={(e) => { e.stopPropagation(); handleEditClick(item.id); }}
                       className="p-2.5 bg-white text-black hover:bg-black hover:text-white transition-colors border border-black/10"
                       title="Edit"
                     >
@@ -258,139 +282,45 @@ export default function CredentialsAdmin() {
                     </p>
                   </div>
 
-                  <button
-                    onClick={() => updateField(index, 'medal', !item.medal)}
-                    className={`mt-4 w-full py-2.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                      item.medal
-                        ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {item.medal ? 'Remove Medal' : 'Add Medal'}
-                  </button>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => updateField(index, 'medal', String(!item.medal))}
+                      className={`flex-1 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                        item.medal
+                          ? 'bg-yellow-500 text-white hover:bg-yellow-600'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {item.medal ? 'Remove Medal' : 'Add Medal'}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'application/pdf';
+                        input.onchange = (ev) => {
+                          const file = ev.target.files[0];
+                          if (file) handlePdfUpload(index, file);
+                        };
+                        input.click();
+                      }}
+                      className={`py-2.5 px-3 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                        item.pdfPath
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                      title={item.pdfPath ? 'Change PDF' : 'Upload PDF'}
+                    >
+                      <FileText size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {/* Edit Modal */}
-      {editModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
-              <h2 className="text-xl font-black uppercase tracking-tighter">
-                Edit {editModal.num}
-              </h2>
-              <button
-                onClick={closeEditModal}
-                className="p-2 hover:bg-gray-100 transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              {/* Preview Image */}
-              <div className="aspect-video bg-gray-100 overflow-hidden border border-gray-200">
-                <img
-                  src={editModal.src || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800'}
-                  alt={editModal.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Image URL */}
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  value={editModal.src}
-                  onChange={(e) => setEditModal({ ...editModal, src: e.target.value })}
-                  className="w-full border border-gray-300 px-4 py-3 text-sm focus:border-black focus:outline-none transition-colors"
-                  placeholder="https://..."
-                />
-              </div>
-
-              {/* Brand */}
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">
-                  Brand
-                </label>
-                <input
-                  type="text"
-                  value={editModal.brand}
-                  onChange={(e) => setEditModal({ ...editModal, brand: e.target.value })}
-                  className="w-full border border-gray-300 px-4 py-3 text-sm focus:border-black focus:outline-none transition-colors"
-                  placeholder="Brand name"
-                />
-              </div>
-
-              {/* Title */}
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={editModal.title}
-                  onChange={(e) => setEditModal({ ...editModal, title: e.target.value })}
-                  className="w-full border border-gray-300 px-4 py-3 text-sm focus:border-black focus:outline-none transition-colors"
-                  placeholder="Title"
-                />
-              </div>
-
-              {/* Subtitle */}
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">
-                  Subtitle
-                </label>
-                <textarea
-                  value={editModal.subtitle}
-                  onChange={(e) => setEditModal({ ...editModal, subtitle: e.target.value })}
-                  className="w-full border border-gray-300 px-4 py-3 text-sm focus:border-black focus:outline-none transition-colors resize-none h-24"
-                  placeholder="Subtitle"
-                />
-              </div>
-
-              {/* Medal Toggle */}
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  onClick={() => setEditModal({ ...editModal, medal: !editModal.medal })}
-                  className={`w-12 h-6 rounded-full transition-colors relative ${
-                    editModal.medal ? 'bg-yellow-500' : 'bg-gray-300'
-                  }`}
-                >
-                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform shadow ${
-                    editModal.medal ? 'translate-x-7' : 'translate-x-1'
-                  }`} />
-                </button>
-                <span className="text-sm font-bold uppercase tracking-widest">
-                  Medal
-                </span>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 flex gap-3 sticky bottom-0 bg-white">
-              <button
-                onClick={closeEditModal}
-                className="flex-1 py-3 border border-gray-300 text-sm font-bold uppercase tracking-widest hover:bg-gray-50 transition-colors"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={saveEditModal}
-                className="flex-1 py-3 bg-black text-white text-sm font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors"
-              >
-                Lưu Thay Đổi
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add New Modal */}
       {showAddModal && (
@@ -490,6 +420,46 @@ export default function CredentialsAdmin() {
                   className="w-full border border-gray-300 px-4 py-3 text-sm focus:border-black focus:outline-none transition-colors"
                   placeholder="https://..."
                 />
+              </div>
+
+              {/* PDF Upload */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  PDF File
+                </label>
+                {newItem.pdf ? (
+                  <div className="flex items-center gap-3 p-3 border border-blue-200 bg-blue-50 rounded">
+                    <FileText size={20} className="text-blue-600 shrink-0" />
+                    <p className="text-sm font-medium text-blue-800 flex-1 truncate">
+                      {newItem.pdf.name}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setNewItem({ ...newItem, pdf: null })}
+                      className="text-xs text-red-500 hover:text-red-700 font-bold"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors bg-gray-50">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <FileText size={24} className="w-8 h-8 mb-2 text-gray-400" />
+                      <p className="text-xs text-gray-500">Click để chọn file PDF</p>
+                    </div>
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="application/pdf"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setNewItem({ ...newItem, pdf: file });
+                        }
+                      }}
+                    />
+                  </label>
+                )}
               </div>
             </div>
 
