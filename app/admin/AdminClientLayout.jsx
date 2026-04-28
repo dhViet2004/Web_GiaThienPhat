@@ -52,6 +52,12 @@ export default function AdminClientLayout({ children }) {
               DANH MỤC
             </Link>
             <Link 
+              href="/admin/credentials" 
+              className="p-4 hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors"
+            >
+              CREDENTIALS
+            </Link>
+            <Link 
               href="/admin/settings" 
               className="p-4 hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors"
             >

@@ -12,11 +12,8 @@ export function SmoothScroll({ children }) {
   const startScrollTop = useRef(0);
   const pointerId = useRef(null);
 
-  // Tắt hoàn toàn Lenis Smooth Scroll ở thư mục /admin để tránh 
-  // xung đột CSS dẫn tới hiện tượng lưới nền chớp giật liên tục.
-  if (pathname && pathname.startsWith('/admin')) {
-    return <>{children}</>;
-  }
+  // Check if we should disable smooth scroll
+  const isAdminOrCredentials = pathname && (pathname.startsWith('/admin') || pathname.startsWith('/credentials'));
 
   const handlePointerDown = useCallback((e) => {
     if (pointerId.current !== null) return;
@@ -74,6 +71,11 @@ export function SmoothScroll({ children }) {
       document.removeEventListener('pointercancel', handlePointerCancel);
     };
   }, [handlePointerMove, handlePointerUp, handlePointerCancel]);
+
+  // Tắt Smooth Scroll ở thư mục /admin và /credentials để tránh xung đột
+  if (isAdminOrCredentials) {
+    return <>{children}</>;
+  }
 
   return (
     <ReactLenis

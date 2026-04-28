@@ -1,8 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400&display=swap');
+@import "tailwindcss";
+
 html {
   scrollbar-gutter: stable;
 }
-
-@import "tailwindcss";
 
 /* ============================================
    CSS Variable Image Sync Height
@@ -48,6 +49,35 @@ html {
 
 @utility img-sync-height {
   height: var(--img-sync-h);
+}
+
+/* ============================================
+   No Scrollbar Utility
+   ============================================ */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================
+   Clip Path Ribbon Utility (Medal Badge)
+   ============================================ */
+@utility clip-path-ribbon {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%);
+}
+
+/* ============================================
+   Credentials Page Specific Styles
+   ============================================ */
+.font-serif {
+  font-family: "Playfair Display", ui-serif, Georgia, serif;
+}
+
+.font-mono {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 @utility grid-background {
