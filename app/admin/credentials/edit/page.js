@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Save, FileText, X, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function CredentialEditPage() {
+function CredentialEditContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
@@ -416,5 +416,24 @@ export default function CredentialEditPage() {
         </form>
       </main>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-xs uppercase tracking-widest text-gray-400">Đang tải...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function CredentialEditPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CredentialEditContent />
+    </Suspense>
   );
 }
