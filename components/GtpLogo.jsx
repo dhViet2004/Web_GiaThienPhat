@@ -63,7 +63,7 @@ export default function GtpLogo({ onHoverStart, onHoverEnd }) {
   return (
     <div 
       ref={containerRef}
-      className="relative z-20 h-[14px] w-[32px] cursor-pointer md:h-[18px] md:w-[38px] lg:h-[24px] lg:w-[42px] group transition-opacity duration-500 hover:opacity-100 opacity-90"
+      className="relative z-[1002] h-[14px] w-[32px] cursor-pointer md:h-[18px] md:w-[38px] lg:h-[24px] lg:w-[42px] group transition-opacity duration-500 hover:opacity-100 opacity-90"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

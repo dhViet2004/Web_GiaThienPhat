@@ -252,7 +252,7 @@ export default function BigHomepage() {
           <div className="hidden md:block absolute left-[35px] lg:left-[35px] z-[1001]">
             <button 
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-0 bg-transparent border-none outline-none hover:opacity-70 transition-opacity"
+              className="relative z-[1002] p-0 bg-transparent border-none outline-none hover:opacity-70 transition-opacity"
               aria-label="Toggle Menu"
             >
               <GtpLogo />
