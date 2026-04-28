@@ -176,9 +176,9 @@ export default function BigHomepage() {
               )}
             </button>
 
-            {/* Left Menu Drawer - Projects/About/Credentials */}
+            {/* Left Menu Drawer - Projects/About/Credentials - NO backdrop */}
             <div 
-              className={`fixed top-0 left-0 bottom-0 z-[950] w-[200px] bg-white flex flex-col pt-[70px] px-[25px] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              className={`fixed top-0 left-0 bottom-0 z-[1000] w-[200px] bg-white flex flex-col pt-[70px] px-[25px] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 leftMenuOpen ? 'translate-x-0' : '-translate-x-full'
               }`}
             >
@@ -195,15 +195,6 @@ export default function BigHomepage() {
                 ))}
               </div>
             </div>
-
-            {/* Backdrop for Left Menu */}
-            <div 
-              onClick={() => setLeftMenuOpen(false)}
-              aria-hidden="true"
-              className={`fixed inset-0 z-[940] bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
-                leftMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-              }`}
-            />
           </div>
 
           {/* ================ MOBILE: RIGHT MENU (Filter) ================ */}
@@ -220,9 +211,9 @@ export default function BigHomepage() {
               )}
             </button>
 
-            {/* Right Menu Drawer - Categories & Submenu */}
+            {/* Right Menu Drawer - Categories & Submenu - NO backdrop */}
             <div 
-              className={`fixed top-0 right-0 bottom-0 z-[950] w-[220px] bg-white flex flex-col pt-[70px] px-[25px] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              className={`fixed top-0 right-0 bottom-0 z-[1000] w-[220px] bg-white flex flex-col pt-[70px] px-[25px] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 rightMenuOpen ? 'translate-x-0' : 'translate-x-full'
               }`}
             >
@@ -255,15 +246,6 @@ export default function BigHomepage() {
                 ))}
               </div>
             </div>
-
-            {/* Backdrop for Right Menu */}
-            <div 
-              onClick={() => setRightMenuOpen(false)}
-              aria-hidden="true"
-              className={`fixed inset-0 z-[940] bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
-                rightMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-              }`}
-            />
           </div>
 
           {/* ================ DESKTOP: LOGO (Center-Left) ================ */}
@@ -276,9 +258,9 @@ export default function BigHomepage() {
               <GtpLogo />
             </button>
 
-            {/* Desktop Sidebar Menu - Slides from left */}
+            {/* Desktop Sidebar Menu - Slides from left, NO backdrop */}
             <nav 
-              className={`fixed top-0 bottom-0 left-0 z-[950] flex flex-col gap-0.5 bg-white pt-[70px] pl-[30px] lg:pl-[30px] pr-10 transition-all duration-300 ${
+              className={`fixed top-0 bottom-0 left-0 z-[1000] flex flex-col gap-0.5 bg-white pt-[70px] pl-[30px] lg:pl-[30px] pr-10 transition-all duration-300 ${
                 menuOpen 
                   ? 'translate-x-0 opacity-100 pointer-events-auto' 
                   : '-translate-x-full opacity-0 pointer-events-none'
@@ -309,15 +291,6 @@ export default function BigHomepage() {
                 Credentials
               </Link>
             </nav>
-
-            {/* Desktop Backdrop */}
-            <div 
-              onClick={() => setMenuOpen(false)}
-              aria-hidden="true"
-              className={`fixed inset-0 z-[940] bg-black/30 transition-opacity duration-300 ${
-                menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-              }`}
-            />
           </div>
 
           {/* ================ MOBILE: CENTER LOGO ================ */}

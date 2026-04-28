@@ -2,63 +2,50 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { X } from 'lucide-react';
 
 export default function SidebarMenu({ isOpen, onClose }) {
   const links = [
-    { label: 'Landscape', href: '#landscape' },
-    { label: 'Engineering', href: '#engineering' },
-    { label: 'Architecture', href: '#architecture' },
-    { label: 'Products', href: '#products' },
+    { label: 'Projects', href: '/' },
+    { label: 'About', href: '/about' },
+    { label: 'Credentials', href: '/credentials' },
   ];
 
-  // 点击链接时切换分类筛选
   const handleLinkClick = (e, href) => {
-    const category = href.replace('#', '');
-    const currentHash = window.location.hash.toLowerCase();
-    // 如果点击的是当前分类，则清除筛选（返回全部）
-    if (currentHash === href.toLowerCase()) {
-      window.history.pushState(null, '', window.location.pathname);
-      window.dispatchEvent(new Event('hashchange'));
+    // Nếu là hash link thì xử lý filter, không điều hướng
+    if (href.startsWith('#')) {
+      e.preventDefault();
+      const currentHash = window.location.hash.toLowerCase();
+      if (currentHash === href.toLowerCase()) {
+        window.history.pushState(null, '', window.location.pathname);
+        window.dispatchEvent(new Event('hashchange'));
+      }
+      onClose();
+    } else {
+      // Điều hướng đến trang mới
+      onClose();
     }
-    // 关闭 sidebar
-    onClose();
   };
 
   return (
     <>
-
-      {/* Backdrop (closes sidebar on click) */}
-      <div 
-        onClick={onClose}
-        aria-hidden="true"
-        className={`md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-      />
-
-      {/* Sidebar Navigation (BIG Style Right Drawer) */}
+      {/* Sidebar Navigation: BIG.dk Style - Menu trượt từ trái, z-index cao hơn header */}
       <nav
-        className={`fixed top-0 bottom-0 right-0 z-50 w-[210px] bg-white flex flex-col pt-[80px] px-[25px] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'
+        className={`fixed top-0 bottom-0 left-0 z-[1000] flex flex-col gap-0.5 bg-white pt-[70px] pl-[30px] lg:pl-[30px] pr-10 transition-all duration-300 ${
+          isOpen 
+            ? 'translate-x-0 opacity-100 pointer-events-auto' 
+            : '-translate-x-full opacity-0 pointer-events-none'
         }`}
       >
-        <div className="flex flex-col gap-2">
-          {links.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              onClick={(e) => {
-                e.preventDefault();
-                handleLinkClick(e, link.href);
-              }}
-              className="group flex items-center text-[13px] font-semibold uppercase text-[#6b6b6b] hover:text-black py-1.5 tracking-widest transition-colors"
-            >
-              <span className="mr-2 block w-[10px] -translate-y-[0.5px] opacity-40 group-hover:opacity-100">+</span>
-              {link.label}
-            </Link>
-          ))}
-        </div>
+        {links.map((link) => (
+          <Link
+            key={link.label}
+            href={link.href}
+            onClick={(e) => handleLinkClick(e, link.href)}
+            className="text-sm uppercase opacity-50 transition-opacity hover:opacity-100"
+          >
+            {link.label}
+          </Link>
+        ))}
       </nav>
     </>
   );

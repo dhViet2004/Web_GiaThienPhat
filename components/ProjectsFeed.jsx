@@ -1118,7 +1118,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                           <div
                             onClick={(e) => { e.preventDefault(); handleSelectProject(project); }}
                             // Đổi thành items-start để text và icon bằng nhau ở mép trên
-                            className="project-info bottom-0 mt-[14px] flex items-start shrink-0 bg-white z-20 cursor-pointer w-[90vw] sm:w-auto md:absolute md:top-0 md:-left-[14px] md:mt-0 md:mr-[14px] md:max-w-[324px] md:-translate-x-full md:flex-col md:items-end md:text-right lg:-left-[20px] lg:mr-[20px]"
+                            className="project-info bottom-0 mt-[14px] flex items-start shrink-0 bg-white z-20 cursor-pointer w-[80vw] sm:w-auto md:absolute md:top-0 md:-left-[14px] md:mt-0 md:mr-[14px] md:max-w-[324px] md:-translate-x-full md:flex-col md:items-end md:text-right lg:-left-[20px] lg:mr-[20px]"
                           >
                             {/* Container chứa Tên và Địa điểm - Xóa bỏ justify-center */}
                             <div className="md:mt-[18px] md:ml-0 lg:mt-[24px]">
