@@ -18,6 +18,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
           script: |
+            set -e # Lập tức dừng CI/CD nếu có lệnh nào bị lỗi
             cd /var/www/web_giathienphat
 
             # BƯỚC 1: Backup Database
@@ -28,7 +29,7 @@ jobs:
               --quiet || echo "Backup failed, continuing..."
             find mongo_backup -name "backup_*.archive.gz" -mtime +7 -delete
 
-            # BƯỚC 2: Cập nhật code mới (Ép ghi đè để không bao giờ bị kẹt code cũ)
+            # BƯỚC 2: Cập nhật code mới
             git fetch --all
             git reset --hard origin/master
             git pull origin master
@@ -37,15 +38,14 @@ jobs:
               cp .env.example .env 2>/dev/null || touch .env
             fi
 
-            # BƯỚC 3: Xóa cache và Build Image ngầm (Lúc này web cũ vẫn đang hoạt động phục vụ khách)
-            docker compose build --no-cache nextjs
-
-            # BƯỚC 4: Tráo đổi Container mới (Quá trình này diễn ra chớp nhoáng, hạn chế tối đa 502)
-            docker compose up -d
+            # BƯỚC 3 & 4: Ép buộc Build Image và Tái tạo Container cùng lúc
+            # Sử dụng --build để luôn build lại image
+            # Sử dụng --force-recreate để đảm bảo container được tạo lại với image mới
+            docker compose up -d --build --force-recreate nextjs
 
             # BƯỚC 5: Đợi hệ thống ổn định và chạy các script phụ trợ
             sleep 5
             docker compose exec -T nextjs node scripts/seed-admin.js || echo "Seed admin skipped"
 
-            # BƯỚC 6: Dọn dẹp rác (Xóa các image cũ để tránh đầy ổ cứng VPS)
+            # BƯỚC 6: Dọn dẹp rác
             docker image prune -f

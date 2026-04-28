@@ -1,16 +1,19 @@
 'use client';
 
-import { Search, Building2, Trees, Sofa } from 'lucide-react';
+import { Search, Building2, Trees, Sofa, SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import GtpLogo from './GtpLogo';
 import ProjectsFeed from './ProjectsFeed';
+import { Menu, X } from 'lucide-react';
 
 // Sample Data Structure
 const projects = [];
 
 export default function BigHomepage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [leftMenuOpen, setLeftMenuOpen] = useState(false); // Mobile: Projects/About/Credentials
+  const [rightMenuOpen, setRightMenuOpen] = useState(false); // Mobile: Categories/Submenu
   const [navVisible, setNavVisible] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState(null);
@@ -70,6 +73,13 @@ export default function BigHomepage() {
     { title: 'Products', sub: ['Furniture', 'Lighting', 'Installation'] },
   ];
 
+  // Link menu cho mobile (bên trái)
+  const linkMenu = [
+    { label: 'Projects', href: '/' },
+    { label: 'About', href: '/about' },
+    { label: 'Credentials', href: '/credentials' },
+  ];
+
   // 点击导航分类链接的处理函数
   const handleCategoryClick = (e, title) => {
     e.preventDefault();
@@ -90,6 +100,28 @@ export default function BigHomepage() {
     setActiveCategory(categoryTitle);
     setActiveSubcategory(subcategory);
     setHoveredCategory(null);
+    setRightMenuOpen(false);
+  };
+
+  // Click category trên mobile
+  const handleMobileCategoryClick = (e, title) => {
+    e.preventDefault();
+    window.history.pushState(null, '', `#${title.toLowerCase()}`);
+    window.dispatchEvent(new Event('hashchange'));
+    setActiveCategory(title);
+    setActiveSubcategory(null);
+  };
+
+  // Click submenu item trên mobile
+  const handleMobileSubcategoryClick = (e, categoryTitle, subcategory) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const subSlug = subcategory.toLowerCase().replace(/ /g, '-');
+    window.history.pushState(null, '', `#${categoryTitle.toLowerCase()}-${subSlug}`);
+    window.dispatchEvent(new Event('hashchange'));
+    setActiveCategory(categoryTitle);
+    setActiveSubcategory(subcategory);
+    setRightMenuOpen(false);
   };
 
   // Click outside to close submenu
@@ -126,33 +158,127 @@ export default function BigHomepage() {
       <header className={`fixed top-0 left-0 w-full z-[900] bg-white transition-opacity duration-[1500ms] ${navVisible ? 'opacity-100' : 'opacity-0'}`}>
         <div className="relative flex justify-between items-center px-[20px] lg:px-[35px] pt-[22px] lg:pt-[24px] pb-4">
           
-          {/* 1. Logo acting as Hamburger Menu trigger on Mobile, Home Link on Desktop */}
-          <div className="w-1/4 flex items-start">
-            {/* Mobile: Click to toggle sidebar */}
-            <div className="md:hidden">
-              <button 
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="p-0 bg-transparent border-none outline-none relative z-[1001]"
-                aria-label="Toggle Sidebar Menu"
-              >
-                <GtpLogo />
-              </button>
+          {/* ================ MOBILE: LEFT MENU (Hamburger) ================ */}
+          <div className="md:hidden flex items-center">
+            <button 
+              onClick={() => setLeftMenuOpen(!leftMenuOpen)}
+              className="p-0 bg-transparent border-none outline-none relative z-[1001]"
+              aria-label="Toggle Left Menu"
+            >
+              {leftMenuOpen ? (
+                <X size={20} className="text-black" />
+              ) : (
+                <svg width="22" height="14" viewBox="0 0 22 14" fill="none">
+                  <line x1="0" y1="1" x2="22" y2="1" stroke="black" strokeWidth="2"/>
+                  <line x1="0" y1="7" x2="22" y2="7" stroke="black" strokeWidth="2"/>
+                  <line x1="0" y1="13" x2="22" y2="13" stroke="black" strokeWidth="2"/>
+                </svg>
+              )}
+            </button>
+
+            {/* Left Menu Drawer - Projects/About/Credentials */}
+            <div 
+              className={`fixed top-0 left-0 bottom-0 z-[950] w-[200px] bg-white flex flex-col pt-[70px] px-[25px] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                leftMenuOpen ? 'translate-x-0' : '-translate-x-full'
+              }`}
+            >
+              <div className="flex flex-col gap-1">
+                {linkMenu.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    onClick={() => setLeftMenuOpen(false)}
+                    className="text-[13px] font-semibold uppercase text-[#6b6b6b] hover:text-black py-2 tracking-widest transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
 
-            {/* Desktop: Click logo to show dropdown menu */}
-            <div className="hidden md:block">
-              <button 
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="p-0 bg-transparent border-none outline-none relative z-[1001] hover:opacity-70 transition-opacity"
-                aria-label="Toggle Menu"
-              >
-                <GtpLogo />
-              </button>
+            {/* Backdrop for Left Menu */}
+            <div 
+              onClick={() => setLeftMenuOpen(false)}
+              aria-hidden="true"
+              className={`fixed inset-0 z-[940] bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+                leftMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              }`}
+            />
+          </div>
+
+          {/* ================ MOBILE: RIGHT MENU (Filter) ================ */}
+          <div className="md:hidden flex items-center ml-auto">
+            <button 
+              onClick={() => setRightMenuOpen(!rightMenuOpen)}
+              className="p-0 bg-transparent border-none outline-none relative z-[1001]"
+              aria-label="Toggle Filter Menu"
+            >
+              {rightMenuOpen ? (
+                <X size={20} className="text-black" />
+              ) : (
+                <SlidersHorizontal size={20} className="text-black" />
+              )}
+            </button>
+
+            {/* Right Menu Drawer - Categories & Submenu */}
+            <div 
+              className={`fixed top-0 right-0 bottom-0 z-[950] w-[220px] bg-white flex flex-col pt-[70px] px-[25px] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                rightMenuOpen ? 'translate-x-0' : 'translate-x-full'
+              }`}
+            >
+              <div className="flex flex-col gap-4">
+                {navigation.map((cat) => (
+                  <div key={cat.title} className="flex flex-col">
+                    <button
+                      onClick={(e) => handleMobileCategoryClick(e, cat.title)}
+                      className={`text-[12px] font-semibold uppercase tracking-widest py-1 transition-colors text-left ${
+                        activeCategory === cat.title ? 'text-black' : 'text-[#6b6b6b]'
+                      }`}
+                    >
+                      {cat.title}
+                    </button>
+                    {/* Sub-items */}
+                    <div className="flex flex-col gap-1 pl-3 mt-1">
+                      {cat.sub.map((subItem) => (
+                        <button
+                          key={subItem}
+                          onClick={(e) => handleMobileSubcategoryClick(e, cat.title, subItem)}
+                          className={`text-[11px] uppercase tracking-wider py-1 text-left transition-colors ${
+                            activeSubcategory === subItem ? 'text-black font-medium' : 'text-[#9e9e9e] hover:text-black'
+                          }`}
+                        >
+                          {subItem}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Sidebar Menu - Slides from left when menuOpen */}
+            {/* Backdrop for Right Menu */}
+            <div 
+              onClick={() => setRightMenuOpen(false)}
+              aria-hidden="true"
+              className={`fixed inset-0 z-[940] bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+                rightMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              }`}
+            />
+          </div>
+
+          {/* ================ DESKTOP: LOGO (Center-Left) ================ */}
+          <div className="hidden md:block absolute left-[35px] lg:left-[35px] z-[1001]">
+            <button 
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="p-0 bg-transparent border-none outline-none hover:opacity-70 transition-opacity"
+              aria-label="Toggle Menu"
+            >
+              <GtpLogo />
+            </button>
+
+            {/* Desktop Sidebar Menu - Slides from left */}
             <nav 
-              className={`fixed top-0 bottom-0 left-0 z-10 flex flex-col gap-0.5 bg-white pt-[60px] pr-5 pl-[5vw] md:pl-[60px] lg:pl-[30px] transition-all duration-300 ${
+              className={`fixed top-0 bottom-0 left-0 z-[950] flex flex-col gap-0.5 bg-white pt-[70px] pl-[30px] lg:pl-[30px] pr-10 transition-all duration-300 ${
                 menuOpen 
                   ? 'translate-x-0 opacity-100 pointer-events-auto' 
                   : '-translate-x-full opacity-0 pointer-events-none'
@@ -183,6 +309,34 @@ export default function BigHomepage() {
                 Credentials
               </Link>
             </nav>
+
+            {/* Desktop Backdrop */}
+            <div 
+              onClick={() => setMenuOpen(false)}
+              aria-hidden="true"
+              className={`fixed inset-0 z-[940] bg-black/30 transition-opacity duration-300 ${
+                menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              }`}
+            />
+          </div>
+
+          {/* ================ MOBILE: CENTER LOGO ================ */}
+          <div className="md:hidden absolute left-1/2 -translate-x-1/2 z-[1001]">
+            <Link href="/" className="block">
+              <svg width="32" height="14" viewBox="0 0 216 98" className="w-auto h-[14px]">
+                <line x1="0" y1="8" x2="60" y2="8" stroke="black" strokeWidth="16" />
+                <line x1="0" y1="90" x2="60" y2="90" stroke="black" strokeWidth="16" />
+                <line x1="8" y1="8" x2="8" y2="90" stroke="black" strokeWidth="16" />
+                <line x1="52" y1="49" x2="52" y2="90" stroke="black" strokeWidth="16" />
+                <line x1="26" y1="49" x2="60" y2="49" stroke="black" strokeWidth="16" />
+                <line x1="78" y1="8" x2="138" y2="8" stroke="black" strokeWidth="16" />
+                <line x1="108" y1="8" x2="108" y2="90" stroke="black" strokeWidth="16" />
+                <line x1="156" y1="8" x2="216" y2="8" stroke="black" strokeWidth="16" />
+                <line x1="156" y1="49" x2="216" y2="49" stroke="black" strokeWidth="16" />
+                <line x1="164" y1="8" x2="164" y2="90" stroke="black" strokeWidth="16" />
+                <line x1="208" y1="8" x2="208" y2="49" stroke="black" strokeWidth="16" />
+              </svg>
+            </Link>
           </div>
 
           {/* 2. Navigation (Desktop Only) */}
@@ -231,8 +385,8 @@ export default function BigHomepage() {
             ))}
           </nav>
 
-          {/* 3. Search Bar (Right) */}
-          <div className="absolute top-1/2 -translate-y-1/2 right-0 pr-[20px] lg:pr-[35px] z-50 flex items-center">
+          {/* 3. Search Bar (Right) - Desktop Only */}
+          <div className="hidden md:block absolute top-1/2 -translate-y-1/2 right-0 pr-[35px] z-50 flex items-center">
             <div className="relative flex items-center bg-white">
               {/* Search Icon */}
               <div className="px-2 cursor-pointer">
