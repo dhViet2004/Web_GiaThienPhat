@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import GtpLogo from './GtpLogo';
 import ProjectsFeed from './ProjectsFeed';
-import SidebarMenu from './SidebarMenu';
 
 // Sample Data Structure
 const projects = [];
@@ -96,9 +95,24 @@ export default function BigHomepage() {
   // Click outside to close submenu
   useEffect(() => {
     const handleClickOutside = (e) => {
-      // Kiểm tra nếu click không nằm trong nav menu
-      const nav = document.querySelector('nav');
-      if (nav && !nav.contains(e.target)) {
+      // Kiểm tra nếu click không nằm trong các nav menu (sidebar và category nav)
+      const sidebarNav = document.querySelector('nav');
+      const categoryNav = document.querySelectorAll('nav');
+      let isInsideNav = false;
+      
+      // Kiểm tra click có nằm trong sidebar nav không
+      if (sidebarNav && sidebarNav.contains(e.target)) {
+        isInsideNav = true;
+      }
+      
+      // Kiểm tra click có nằm trong category nav (submenu) không
+      categoryNav.forEach((nav) => {
+        if (nav.contains(e.target)) {
+          isInsideNav = true;
+        }
+      });
+      
+      if (!isInsideNav) {
         setHoveredCategory(null);
       }
     };
@@ -114,6 +128,7 @@ export default function BigHomepage() {
           
           {/* 1. Logo acting as Hamburger Menu trigger on Mobile, Home Link on Desktop */}
           <div className="w-1/4 flex items-start">
+            {/* Mobile: Click to toggle sidebar */}
             <div className="md:hidden">
               <button 
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -123,11 +138,51 @@ export default function BigHomepage() {
                 <GtpLogo />
               </button>
             </div>
+
+            {/* Desktop: Click logo to show dropdown menu */}
             <div className="hidden md:block">
-              <Link href="/" className="hover:opacity-70 transition-opacity">
+              <button 
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="p-0 bg-transparent border-none outline-none relative z-[1001] hover:opacity-70 transition-opacity"
+                aria-label="Toggle Menu"
+              >
                 <GtpLogo />
-              </Link>
+              </button>
             </div>
+
+            {/* Sidebar Menu - Slides from left when menuOpen */}
+            <nav 
+              className={`fixed top-0 bottom-0 left-0 z-10 flex flex-col gap-0.5 bg-white pt-[60px] pr-5 pl-[5vw] md:pl-[60px] lg:pl-[30px] transition-all duration-300 ${
+                menuOpen 
+                  ? 'translate-x-0 opacity-100 pointer-events-auto' 
+                  : '-translate-x-full opacity-0 pointer-events-none'
+              }`}
+            >
+              <Link 
+                href="/"
+                onClick={() => {
+                  setMenuOpen(false);
+                  window.location.href = '/';
+                }}
+                className="text-sm uppercase opacity-50 transition-opacity hover:opacity-100"
+              >
+                Projects
+              </Link>
+              <Link 
+                href="/about"
+                onClick={() => setMenuOpen(false)}
+                className="text-sm uppercase opacity-50 transition-opacity hover:opacity-100"
+              >
+                About
+              </Link>
+              <Link 
+                href="/credentials"
+                onClick={() => setMenuOpen(false)}
+                className="text-sm uppercase opacity-50 transition-opacity hover:opacity-100"
+              >
+                Credentials
+              </Link>
+            </nav>
           </div>
 
           {/* 2. Navigation (Desktop Only) */}
@@ -137,21 +192,27 @@ export default function BigHomepage() {
                 key={cat.title}
                 className="group relative px-5 py-1"
               >
-                {/* Menu Item - Click để toggle submenu */}
+                {/* Menu Item - Click để toggle submenu và filter theo category */}
                 <button
                   onClick={() => {
-                    // Toggle: nếu đang hover category này thì đóng, không thì mở
-                    setHoveredCategory(hoveredCategory === cat.title ? null : cat.title);
+                    // Toggle: nếu đang hover category này thì đóng, không thì mở và filter
+                    if (hoveredCategory === cat.title) {
+                      setHoveredCategory(null);
+                    } else {
+                      setHoveredCategory(cat.title);
+                      setActiveCategory(cat.title);
+                      setActiveSubcategory(null);
+                    }
                   }}
-                  className={`text-[11px] md:text-[14.5px] font-medium tracking-widest uppercase transition-colors duration-200 bg-transparent border-none cursor-pointer p-0 ${hoveredCategory === cat.title ? 'text-black' : 'text-[#6b6b6b] hover:text-black'}`}
+                  className={`text-[11px] md:text-[14.5px] font-medium tracking-widest uppercase transition-colors duration-200 bg-transparent border-none cursor-pointer p-0 ${hoveredCategory === cat.title || activeCategory === cat.title ? 'text-black' : 'text-[#6b6b6b] hover:text-black'}`}
                 >
                   {cat.title}
                 </button>
 
-                {/* Sub-menu - Hiện khi hoveredCategory === cat.title */}
+                {/* Sub-menu - Hiện khi hoveredCategory === cat.title HOẶC activeCategory === cat.title */}
                 <div 
-                  className={`absolute top-[42px] left-1/2 -translate-x-1/2 z-30 bg-white flex-row justify-center pb-2 pointer-events-auto ${
-                    hoveredCategory === cat.title ? 'flex' : 'hidden'
+                  className={`absolute top-[42px] left-1/2 -translate-x-1/2 z-30 bg-transparent flex-row justify-center pointer-events-auto ${
+                    hoveredCategory === cat.title || activeCategory === cat.title ? 'flex' : 'hidden'
                   }`}
                 >
                    {cat.sub.map((subItem) => (
@@ -213,9 +274,7 @@ export default function BigHomepage() {
         </div>
       </header>
 
-      <SidebarMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
-
-      <ProjectsFeed />
+      <ProjectsFeed activeCategory={activeCategory} activeSubcategory={activeSubcategory} />
     </div>
   );
 }

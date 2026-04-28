@@ -718,7 +718,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
 };
 
 // --- Main Feed Component ---
-export default function ProjectsFeed() {
+export default function ProjectsFeed({ activeCategory: propActiveCategory, activeSubcategory: propActiveSubcategory }) {
   const containerRef = useRef(null);
 
   const [projects, setProjects] = useState([]);
@@ -731,8 +731,9 @@ export default function ProjectsFeed() {
     if (typeof window === 'undefined') return false;
     return window.innerWidth < 1024;
   });
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [activeSubcategory, setActiveSubcategory] = useState(null);
+  // Ưu tiên props từ BigHomepage, fallback vào URL hash
+  const [activeCategory, setActiveCategory] = useState(propActiveCategory || null);
+  const [activeSubcategory, setActiveSubcategory] = useState(propActiveSubcategory || null);
   const expandedRef = useRef(new Set());
 
   // Detect mobile on mount and resize
@@ -743,8 +744,21 @@ export default function ProjectsFeed() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // 监听 URL hash 变化来更新筛选分类和子分类
+  // Khi props thay đổi từ BigHomepage, cập nhật state
   useEffect(() => {
+    if (propActiveCategory !== undefined) {
+      setActiveCategory(propActiveCategory);
+    }
+    if (propActiveSubcategory !== undefined) {
+      setActiveSubcategory(propActiveSubcategory);
+    }
+  }, [propActiveCategory, propActiveSubcategory]);
+
+  // 监听 URL hash 变化来更新筛选分类和子分类 (chỉ khi không có props)
+  useEffect(() => {
+    // Nếu có props từ BigHomepage, bỏ qua URL hash
+    if (propActiveCategory !== undefined && propActiveCategory !== null) return;
+    
     const handleHashChange = () => {
       const hash = window.location.hash.toLowerCase();
       if (!hash || hash === '#all') {
@@ -777,7 +791,7 @@ export default function ProjectsFeed() {
     // 监听 hash 变化
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [propActiveCategory]);
 
   // Lấy data trực tiếp từ projects array (API đã trả đầy đủ blocks, general...)
   useEffect(() => {

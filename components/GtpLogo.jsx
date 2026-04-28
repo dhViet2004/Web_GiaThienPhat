@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useRef } from 'react';
+import Link from 'next/link';
 import gsap from 'gsap';
 
-export default function GtpLogo() {
+export default function GtpLogo({ onHoverStart, onHoverEnd }) {
   const containerRef = useRef(null);
 
   const handleMouseEnter = () => {
@@ -29,6 +30,8 @@ export default function GtpLogo() {
       ease: 'power3.inOut', 
       stagger: 0.05 
     }, 0.1);
+
+    if (onHoverStart) onHoverStart();
   };
 
   const handleMouseLeave = () => {
@@ -53,6 +56,8 @@ export default function GtpLogo() {
       ease: 'back.out(1.5)', 
       stagger: 0.02 
     }, 0.1);
+
+    if (onHoverEnd) onHoverEnd();
   };
 
   return (
