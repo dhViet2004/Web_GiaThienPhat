@@ -4,7 +4,8 @@ import Credential from '@/models/Credential';
 
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    // Await params in Next.js 15+
+    const { id } = await params;
     await dbConnect();
     
     const credential = await Credential.findOne({ id }).lean();

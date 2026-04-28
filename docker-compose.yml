@@ -31,7 +31,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args: # <-- THÊM ĐOẠN NÀY
+      args:
         - MONGODB_URI=mongodb://admin:secure_password_gtp@mongodb:27017/gtp_db?authSource=admin
     container_name: gtp_nextjs
     restart: always
@@ -42,6 +42,8 @@ services:
       MONGODB_URI: mongodb://admin:secure_password_gtp@mongodb:27017/gtp_db?authSource=admin
     depends_on:
       - mongodb
+    volumes:
+      - ./uploads:/app/uploads
 
 volumes:
   gtp_mongodb_data:

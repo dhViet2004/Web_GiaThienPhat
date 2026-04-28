@@ -4,7 +4,7 @@ import Credential from '@/models/Credential';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-const PDF_UPLOAD_DIR = path.join(process.cwd(), 'public', 'pdf');
+const PDF_UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
 async function ensureUploadDir() {
   try {
@@ -16,6 +16,7 @@ async function ensureUploadDir() {
 
 async function savePdfFile(pdfFile) {
   if (!pdfFile || pdfFile.size === 0) {
+    console.log('savePdfFile: No file provided');
     return '';
   }
 
@@ -26,17 +27,24 @@ async function savePdfFile(pdfFile) {
   const fileName = `${timestamp}-${originalName}`;
   const filePath = path.join(PDF_UPLOAD_DIR, fileName);
 
+  console.log('savePdfFile: Saving to', filePath);
+
   const arrayBuffer = await pdfFile.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
   await fs.writeFile(filePath, buffer);
 
-  return `/pdf/${fileName}`;
+  console.log('savePdfFile: Saved successfully');
+  return `/api/pdf/${fileName}`;
 }
 
 async function deletePdfFile(pdfPath) {
   if (!pdfPath) return;
   
-  const filePath = path.join(process.cwd(), 'public', pdfPath);
+  // Extract filename from /api/pdf/filename format
+  const filename = pdfPath.split('/api/pdf/').pop();
+  if (!filename) return;
+  
+  const filePath = path.join(process.cwd(), 'uploads', filename);
   try {
     await fs.unlink(filePath);
   } catch (error) {
@@ -233,6 +241,8 @@ export async function POST(request) {
     const medal = formData.get('medal') === 'true';
     const pdfFile = formData.get('pdf');
 
+    console.log('POST received:', { id, brand, title, pdfFileName: pdfFile?.name, pdfFileSize: pdfFile?.size });
+
     if (!brand || !title || !num) {
       return NextResponse.json({ error: 'Brand, title, and num are required' }, { status: 400 });
     }
@@ -240,6 +250,7 @@ export async function POST(request) {
     let pdfPath = '';
     if (pdfFile && pdfFile.size > 0) {
       pdfPath = await savePdfFile(pdfFile);
+      console.log('pdfPath saved:', pdfPath);
     }
 
     const newCredential = await Credential.create({
@@ -275,6 +286,7 @@ export async function PUT(request) {
     const pdfFile = formData.get('pdf');
     const pdfPathFromClient = formData.get('pdfPath');
     const keepExistingPdf = formData.get('keepExistingPdf') === 'true';
+    const deletePdf = formData.get('deletePdf') === 'true';
 
     let credential;
     
@@ -291,6 +303,12 @@ export async function PUT(request) {
           await deletePdfFile(existing.pdfPath);
         }
         updateData.pdfPath = await savePdfFile(pdfFile);
+      } else if (deletePdf) {
+        const existing = await Credential.findOne({ id });
+        if (existing?.pdfPath) {
+          await deletePdfFile(existing.pdfPath);
+        }
+        updateData.pdfPath = '';
       } else if (keepExistingPdf && pdfPathFromClient !== undefined) {
         updateData.pdfPath = pdfPathFromClient;
       }
@@ -318,6 +336,12 @@ export async function PUT(request) {
           await deletePdfFile(existing.pdfPath);
         }
         updateData.pdfPath = await savePdfFile(pdfFile);
+      } else if (deletePdf) {
+        const existing = allCredentials[index];
+        if (existing?.pdfPath) {
+          await deletePdfFile(existing.pdfPath);
+        }
+        updateData.pdfPath = '';
       } else if (keepExistingPdf && pdfPathFromClient !== undefined) {
         updateData.pdfPath = pdfPathFromClient;
       }

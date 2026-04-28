@@ -5,6 +5,17 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2, FileText, Download, ExternalLink, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-react';
 
+// Convert old /pdf/ path to new /api/pdf/ path
+function getPdfUrl(pdfPath) {
+  if (!pdfPath) return null;
+  if (pdfPath.startsWith('/api/pdf/')) return pdfPath;
+  if (pdfPath.startsWith('/pdf/')) {
+    const filename = pdfPath.replace('/pdf/', '');
+    return `/api/pdf/${filename}`;
+  }
+  return pdfPath;
+}
+
 function PdfViewerModal({ pdfPath, onClose }) {
   const [scale, setScale] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
@@ -113,7 +124,7 @@ function PdfViewerModal({ pdfPath, onClose }) {
             <ExternalLink size={18} />
           </button>
           <a
-            href={pdfPath}
+            href={getPdfUrl(pdfPath)}
             download
             className="p-2 hover:bg-gray-700 rounded transition-colors"
             title="Download"
@@ -143,7 +154,7 @@ function PdfViewerModal({ pdfPath, onClose }) {
         )}
         <iframe
           ref={iframeRef}
-          src={`${pdfPath}#page=${currentPage}&zoom=${Math.round(scale * 100)}`}
+          src={`${getPdfUrl(pdfPath)}#page=${currentPage}&zoom=${Math.round(scale * 100)}`}
           className="bg-white shadow-2xl"
           style={{
             width: `${Math.round(595 * scale)}px`,
@@ -251,7 +262,7 @@ export default function CredentialsDetail({ credential: initialCredential }) {
       {/* PDF Modal */}
       {showPdf && item.pdfPath && (
         <PdfViewerModal 
-          pdfPath={item.pdfPath} 
+          pdfPath={getPdfUrl(item.pdfPath)} 
           onClose={() => setShowPdf(false)} 
         />
       )}
@@ -350,7 +361,7 @@ export default function CredentialsDetail({ credential: initialCredential }) {
                     View PDF
                   </button>
                   <a
-                    href={item.pdfPath}
+                    href={getPdfUrl(item.pdfPath)}
                     download
                     className="flex items-center gap-2 px-5 py-2.5 border-2 border-black text-black text-sm font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-colors"
                   >

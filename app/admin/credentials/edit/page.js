@@ -25,6 +25,7 @@ function CredentialEditContent() {
     pdf: null
   });
   const [pdfPreview, setPdfPreview] = useState(null);
+  const [pdfDeleted, setPdfDeleted] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -104,8 +105,13 @@ function CredentialEditContent() {
       if (formData.pdf) {
         formDataToSend.append('pdf', formData.pdf);
         formDataToSend.append('keepExistingPdf', 'false');
+        formDataToSend.append('deletePdf', 'true');
+      } else if (pdfDeleted) {
+        formDataToSend.append('keepExistingPdf', 'false');
+        formDataToSend.append('deletePdf', 'true');
       } else {
         formDataToSend.append('keepExistingPdf', 'true');
+        formDataToSend.append('deletePdf', 'false');
       }
 
       const res = await fetch('/api/admin/credentials', {
@@ -134,6 +140,7 @@ function CredentialEditContent() {
   const removePdf = () => {
     setFormData(prev => ({ ...prev, pdf: null }));
     setPdfPreview(null);
+    setPdfDeleted(true);
   };
 
   if (loading) {

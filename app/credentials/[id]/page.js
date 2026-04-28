@@ -20,7 +20,9 @@ async function getCredential(id) {
 }
 
 export async function generateMetadata({ params }) {
-  const credential = await getCredential(params.id);
+  // Await params in Next.js 15+
+  const { id } = await params;
+  const credential = await getCredential(id);
   
   if (!credential) {
     return {
@@ -35,7 +37,9 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function Page({ params }) {
-  const credential = await getCredential(params.id);
+  // Await params in Next.js 15+
+  const { id } = await params;
+  const credential = await getCredential(id);
   
   return <CredentialsDetail credential={credential} />;
 }
