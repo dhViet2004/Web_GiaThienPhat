@@ -19,7 +19,7 @@ const FadeIn = ({ children, delay = 0, className = "" }) => (
   </motion.div>
 );
 
-// Default content in case API fails
+// Default content in case API fails mock data
 const DEFAULT_DATA = {
   profile: {
     title: 'GTP',
