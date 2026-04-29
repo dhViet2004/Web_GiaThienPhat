@@ -16,6 +16,7 @@ export default function AdminClientLayout({ children }) {
   const navItems = [
     { href: '/admin', label: 'BẢNG ĐIỀU KHIỂN' },
     { href: '/admin/projects/new', label: '+ THÊM DỰ ÁN MỚI' },
+    { href: '/admin/about', label: 'TRANG ABOUT' },
     { href: '/admin/credentials', label: 'HỒ SƠ NĂNG LỰC' },
     { href: '/admin/settings', label: 'CÀI ĐẶT' },
   ];
