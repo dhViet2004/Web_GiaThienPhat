@@ -72,7 +72,11 @@ function PdfViewerModal({ pdfPath, onClose }) {
       {/* PDF Container */}
       <div 
         ref={containerRef}
-        className="flex-1 overflow-hidden"
+        className="flex-1 overflow-auto overscroll-contain"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y pinch-zoom',
+        }}
       >
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
@@ -82,8 +86,13 @@ function PdfViewerModal({ pdfPath, onClose }) {
         <iframe
           ref={iframeRef}
           src={pdfUrl}
-          className="w-screen h-screen bg-white"
+          className="block w-screen h-[100dvh] bg-white"
           title="PDF Viewer"
+          scrolling="yes"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y pinch-zoom',
+          }}
           onLoad={() => setLoading(false)}
         />
       </div>
