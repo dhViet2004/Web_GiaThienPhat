@@ -18,16 +18,7 @@ function useIsMobile() {
 
 export default function CredentialsPage() {
   const isMobile = useIsMobile();
-  const [mounted, setMounted] = useState(false);
-  const [introState, setIntroState] = useState('loading');
   const [credentialsItems, setCredentialsItems] = useState([]);
-
-  useEffect(() => {
-    setMounted(true);
-    const t1 = setTimeout(() => setIntroState('spinning'), 800);
-    const t2 = setTimeout(() => setIntroState('ready'), 3300);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
 
   useEffect(() => {
     fetch('/api/admin/credentials')
@@ -40,110 +31,14 @@ export default function CredentialsPage() {
       .catch(err => console.error('Failed to fetch credentials:', err));
   }, []);
 
-  if (!mounted) return null;
   if (credentialsItems.length === 0) return null;
 
-  const introEnded = introState === 'ready';
-
   return (
-    <>
-      <AnimatePresence>
-        {introState === 'loading' && (
-          <motion.div 
-            key="loading"
-            className={`fixed inset-0 z-[200] ${isMobile ? 'bg-[#f2f2f2]' : 'bg-white'} flex items-center justify-center`}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="text-[#1a1a1a] font-serif italic text-center tracking-tight text-2xl md:text-4xl leading-snug px-6"
-            >
-              Integrated Marketing<br/>Communication Agency
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {introState === 'spinning' && (
-          <motion.div 
-            key="spinning"
-            className="fixed inset-0 z-[150] flex items-center justify-center overflow-hidden"
-            initial={{ backgroundColor: isMobile ? 'rgba(242, 242, 242, 1)' : 'rgba(255, 255, 255, 1)' }}
-            animate={{ backgroundColor: isMobile ? 'rgba(242, 242, 242, 1)' : 'rgba(255, 255, 255, 1)' }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            style={{ perspective: 1200 }} 
-          >
-             <motion.div
-               initial={isMobile ? { rotateX: 0, scale: 0.5 } : { rotateY: 0, scale: 0.5 }}
-               animate={{ 
-                 rotateX: isMobile ? 1440 : 0,
-                 rotateY: isMobile ? 0 : 1440,
-                 scale: [0.5, 1.2, 1] 
-               }} 
-               transition={{ 
-                 rotateX: { duration: 2.5, ease: [0.45, 0, 0.55, 1] },
-                 rotateY: { duration: 2.5, ease: [0.45, 0, 0.55, 1] }, 
-                 scale: { duration: 2.5, times: [0, 0.6, 1], ease: "easeInOut" } 
-               }} 
-               className="relative"
-               style={{ transformStyle: 'preserve-3d' }}
-             >
-                 {[...credentialsItems, ...credentialsItems, ...credentialsItems].map((item, i, arr) => {
-                   const angle = (i / arr.length) * 360;
-                   const radius = isMobile ? 550 : 750;
-                   const startX = i % 2 === 0 ? '-120vw' : '120vw';
-                   const startY = i % 3 === 0 ? '-120vh' : '120vh';
-
-                   return (
-                     <motion.div
-                       key={`${item.id}-${i}`}
-                       className="absolute inset-0"
-                       initial={{ x: startX, y: startY, opacity: 0 }}
-                       animate={{ x: 0, y: 0, opacity: 1 }}
-                       exit={{ opacity: 0 }}
-                       transition={{ duration: 1.2, delay: i * 0.015, ease: [0.23, 1, 0.32, 1] }}
-                       style={{ transformStyle: 'preserve-3d' }}
-                     >
-                       <div
-                         className="absolute shadow-xl overflow-hidden bg-gray-100"
-                         style={{ 
-                            transform: isMobile 
-                               ? `rotateX(${angle}deg) translateZ(${radius}px)`
-                               : `rotateY(${angle}deg) translateZ(${radius}px)`,
-                            backfaceVisibility: 'hidden', 
-                            borderRadius: '4px',
-                             width: isMobile ? '110px' : '150px',
-                             height: isMobile ? '150px' : '220px',
-                             left: '50%',
-                             top: '50%',
-                             marginLeft: isMobile ? '-55px' : '-75px',
-                             marginTop: isMobile ? '-75px' : '-110px'
-                         }}
-                       >
-                         <img src={item.src} className="w-full h-full object-cover pointer-events-none" />
-                       </div>
-                     </motion.div>
-                   );
-                 })}
-             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {introEnded && (
-        <div className={`relative z-0 pointer-events-auto`}>
-          {isMobile 
-            ? <MobileCredentials introEnded={true} credentialsItems={credentialsItems} /> 
-            : <DesktopCredentials introEnded={true} credentialsItems={credentialsItems} />}
-        </div>
-      )}
-    </>
+    <div className={`relative z-0 pointer-events-auto`}>
+      {isMobile 
+        ? <MobileCredentials introEnded={true} credentialsItems={credentialsItems} /> 
+        : <DesktopCredentials introEnded={true} credentialsItems={credentialsItems} />}
+    </div>
   );
 }
 

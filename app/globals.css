@@ -1,10 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400&display=swap');
 @import "tailwindcss";
 
-html {
-  scrollbar-gutter: stable;
-}
-
 /* ============================================
    CSS Variable Image Sync Height
    - Thay thế ResizeObserver thủ công
@@ -95,21 +91,6 @@ body {
   font-family: inherit;
   font-weight: 400;
   letter-spacing: 0.05em;
-}
-
-/* Custom minimal scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #000;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #333;
 }
 
 /* ============================================

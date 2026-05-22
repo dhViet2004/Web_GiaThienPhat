@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, FileText, Download, ExternalLink, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Loader2, FileText } from 'lucide-react';
 
 // Convert old /pdf/ path to new /api/pdf/ path
 function getPdfUrl(pdfPath) {
@@ -16,150 +16,73 @@ function getPdfUrl(pdfPath) {
   return pdfPath;
 }
 
+function getDefaultPdfZoom() {
+  if (typeof window === 'undefined') return 145;
+  if (window.innerWidth >= 1800) return 160;
+  if (window.innerWidth >= 1440) return 150;
+  if (window.innerWidth >= 1024) return 135;
+  return 115;
+}
+
 function PdfViewerModal({ pdfPath, onClose }) {
-  const [scale, setScale] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const iframeRef = useRef(null);
   const containerRef = useRef(null);
 
   useEffect(() => {
-    const handleMessage = (event) => {
-      if (event.data.type === 'pdfLoaded') {
-        setLoading(false);
-        setTotalPages(event.data.totalPages || 1);
-      }
-      if (event.data.type === 'pageChanged') {
-        setCurrentPage(event.data.page);
-      }
-    };
-    
-    window.addEventListener('message', handleMessage);
-    
-    // Fallback: set loading to false after timeout
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousBodyPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
     const timeout = setTimeout(() => setLoading(false), 3000);
     
     return () => {
-      window.removeEventListener('message', handleMessage);
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.paddingRight = previousBodyPaddingRight;
       clearTimeout(timeout);
     };
   }, []);
 
-  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.25, 3));
-  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.25, 0.5));
-  
-  const handlePrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
-  const handleNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
-
-  const handleFullscreen = () => {
-    if (containerRef.current) {
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      } else {
-        containerRef.current.requestFullscreen();
-      }
-    }
-  };
+  const pdfUrl = `${getPdfUrl(pdfPath)}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&zoom=${getDefaultPdfZoom()}`;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/80 z-[100] flex flex-col"
-      onClick={onClose}
+      className="fixed inset-0 bg-black z-[100] flex flex-col"
     >
-      {/* Header Controls */}
-      <div 
-        className="flex items-center justify-between px-4 py-3 bg-gray-900 text-white"
-        onClick={(e) => e.stopPropagation()}
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 p-2 text-white hover:text-red-500 transition-colors"
+        title="Close"
       >
-        <div className="flex items-center gap-4">
-          <button
-            onClick={handleZoomOut}
-            className="p-2 hover:bg-gray-700 rounded transition-colors"
-            title="Zoom Out"
-          >
-            <ZoomOut size={18} />
-          </button>
-          <span className="text-sm font-mono min-w-[60px] text-center">
-            {Math.round(scale * 100)}%
-          </span>
-          <button
-            onClick={handleZoomIn}
-            className="p-2 hover:bg-gray-700 rounded transition-colors"
-            title="Zoom In"
-          >
-            <ZoomIn size={18} />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handlePrevPage}
-            disabled={currentPage <= 1}
-            className="p-2 hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <span className="text-sm font-mono min-w-[60px] text-center">
-            {currentPage} / {totalPages}
-          </span>
-          <button
-            onClick={handleNextPage}
-            disabled={currentPage >= totalPages}
-            className="p-2 hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleFullscreen}
-            className="p-2 hover:bg-gray-700 rounded transition-colors"
-            title="Fullscreen"
-          >
-            <ExternalLink size={18} />
-          </button>
-          <a
-            href={getPdfUrl(pdfPath)}
-            download
-            className="p-2 hover:bg-gray-700 rounded transition-colors"
-            title="Download"
-          >
-            <Download size={18} />
-          </a>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-red-600 rounded transition-colors ml-2"
-            title="Close"
-          >
-            <span className="text-xl font-bold">×</span>
-          </button>
-        </div>
-      </div>
+        <span className="text-3xl font-light leading-none">×</span>
+      </button>
 
       {/* PDF Container */}
       <div 
         ref={containerRef}
-        className="flex-1 overflow-auto bg-gray-800 flex items-start justify-center p-4"
-        onClick={(e) => e.stopPropagation()}
+        className="flex-1 overflow-hidden"
       >
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-800 z-10">
+          <div className="absolute inset-0 flex items-center justify-center z-10">
             <Loader2 className="w-8 h-8 animate-spin text-white" />
           </div>
         )}
         <iframe
           ref={iframeRef}
-          src={`${getPdfUrl(pdfPath)}#page=${currentPage}&zoom=${Math.round(scale * 100)}`}
-          className="bg-white shadow-2xl"
-          style={{
-            width: `${Math.round(595 * scale)}px`,
-            height: `${Math.round(842 * scale)}px`,
-          }}
+          src={pdfUrl}
+          className="w-screen h-screen bg-white"
           title="PDF Viewer"
           onLoad={() => setLoading(false)}
         />
@@ -241,9 +164,6 @@ export default function CredentialsDetail({ credential: initialCredential }) {
         
         {item.pdfPath && (
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-gray-400 hidden md:inline">
-              {item.pdfPath.split('/').pop()}
-            </span>
             <button
               onClick={() => setShowPdf(true)}
               className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${
@@ -347,28 +267,15 @@ export default function CredentialsDetail({ credential: initialCredential }) {
                   <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                     <FileText size={24} className="text-red-600" />
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-800">{item.pdfPath.split('/').pop()}</p>
-                    <p className="text-xs text-gray-500">PDF Document</p>
-                  </div>
+                  <p className="font-medium text-gray-800">PDF Document</p>
                 </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowPdf(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-black text-white text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors"
-                  >
-                    <FileText size={16} />
-                    View PDF
-                  </button>
-                  <a
-                    href={getPdfUrl(item.pdfPath)}
-                    download
-                    className="flex items-center gap-2 px-5 py-2.5 border-2 border-black text-black text-sm font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-colors"
-                  >
-                    <Download size={16} />
-                    Download
-                  </a>
-                </div>
+                <button
+                  onClick={() => setShowPdf(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-black text-white text-sm font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors"
+                >
+                  <FileText size={16} />
+                  View PDF
+                </button>
               </div>
             </div>
           </div>
