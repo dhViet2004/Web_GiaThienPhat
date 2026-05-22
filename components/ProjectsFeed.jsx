@@ -1108,7 +1108,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                                 style={{ width: '100%', height: 'auto' }}
                                 priority={index < 4}
                                 sizes="(max-width: 768px) 90vw, 64vh"
-                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                className="object-cover transition-transform duration-700"
                               />
                               <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                             </motion.div>

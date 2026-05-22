@@ -121,9 +121,9 @@ export default function AboutPage() {
   };
 
   return (
-    <div className="min-h-screen selection:bg-[#1a1a1a] selection:text-[#fcfcf7] font-sans text-[#2d2d2b] bg-[#F2F2ED]">
+    <div className="min-h-screen selection:bg-[#1a1a1a] selection:text-[#fcfcf7] font-sans text-[#2d2d2b] bg-[#fff]">
       {/* HEADER */}
-      <header className={`fixed top-0 left-0 w-full z-[900] bg-[#F2F2ED] transition-opacity duration-[1500ms] ${navVisible ? 'opacity-100' : 'opacity-0'}`}>
+      <header className={`fixed top-0 left-0 w-full z-[900] bg-[#fff] transition-opacity duration-[1500ms] ${navVisible ? 'opacity-100' : 'opacity-0'}`}>
         <div className="relative flex justify-between items-center px-[20px] lg:px-[35px] pt-[22px] lg:pt-[24px] pb-4">
 
           {/* MOBILE: Hamburger + Left Drawer */}
