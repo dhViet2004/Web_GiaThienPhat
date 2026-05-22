@@ -592,12 +592,10 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               <motion.div
                 layoutId={layoutId}
                 transition={{
-                  type: "spring",
-                  stiffness: 80,
-                  damping: 35,
-                  mass: 1,
+                  duration: 0.78,
+                  ease: [0.45, 0, 0.55, 1],
                 }}
-                className="relative w-auto h-full flex items-center justify-center min-w-0 max-w-full"
+                className="big-project-image-box relative w-auto h-full flex items-center justify-center min-w-0 max-w-full"
               >
                 <Image
                   src={coverImageUrl}
@@ -850,8 +848,8 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
     if (!project) return;
 
     window.history.pushState(null, '', `/projects/${project._id}`);
-    gsap.killTweensOf('.velocity-card');
-    gsap.set('.velocity-card', { scale: 1, y: 0 });
+    gsap.killTweensOf(containerRef.current);
+    gsap.killTweensOf('.big-project-thumb-shell');
 
     setExpandedProjectIds(prev => {
       const next = new Set(prev);
@@ -859,10 +857,6 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
       return next;
     });
 
-    requestAnimationFrame(() => {
-      const el = document.getElementById(`project-${project._id}`);
-      if (el) el.scrollIntoView({ behavior: 'instant', block: 'center' });
-    });
   }, []);
 
   // Xóa project khỏi Set khi user click nút đóng (mobile / nút close inline)
@@ -878,35 +872,30 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
   useGSAP(() => {
     if (!isInitialized || projects.length === 0) return;
 
-    gsap.to('.projects-scaler', {
-      scale: 0.95,
-      y: '4vh',
-      ease: 'none',
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 1.2,
-      }
-    });
+    gsap.set(containerRef.current, { '--project-velocity-scale': 1 });
 
     ScrollTrigger.create({
       trigger: containerRef.current,
       start: 'top bottom',
       end: 'bottom top',
       onUpdate: (self) => {
-        // Chỉ chạy velocity-card effect khi KHÔNG có project nào được mở rộng
+        // Chỉ co giãn image block theo velocity khi KHÔNG có project nào được mở rộng
         if (expandedRef.current.size > 0) return;
 
         const rawVelocity = typeof self.getVelocity === 'function' ? self.getVelocity() : 0;
         const velocity = Math.abs(rawVelocity);
-        const targetCardScale = Math.max(0.97, 1 - velocity / 8000);
-        const momentumY = gsap.utils.clamp(-80, 80, rawVelocity / 25);
+        const targetImageScale = Math.max(0.94, 1 - velocity / 12000);
 
-        gsap.to('.velocity-card', {
-          scale: targetCardScale,
-          y: momentumY,
-          duration: 0.8,
+        gsap.to(containerRef.current, {
+          '--project-velocity-scale': targetImageScale,
+          duration: 0.2,
+          ease: 'power3.out',
+          overwrite: 'auto',
+        });
+        gsap.to(containerRef.current, {
+          '--project-velocity-scale': 1,
+          duration: 0.78,
+          delay: 0.12,
           ease: 'power3.out',
           overwrite: 'auto',
         });
@@ -980,6 +969,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
       prevIsMobileRef.current = isMobileView;
       // Xóa sạch GSAP inline styles để Tailwind CSS classes hoạt động đúng sau resize
       gsap.set('.velocity-card', { clearProps: 'all' });
+      gsap.set(containerRef.current, { '--project-velocity-scale': 1 });
       gsap.set('.project-image', { clearProps: 'all' });
       gsap.set('.project-info', { clearProps: 'all' });
       gsap.set('.projects-scaler', { clearProps: 'all' });
@@ -1058,6 +1048,32 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
             max-height: var(--gallery-img-h) !important;
           }
         }
+
+        .big-project-image-box {
+          transition:
+            width 0.78s cubic-bezier(0.45, 0, 0.55, 1),
+            height 0.78s cubic-bezier(0.45, 0, 0.55, 1),
+            max-height 0.78s cubic-bezier(0.45, 0, 0.55, 1);
+        }
+
+        .big-project-thumb-shell {
+          width: calc(80vw * var(--project-velocity-scale, 1));
+          transition:
+            width 0.78s cubic-bezier(0.45, 0, 0.55, 1),
+            height 0.78s cubic-bezier(0.45, 0, 0.55, 1);
+        }
+
+        @media (min-width: 640px) {
+          .big-project-thumb-shell {
+            width: calc(300px * var(--project-velocity-scale, 1));
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .big-project-thumb-shell {
+            width: calc(56vh * var(--project-velocity-scale, 1));
+          }
+        }
       `}</style>
 
       <div ref={containerRef} className="w-full bg-white relative pt-24 md:pt-[90px] pb-[20vh] overflow-hidden z-10">
@@ -1080,7 +1096,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                     key={project._id || index}
                     id={`project-${project._id}`}
                     layout={!isExpanded}  // Tắt layout animation khi expanded để tránh FLIP counteract w-full
-                    className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobilePortal
+                    className={`${isExpanded ? '' : 'transition-all duration-500'} ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobilePortal
                       ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
                       : isExpanded
                         ? 'relative w-full h-[75vh] md:h-[75vh] z-50 my-0'  // w-full = 100% containerRef = 100vw
@@ -1093,12 +1109,15 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                         <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
 
                           {/* 1. COVER IMAGE WRAPPER */}
-                          <div className="shrink-0 project-image overflow-hidden w-[80vw] sm:w-[300px] lg:w-[56vh] relative">
+                          <div className="big-project-thumb-shell shrink-0 project-image overflow-hidden relative">
                             <motion.div
                               layoutId={`img-container-${project._id}`}
                               onClick={() => handleSelectProject(project)}
-                              transition={{ type: "spring", stiffness: 80, damping: 35, mass: 1 }}
-                              className="relative w-full cursor-pointer group"
+                              transition={{
+                                duration: 0.78,
+                                ease: [0.45, 0, 0.55, 1],
+                              }}
+                              className="big-project-image-box relative w-full cursor-pointer group"
                             >
                               <Image
                                 src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}

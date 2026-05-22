@@ -149,7 +149,7 @@ export default function AboutPage() {
 
             {/* Left Menu Drawer */}
             <div
-              className={`fixed top-0 left-0 bottom-0 z-[1000] w-[200px] bg-[#F2F2ED] flex flex-col pt-[70px] px-[25px] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              className={`fixed top-0 left-0 bottom-0 z-[1000] w-[200px] bg-[#fff] flex flex-col pt-[70px] px-[25px] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                 menuOpen ? 'translate-x-0' : '-translate-x-full'
               }`}
             >
@@ -203,7 +203,7 @@ export default function AboutPage() {
 
             {/* Desktop Sidebar Menu - Slides from left */}
             <nav
-              className={`fixed top-0 bottom-0 left-0 z-[1000] flex flex-col gap-0.5 bg-[#F2F2ED] pt-[70px] pl-[30px] lg:pl-[30px] pr-10 transition-all duration-300 ${
+              className={`fixed top-0 bottom-0 left-0 z-[1000] flex flex-col gap-0.5 bg-[#fff] pt-[70px] pl-[30px] lg:pl-[30px] pr-10 transition-all duration-300 ${
                 menuOpen
                   ? 'translate-x-0 opacity-100 pointer-events-auto'
                   : '-translate-x-full opacity-0 pointer-events-none'
@@ -449,7 +449,7 @@ export default function AboutPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#fcfcf7] pt-32 md:pt-48 pb-12 px-6 md:px-12 w-full">
+      <footer className="bg-[#fff] pt-32 md:pt-48 pb-12 px-6 md:px-12 w-full">
         <div className="max-w-screen-2xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 mb-24 md:mb-40">
             <div className="hidden md:block"></div>
