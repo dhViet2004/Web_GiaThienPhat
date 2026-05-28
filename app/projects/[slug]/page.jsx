@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon, Loader2 } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { apiGet } from '@/lib/api';
 
 const IconMap = {};
@@ -42,6 +43,28 @@ function getProjectYear(project) {
   }
   return '2024';
 }
+
+// Helper to render icon block (black square container matching big.dk)
+const renderIconBlock = (icon) => {
+  const isUrl = icon && (icon.startsWith('http') || icon.startsWith('/') || icon.includes('.') || icon.includes('data:image/'));
+
+  return (
+    <div className="h-lg:size-[48px] size-[30px] bg-black md:size-[38px] lg:size-[50px] shrink-0 flex items-center justify-center overflow-hidden">
+      {isUrl ? (
+        <img
+          src={icon}
+          alt="icon"
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        (() => {
+          const IconComp = LucideIcons[icon] || LucideIcons.Building2;
+          return <IconComp className="text-white w-1/2 h-1/2" strokeWidth={1.5} />;
+        })()
+      )}
+    </div>
+  );
+};
 
 export default function ProjectDetailPage({ params }) {
   const { slug: projectId } = React.use(params);
@@ -423,6 +446,10 @@ export default function ProjectDetailPage({ params }) {
 
           {/* BLOCK 1A: PROJECT INFO — independent sibling, self-padded */}
           <div className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none pl-[5vw] lg:pl-[10vw]">
+            <div className="mb-4 flex justify-start">
+              {renderIconBlock(projectData.general?.icon)}
+            </div>
+
             <div className="mb-6"></div>
             <h1 className="text-xl lg:text-3xl font-bold tracking-tighter leading-none break-words w-full m-0 p-0">
               {projectData.general?.title || 'Untitled Project'}

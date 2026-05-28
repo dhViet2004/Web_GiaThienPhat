@@ -9,10 +9,33 @@ import { CustomEase } from 'gsap/CustomEase';
 import { useGSAP } from '@gsap/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2 } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { apiGet } from '@/lib/api';
 
 gsap.registerPlugin(ScrollTrigger, CustomEase);
 CustomEase.create('customBIG', 'M0,0 C0.45,0 0.55,1 1,1');
+
+// Helper to render icon block (black square container matching big.dk)
+const renderIconBlock = (icon) => {
+  const isUrl = icon && (icon.startsWith('http') || icon.startsWith('/') || icon.includes('.') || icon.includes('data:image/'));
+
+  return (
+    <div className="h-lg:size-[48px] size-[30px] bg-black md:size-[38px] lg:size-[50px] shrink-0 flex items-center justify-center overflow-hidden">
+      {isUrl ? (
+        <img
+          src={icon}
+          alt="icon"
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        (() => {
+          const IconComp = LucideIcons[icon] || LucideIcons.Building2;
+          return <IconComp className="text-white w-1/2 h-1/2" strokeWidth={1.5} />;
+        })()
+      )}
+    </div>
+  );
+};
 
 // --- Mobile Project Detail (Không có animation phóng to ảnh) ---
 const MobileProjectDetail = ({ project, onClose }) => {
@@ -568,6 +591,10 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }}
               className="self-stretch shrink-0 flex flex-col justify-start w-[85vw] sm:w-[320px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6 pt-[min(10vh,60px)] lg:pt-0"
             >
+              <div className="mb-4 flex justify-center lg:justify-end">
+                {renderIconBlock(project.general?.icon)}
+              </div>
+
               <h1 className="text-lg sm:text-xl lg:text-[18px] xl:text-[22px] font-normal text-black m-0 p-0 leading-[1.3] whitespace-normal w-full">
                 {project.general?.title || 'Untitled Project'}
               </h1>
@@ -1512,11 +1539,12 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                           {/* 1. KHỐI THÔNG TIN (Info Block) */}
                           <div
                             onClick={(e) => { e.preventDefault(); handleSelectProject(project); }}
-                            // Đổi thành items-start để text và icon bằng nhau ở mép trên
                             className="project-info bottom-0 mt-[14px] flex items-start shrink-0 bg-white z-20 cursor-pointer w-[90vw] sm:w-auto md:absolute md:top-0 md:-left-[30px] md:mt-0 md:mr-[30px] md:max-w-[324px] md:-translate-x-full md:flex-col md:items-end md:text-right lg:-left-[44px] lg:mr-[44px]"
                           >
-                            {/* Container chứa Tên và Địa điểm - Xóa bỏ justify-center */}
-                            <div className="md:mt-[18px] md:ml-0 lg:mt-[24px]">
+                            {renderIconBlock(project.general?.icon)}
+                            
+                            {/* Container chứa Tên và Địa điểm */}
+                            <div className="ml-[14px] md:mt-[18px] md:ml-0 lg:mt-[24px]">
 
                               {/* TITLE: Thêm leading-[15px] và font-normal để ép sát khoảng cách dòng */}
                               <h3 className="text-[15px] leading-[15px] font-normal break-words m-0 p-0 text-black sm:text-[13px] sm:max-w-[30vw] md:text-[14px] md:max-w-[170px] lg:text-[18px] lg:leading-[20px] lg:max-w-none transition-opacity hover:opacity-70">

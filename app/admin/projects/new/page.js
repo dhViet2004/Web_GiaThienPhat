@@ -366,6 +366,18 @@ export default function CreateNewProjectPage() {
                   className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
                 />
               </div>
+
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-[0.2em] mb-1 block">Đường Dẫn URL Icon Dự Án (Khối màu đen)</label>
+                <input
+                  type="text"
+                  name="icon"
+                  value={project.general.icon}
+                  onChange={handleGeneralChange}
+                  placeholder="VD: https://media.big.dk/... hoặc Building2, Trees, Sofa"
+                  className="admin-input w-full bg-transparent border-b border-gray-300 focus:border-black transition-colors rounded-none outline-none py-2 text-sm placeholder:text-gray-200"
+                />
+              </div>
             </div>
           </section>
 

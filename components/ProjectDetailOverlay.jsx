@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useLayoutEffect, useState, useCallback } from
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Trees, Sofa, LayoutTemplate, Video, ImageIcon, Loader2 } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 
 const IconMap = {};
 function getTextBlock(project) {
@@ -37,6 +38,28 @@ function getProjectYear(project) {
   }
   return '2024';
 }
+
+// Helper to render icon block (black square container matching big.dk)
+const renderIconBlock = (icon) => {
+  const isUrl = icon && (icon.startsWith('http') || icon.startsWith('/') || icon.includes('.') || icon.includes('data:image/'));
+
+  return (
+    <div className="h-lg:size-[48px] size-[30px] bg-black md:size-[38px] lg:size-[50px] shrink-0 flex items-center justify-center overflow-hidden">
+      {isUrl ? (
+        <img
+          src={icon}
+          alt="icon"
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        (() => {
+          const IconComp = LucideIcons[icon] || LucideIcons.Building2;
+          return <IconComp className="text-white w-1/2 h-1/2" strokeWidth={1.5} />;
+        })()
+      )}
+    </div>
+  );
+};
 
 export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
   const scrollRef = useRef(null);
@@ -400,6 +423,10 @@ export default function ProjectDetailOverlay({ project, onClose, isLoading }) {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="h-full flex flex-col justify-center shrink-0 w-[85vw] sm:w-[320px] lg:w-[380px] select-none pointer-events-none"
           >
+            <div className="mb-4 flex justify-end">
+              {renderIconBlock(project.general?.icon)}
+            </div>
+
             <div className="mb-6"></div>
             <h1 className="text-xl lg:text-3xl font-bold uppercase tracking-tighter leading-none break-words w-full m-0 p-0 text-right">
               {project.general?.title || 'Untitled Project'}
