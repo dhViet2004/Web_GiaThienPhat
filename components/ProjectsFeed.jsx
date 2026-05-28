@@ -565,7 +565,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.35, duration: 0.5, ease: "easeOut" }}
+              transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }}
               className="self-stretch shrink-0 flex flex-col justify-start w-[85vw] sm:w-[320px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6 pt-[min(10vh,60px)] lg:pt-0"
             >
               <h1 className="text-lg sm:text-xl lg:text-[18px] xl:text-[22px] font-normal text-black m-0 p-0 leading-[1.3] whitespace-normal w-full">
@@ -620,7 +620,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
+              transition={{ delay: 0.4, duration: 0.6, ease: "easeOut" }}
               className={
                 description
                   ? `shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[280px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:mr-[35px]' : ''}`
@@ -673,7 +673,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 + idx * 0.1 }}
+                transition={{ delay: 0.5 + idx * 0.1 }}
                 className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none lg:max-w-none"
                 style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                 data-gallery-card
@@ -1038,10 +1038,10 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
           const imageEl = rowEl.querySelector('.big-project-image-box');
           const imageRect = imageEl?.getBoundingClientRect();
 
-          // Đo tọa độ của parent .projects-scaler để hiệu chỉnh cho position: fixed / absolute
-          // do .projects-scaler có transform làm thay đổi điểm chứa (Containing Block)
-          const scalerEl = rowEl.closest('.projects-scaler');
-          const scalerRect = scalerEl ? scalerEl.getBoundingClientRect() : { left: 0, top: 0 };
+          // Đo tọa độ của phần tử cha định vị gần nhất (Containing Block) của imageEl
+          // để định vị position: absolute một cách chính xác tuyệt đối.
+          const offsetParent = imageEl.offsetParent || rowEl;
+          const parentRect = offsetParent.getBoundingClientRect();
 
           // --- GSAP FLIP 1: Container height ---
           // GSAP lập tử set height = fromHeight trước browser paint
@@ -1052,15 +1052,14 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
               duration: 0.78,
               ease: 'customBIG',
               onComplete: () => {
-                gsap.set(rowEl, { clearProps: 'height,overflow' });
+                // Trả lại chiều cao 75vh responsive ban đầu thay vì xóa hoàn toàn làm sập height thành auto
+                gsap.set(rowEl, { height: '75vh', clearProps: 'overflow' });
               },
             }
           );
 
           // --- GSAP FLIP 2: Image vị trí & kích thước ---
-          // Sử dụng kết hợp position: fixed (để độc lập khỏi chiều cao cha) và transform scale/translate
-          // Do .projects-scaler (cha) có transform và will-change: transform, nó hoạt động như Containing Block
-          // cho position: fixed. Vì vậy, ta trừ đi scalerRect.left/top để định vị chính xác so với .projects-scaler.
+          // Sử dụng position: absolute để cùng hệ tọa độ và bộ rasterize với relative, tránh lệch 2px.
           if (imageEl && imageRect && thumbnailRect) {
             const dx = (thumbnailRect.left + thumbnailRect.width / 2) - (imageRect.left + imageRect.width / 2);
             const dy = (thumbnailRect.top + thumbnailRect.height / 2) - (imageRect.top + imageRect.height / 2);
@@ -1069,9 +1068,9 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
 
             gsap.fromTo(imageEl,
               {
-                position: 'fixed',
-                left: imageRect.left - scalerRect.left,
-                top: imageRect.top - scalerRect.top,
+                position: 'absolute', // Sử dụng absolute thay vì fixed để tránh giật sub-pixel khi chuyển đổi layer compositor
+                left: imageRect.left - parentRect.left,
+                top: imageRect.top - parentRect.top,
                 width: imageRect.width,
                 height: imageRect.height,
                 scaleX: scaleX,
