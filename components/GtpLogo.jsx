@@ -67,29 +67,29 @@ export default function GtpLogo({ onHoverStart, onHoverEnd }) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 216 98" className="w-full h-full overflow-visible pointer-events-none">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 216 97.08" className="w-full h-full overflow-visible pointer-events-none">
         
         {/* Letter G */}
-        <line className="gtp-letter" x1="0" y1="8" x2="60" y2="8" stroke="black" strokeWidth="16" />
-        <line className="gtp-letter" x1="0" y1="90" x2="60" y2="90" stroke="black" strokeWidth="16" />
-        <line className="gtp-letter" x1="8" y1="8" x2="8" y2="90" stroke="black" strokeWidth="16" />
-        <line className="gtp-letter" x1="52" y1="49" x2="52" y2="90" stroke="black" strokeWidth="16" />
-        <line className="gtp-letter" x1="26" y1="49" x2="60" y2="49" stroke="black" strokeWidth="16" />
+        <rect className="gtp-letter" x="0" y="0" width="60" height="12" fill="black" />
+        <rect className="gtp-letter" x="0" y="85.08" width="60" height="12" fill="black" />
+        <rect className="gtp-letter" x="0" y="0" width="12" height="97.08" fill="black" />
+        <rect className="gtp-letter" x="48" y="42.54" width="12" height="54.54" fill="black" />
+        <rect className="gtp-letter" x="24" y="42.54" width="36" height="12" fill="black" />
 
         {/* Letter T */}
-        <line className="gtp-letter" x1="78" y1="8" x2="138" y2="8" stroke="black" strokeWidth="16" />
-        <line className="gtp-letter" x1="108" y1="8" x2="108" y2="90" stroke="black" strokeWidth="16" />
+        <rect className="gtp-letter" x="78" y="0" width="60" height="12" fill="black" />
+        <rect className="gtp-letter" x="102" y="0" width="12" height="97.08" fill="black" />
 
         {/* Letter P */}
-        <line className="gtp-letter" x1="156" y1="8" x2="216" y2="8" stroke="black" strokeWidth="16" />
-        <line className="gtp-letter" x1="156" y1="49" x2="216" y2="49" stroke="black" strokeWidth="16" />
-        <line className="gtp-letter" x1="164" y1="8" x2="164" y2="90" stroke="black" strokeWidth="16" />
-        <line className="gtp-letter" x1="208" y1="8" x2="208" y2="49" stroke="black" strokeWidth="16" />
+        <rect className="gtp-letter" x="156" y="0" width="60" height="12" fill="black" />
+        <rect className="gtp-letter" x="156" y="42.54" width="60" height="12" fill="black" />
+        <rect className="gtp-letter" x="156" y="0" width="12" height="97.08" fill="black" />
+        <rect className="gtp-letter" x="204" y="0" width="12" height="54.54" fill="black" />
 
         {/* Hamburger Lines (Hidden initially) */}
-        <line className="gtp-burger" x1="0" y1="8" x2="216" y2="8" stroke="black" strokeWidth="16" style={{ transformOrigin: '0% 50%', transform: 'scaleX(0)', opacity: 0 }} />
-        <line className="gtp-burger" x1="0" y1="49" x2="216" y2="49" stroke="black" strokeWidth="16" style={{ transformOrigin: '0% 50%', transform: 'scaleX(0)', opacity: 0 }} />
-        <line className="gtp-burger" x1="0" y1="90" x2="216" y2="90" stroke="black" strokeWidth="16" style={{ transformOrigin: '0% 50%', transform: 'scaleX(0)', opacity: 0 }} />
+        <rect className="gtp-burger" x="0" y="0" width="216" height="12" fill="black" style={{ transformOrigin: '0% 50%', transform: 'scaleX(0)', opacity: 0 }} />
+        <rect className="gtp-burger" x="0" y="42.54" width="216" height="12" fill="black" style={{ transformOrigin: '0% 50%', transform: 'scaleX(0)', opacity: 0 }} />
+        <rect className="gtp-burger" x="0" y="85.08" width="216" height="12" fill="black" style={{ transformOrigin: '0% 50%', transform: 'scaleX(0)', opacity: 0 }} />
       </svg>
     </div>
   );

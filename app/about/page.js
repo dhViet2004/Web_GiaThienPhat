@@ -242,7 +242,7 @@ export default function AboutPage() {
         {/* First Section: Profile */}
         <section className="px-6 md:px-12 max-w-screen-xl mx-auto mb-32 md:mb-48">
           <FadeIn>
-            <h1 className="text-[12vw] md:text-[10vw] lg:text-[8rem] text-center font-['Inter'] mb-16 md:mb-32 tracking-tighter leading-none flex items-center justify-center flex-wrap">
+            <h1 className="text-[12vw] md:text-[10vw] lg:text-[8rem] text-center font-sans mb-16 md:mb-32 tracking-tighter leading-none flex items-center justify-center flex-wrap">
               <span className="mr-[0.2em] inline-block">{aboutData.profile.title}</span>
               <span className="inline-block">{aboutData.profile.subtitle}</span>
             </h1>
@@ -269,7 +269,7 @@ export default function AboutPage() {
                   )}
                 </div>
               </FadeIn>
-              <FadeIn delay={0.2} className="font-['Inter'] text-[#8d8d8a] mt-16 md:mt-24">
+              <FadeIn delay={0.2} className="font-sans text-[#8d8d8a] mt-16 md:mt-24">
                 <div className="space-y-8 text-sm md:text-[15px] leading-relaxed md:leading-loose text-left">
                   {aboutData.profile.en.fedl && (
                     <p>
@@ -297,7 +297,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8 min-h-[50vh]">
             <div className="lg:col-span-1 lg:pl-12 self-start md:sticky top-24 md:top-28 z-10">
               <FadeIn>
-                <h2 className="text-xl md:text-2xl font-['Inter'] tracking-tight flex items-center gap-4">
+                <h2 className="text-xl md:text-2xl font-sans tracking-tight flex items-center gap-4">
                   <span className="w-[6px] h-[6px] rounded-full bg-[#2d2d2b] shrink-0 mt-1"></span>
                   Business Contents
                 </h2>
@@ -332,7 +332,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8 min-h-[50vh]">
             <div className="lg:col-span-1 lg:pl-12 self-start md:sticky top-24 md:top-28 z-10">
               <FadeIn>
-                <h2 className="text-xl md:text-2xl font-['Inter'] tracking-tight flex items-center gap-4">
+                <h2 className="text-xl md:text-2xl font-sans tracking-tight flex items-center gap-4">
                   <span className="w-[6px] h-[6px] rounded-full bg-[#2d2d2b] shrink-0 mt-1"></span>
                   People
                 </h2>
@@ -377,7 +377,7 @@ export default function AboutPage() {
                   if (members.length === 0) return null;
                   return (
                     <FadeIn key={cat} delay={0.1}>
-                      <h4 className="font-['Inter'] text-[15px] mb-8">{categoryLabels[cat]}</h4>
+                      <h4 className="font-sans text-[15px] mb-8">{categoryLabels[cat]}</h4>
                       <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-8 gap-x-8 text-[15.5px] tracking-wide">
                         {members.map((member, idx) => (
                           <li key={member.name + idx} className="flex items-baseline">
@@ -398,7 +398,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 min-h-[50vh]">
             <div className="lg:col-span-4 lg:pl-12 self-start md:sticky top-24 md:top-28 z-10">
               <FadeIn>
-                <h2 className="text-xl md:text-2xl font-['Inter'] tracking-tight flex items-center gap-4">
+                <h2 className="text-xl md:text-2xl font-sans tracking-tight flex items-center gap-4">
                   <span className="w-[5px] h-[5px] rounded-full bg-[#2d2d2b] shrink-0 mt-1"></span>
                   Office
                 </h2>
@@ -411,7 +411,7 @@ export default function AboutPage() {
                   <li className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 pb-16 border-b border-[#2d2d2b]/20">
                     <div>
                       <h3 className="text-[15px] font-medium mb-1 tracking-widest uppercase">Company Profile</h3>
-                      <p className="text-[13px] font-['Inter'] text-[#8d8d8a]">{aboutData.office.companyName}</p>
+                      <p className="text-[13px] font-sans text-[#8d8d8a]">{aboutData.office.companyName}</p>
                     </div>
                     <div className="space-y-3 text-[14px] md:text-[15px] leading-relaxed tracking-wide">
                        {aboutData.office.capital && <p>Capital: {aboutData.office.capital}</p>}
@@ -422,8 +422,8 @@ export default function AboutPage() {
                            <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0 mt-1" />
                          </a>
                        )}
-                       {aboutData.office.tel && <p className="font-['Inter'] mt-2">Tel : <a href={`tel:${aboutData.office.tel}`} className="hover:opacity-70 transition-opacity">{aboutData.office.tel}</a></p>}
-                       {aboutData.office.fax && <p className="font-['Inter']">Fax : {aboutData.office.fax}</p>}
+                       {aboutData.office.tel && <p className="font-sans mt-2">Tel : <a href={`tel:${aboutData.office.tel}`} className="hover:opacity-70 transition-opacity">{aboutData.office.tel}</a></p>}
+                       {aboutData.office.fax && <p className="font-sans">Fax : {aboutData.office.fax}</p>}
                     </div>
                   </li>
                 </FadeIn>
@@ -432,7 +432,7 @@ export default function AboutPage() {
                     <li className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 pb-16 border-b border-[#2d2d2b]/20">
                       <div>
                         <h3 className="text-[15px] font-medium mb-1 tracking-widest uppercase">Location</h3>
-                        <p className="text-[13px] font-['Inter'] text-[#8d8d8a]">Station Access</p>
+                        <p className="text-[13px] font-sans text-[#8d8d8a]">Station Access</p>
                       </div>
                       <div className="space-y-3 text-[14px] md:text-[15px] leading-relaxed tracking-wide">
                         {aboutData.office.stationAccess.map((station, idx) => (
@@ -454,7 +454,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 mb-24 md:mb-40">
             <div className="hidden md:block"></div>
             <div>
-              <div className="text-[8vw] md:text-[5vw] lg:text-[4vw] xl:text-[4.5vw] leading-[1.1] font-['Inter'] tracking-tighter text-[#2d2d2b] flex items-center justify-start -ml-[1vw] lg:-ml-4">
+              <div className="text-[8vw] md:text-[5vw] lg:text-[4vw] xl:text-[4.5vw] leading-[1.1] font-sans tracking-tighter text-[#2d2d2b] flex items-center justify-start -ml-[1vw] lg:-ml-4">
                  <span className="font-normal mr-[2vw] md:mr-3">&copy;</span> <span className="shrink-0 whitespace-nowrap">{aboutData.footer.copyright}</span>
               </div>
             </div>
@@ -462,7 +462,7 @@ export default function AboutPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 mb-32 md:mb-56 items-end">
             <div className="flex flex-col items-start order-2 md:order-1">
-              <Link href="/" className="inline-flex items-center gap-3 border border-[#2d2d2b]/20 rounded-full py-4 px-8 hover:bg-[#2d2d2b] hover:text-[#fcfcf7] transition-colors text-[14px] md:text-[15px] font-['Inter'] tracking-wide w-max group">
+              <Link href="/" className="inline-flex items-center gap-3 border border-[#2d2d2b]/20 rounded-full py-4 px-8 hover:bg-[#2d2d2b] hover:text-[#fcfcf7] transition-colors text-[14px] md:text-[15px] font-sans tracking-wide w-max group">
                 Let&apos;s Talk <ArrowRight size={16} strokeWidth={1.5} className="font-light group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -473,7 +473,7 @@ export default function AboutPage() {
               <ul className="flex flex-col w-full">
                 {aboutData.footer.socials.map((social, idx) => (
                   <li key={social.name + idx}>
-                    <a href={social.url} className="flex items-center justify-between py-5 border-t border-[#2d2d2b]/20 hover:opacity-60 transition-opacity text-[15px] font-['Inter'] tracking-wide group">
+                    <a href={social.url} className="flex items-center justify-between py-5 border-t border-[#2d2d2b]/20 hover:opacity-60 transition-opacity text-[15px] font-sans tracking-wide group">
                       <span>{social.name}</span>
                       <ArrowUpRight size={16} strokeWidth={1.5} className="shrink-0 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                     </a>
@@ -487,7 +487,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-end">
              <div className="lg:col-span-5 flex items-center">
              </div>
-             <div className="lg:col-span-7 flex flex-row items-center justify-end font-['Inter'] text-[14px]">
+             <div className="lg:col-span-7 flex flex-row items-center justify-end font-sans text-[14px]">
                <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="flex items-center gap-2 hover:opacity-60 transition-opacity group">
                   <ArrowRight size={14} className="-rotate-90 group-hover:-translate-y-1 transition-transform" />
                   Back to Top

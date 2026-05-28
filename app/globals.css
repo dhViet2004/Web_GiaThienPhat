@@ -1,5 +1,84 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400&display=swap');
 @import "tailwindcss";
+
+@font-face {
+  font-family: "BT Beau Sans";
+  src: url("/fonts/bt-beau-sans/BT%20Beau%20Sans/BT-BeauSans-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BT Beau Sans";
+  src: url("/fonts/bt-beau-sans/BT%20Beau%20Sans/BT-BeauSans-LightItalic.ttf") format("truetype");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BT Beau Sans";
+  src: url("/fonts/bt-beau-sans/BT%20Beau%20Sans/BT-BeauSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BT Beau Sans";
+  src: url("/fonts/bt-beau-sans/BT%20Beau%20Sans/BT-BeauSans-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BT Beau Sans";
+  src: url("/fonts/bt-beau-sans/BT%20Beau%20Sans/BT-BeauSans-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BT Beau Sans";
+  src: url("/fonts/bt-beau-sans/BT%20Beau%20Sans/BT-BeauSans-MediumItalic.ttf") format("truetype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BT Beau Sans";
+  src: url("/fonts/bt-beau-sans/BT%20Beau%20Sans/BT-BeauSans-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BT Beau Sans";
+  src: url("/fonts/bt-beau-sans/BT%20Beau%20Sans/BT-BeauSans-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BT Beau Sans";
+  src: url("/fonts/bt-beau-sans/BT%20Beau%20Sans/BT-BeauSans-ExtraBold.ttf") format("truetype");
+  font-weight: 800 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BT Beau Sans";
+  src: url("/fonts/bt-beau-sans/BT%20Beau%20Sans/BT-BeauSans-ExtraBoldItalic.ttf") format("truetype");
+  font-weight: 800 900;
+  font-style: italic;
+  font-display: swap;
+}
 
 /* ============================================
    CSS Variable Image Sync Height
@@ -68,12 +147,10 @@
 /* ============================================
    Credentials Page Specific Styles
    ============================================ */
-.font-serif {
-  font-family: "Playfair Display", ui-serif, Georgia, serif;
-}
-
+.font-sans,
+.font-serif,
 .font-mono {
-  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  font-family: "BT Beau Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 @utility grid-background {
@@ -88,7 +165,7 @@
 body {
   color: rgb(var(--foreground-rgb));
   background: white;
-  font-family: inherit;
+  font-family: "BT Beau Sans", ui-sans-serif, system-ui, sans-serif;
   font-weight: 400;
   letter-spacing: 0.05em;
 }

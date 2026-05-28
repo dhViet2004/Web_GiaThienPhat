@@ -1,8 +1,6 @@
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { SmoothScroll } from '../components/SmoothScroll';
 
-const inter = Inter({ subsets: ['latin'] });
 const tabLogoUrl =
   'https://res.cloudinary.com/dh1o42tjk/image/upload/v1776845819/LOgo_hrzqlc.png';
 
@@ -19,7 +17,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body>
         <SmoothScroll>
           {children}
         </SmoothScroll>

@@ -1,12 +1,9 @@
 'use client';
 
-import { Inter } from 'next/font/google';
 import Link from 'next/link';
 import LogoutButton from '../../components/LogoutButton';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-
-const inter = Inter({ subsets: ['latin'], weight: ['300', '400', '700'] });
 
 export default function AdminClientLayout({ children }) {
   const pathname = usePathname();
@@ -32,14 +29,14 @@ export default function AdminClientLayout({ children }) {
 
   if (isLoginPage) {
     return (
-      <div className={`${inter.className} bg-white text-black min-h-screen relative`}>
+      <div className="bg-white text-black min-h-screen relative">
         {children}
       </div>
     );
   }
 
   return (
-    <div className={`${inter.className} bg-white text-black min-h-screen relative`}>
+    <div className="bg-white text-black min-h-screen relative">
       {/* Background Grid using CSS */}
       <div className="fixed inset-0 pointer-events-none z-0 grid-background" />
 
