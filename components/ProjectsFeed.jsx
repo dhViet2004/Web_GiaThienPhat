@@ -8,7 +8,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CustomEase } from 'gsap/CustomEase';
 import { useGSAP } from '@gsap/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAnimation } from 'framer-motion';
 import { X, Loader2 } from 'lucide-react';
 import { apiGet } from '@/lib/api';
 
@@ -133,7 +132,7 @@ const MobileProjectDetail = ({ project, onClose }) => {
   });
 
   const normalizeDescriptionText = (text) => String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
-  const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
+  const coverImageUrl = project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070';
 
   return (
     <div className="fixed inset-0 z-[100] bg-white flex flex-col overflow-hidden">
@@ -352,7 +351,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   });
 
   const normalizeDescriptionText = (text) => String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
-  const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
+  const coverImageUrl = project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070';
 
   const hasRightGalleryOrSlider =
     galleryImageBlocks.length > 0 || sliderImages.length > 0;
@@ -561,11 +560,13 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           >
             {/* ====== CARD 1: PROJECT INFO ====== */}
             {/* Mobile: card 85vw riêng | Desktop: flex-1 cột trái, text-right, nở theo chiều sâu */}
+            {/* self-stretch: override items-center của parent — buộc CARD 1 luôn stretch full height */}
+            {/* nếu không có self-stretch, items-center sẽ center CARD 1 theo content height */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
-              className="shrink-0 h-full flex flex-col justify-start w-[85vw] sm:w-[320px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6"
+              transition={{ delay: 0.35, duration: 0.5, ease: "easeOut" }}
+              className="self-stretch shrink-0 flex flex-col justify-start w-[85vw] sm:w-[320px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6 pt-[min(10vh,60px)] lg:pt-0"
             >
               <h1 className="text-lg sm:text-xl lg:text-[18px] xl:text-[22px] font-normal text-black m-0 p-0 leading-[1.3] whitespace-normal w-full">
                 {project.general?.title || 'Untitled Project'}
@@ -594,15 +595,12 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
             </motion.div>
 
             {/* ====== CARD 2: ẢNH CHÍNH ====== */}
-            {/* Mobile: 85vw | Desktop: auto (ảnh tự co theo tỉ lệ, căn giữa bởi flex-1 hai bên) */}
-            <div ref={mainImageRef} className="shrink-0 h-full order-1 lg:order-2 flex min-w-0 justify-center items-center w-[85vw] sm:w-auto">
-              <motion.div
-                layoutId={layoutId}
-                transition={{
-                  duration: 0.72,
-                  ease: [0.76, 0, 0.24, 1],
-                }}
-                className="big-project-image-box relative h-full aspect-[4/3] overflow-hidden flex items-center justify-center min-w-0 max-w-full"
+            {/* Mobile: 85vw | Desktop: auto (ảnh tự co theo tỷ lệ, căn giữa bởi flex-1 hai bên) */}
+            <div ref={mainImageRef} className="shrink-0 h-full order-1 lg:order-2 flex min-w-0 justify-center items-center w-[85vw] lg:w-[100vh]">
+              {/* GSAP FLIP (trong useLayoutEffect) sẽ animate ảnh này từ vị trí thumbnail.
+                  Không cần Framer Motion initial/animate — GSAP kiểm soát toàn bộ. */}
+              <div
+                className="big-project-image-box relative w-[85vw] h-auto aspect-[4/3] lg:w-[100vh] lg:h-[75vh] overflow-hidden flex items-center justify-center min-w-0 max-w-full"
                 style={{ willChange: 'transform' }}
               >
                 <Image
@@ -615,7 +613,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
                   className="object-cover select-none pointer-events-none"
                   style={{ objectFit: 'cover' }}
                 />
-              </motion.div>
+              </div>
             </div>
 
             {/* ====== CARD 3: DESCRIPTION / GALLERY IMAGE (Mobile: 85vw, Desktop: flex-1 cột phải) ====== */}
@@ -623,7 +621,11 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
-              className={`shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[280px] ${description ? 'lg:w-[calc((100vw-100vh)/2)]' : 'lg:w-auto'} lg:min-w-0 order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:mr-[35px]' : ''}`}
+              className={
+                description
+                  ? `shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[280px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:mr-[35px]' : ''}`
+                  : `shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-auto lg:w-auto lg:min-w-0 order-3 select-none pointer-events-none pl-[20px] lg:pl-[35px] pr-0 pt-0 lg:pt-0${hasRightGalleryOrSlider ? ' mr-[20px] lg:mr-[35px]' : ''}`
+              }
             >
               {description ? (
                 <div className="text-[13px] leading-[1.6] text-black tracking-tight opacity-80">
@@ -764,6 +766,10 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
   const [activeCategory, setActiveCategory] = useState(propActiveCategory || null);
   const [activeSubcategory, setActiveSubcategory] = useState(propActiveSubcategory || null);
   const expandedRef = useRef(new Set());
+  // FLIP technique: lưu chiều cao thực tế của row TRƯỚC khi React re-render
+  // để GSAP có thể animate từ giá trị đó lên 75vh một cách mượt mà
+  const expandingFlipRef = useRef(null); // { id, fromHeight }
+  const closingFlipRef = useRef(null);   // { id, fromHeight }
 
   // Detect mobile on mount and resize
   useEffect(() => {
@@ -902,47 +908,18 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
     expandedRef.current = expandedProjectIds;
   }, [expandedProjectIds]);
 
+  // BIG.DK: Khi expandedProjectIds thay đổi, chỉ cần refresh ScrollTrigger
+  // để recalculate vị trí trigger sau khi layout thay đổi.
+  // KHÔNG cần revealVisibleRows vì các row đã ở y:0 (không bị revert nữa).
   useEffect(() => {
     if (!isInitialized || projects.length === 0) return undefined;
 
-    const revealVisibleRows = () => {
+    // Chờ CSS transition hoàn thành (0.78s) rồi mới refresh ScrollTrigger
+    const refreshTimer = window.setTimeout(() => {
       ScrollTrigger.refresh();
-
-      if (expandedRef.current.size === 0) return;
-
-      gsap.utils.toArray('.project-row').forEach((row) => {
-        const rect = row.getBoundingClientRect();
-        const isNearViewport = rect.top < window.innerHeight * 1.08 && rect.bottom > -window.innerHeight * 0.2;
-        if (!isNearViewport) return;
-
-        const imageBlock = row.querySelector('.project-image');
-        const infoBlock = row.querySelector('.project-info');
-        if (imageBlock) {
-          gsap.to(imageBlock, {
-            y: 0,
-            opacity: 1,
-            duration: 0.45,
-            ease: 'power3.out',
-            overwrite: 'auto',
-          });
-        }
-        if (infoBlock) {
-          gsap.to(infoBlock, {
-            y: 0,
-            opacity: 1,
-            duration: 0.45,
-            ease: 'power3.out',
-            overwrite: 'auto',
-          });
-        }
-      });
-    };
-
-    const rafId = requestAnimationFrame(revealVisibleRows);
-    const refreshTimer = window.setTimeout(revealVisibleRows, 780);
+    }, 800);
 
     return () => {
-      cancelAnimationFrame(rafId);
       window.clearTimeout(refreshTimer);
     };
   }, [expandedProjectIds.size, isInitialized, projects.length]);
@@ -969,31 +946,38 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
 
     window.history.pushState(null, '', `/projects/${project._id}`);
     
-    // Đưa projects-scaler về scale 1 trong 1.8s giống big.dk khi mở chi tiết
+    // BIG.DK: Đưa projects-scaler về scale 1 mượt mà khi mở chi tiết
     gsap.killTweensOf('.projects-scaler');
     gsap.to('.projects-scaler', {
       scale: 1,
-      duration: 1.8,
+      duration: 0.78,
       ease: 'power2.out',
       overwrite: 'auto',
     });
 
     const projectRow = document.getElementById(`project-${project._id}`);
     if (projectRow) {
+      // FLIP Step 1: Đo cả chiều cao row và rect của thumbnail image TRƯỚC khi state thay đổi
+      // Thumbnail rect dùng để GSAP FLIP image từ vị trí này đến vị trí expanded
+      const thumbnailImageEl = projectRow.querySelector('.big-project-image-box');
+      expandingFlipRef.current = {
+        id: project._id,
+        fromHeight: projectRow.getBoundingClientRect().height,
+        thumbnailRect: thumbnailImageEl?.getBoundingClientRect() ?? null,
+      };
+
       const scrollTriggerTarget = projectRow.querySelector('.project-row');
       const imageBlock = projectRow.querySelector('.project-image');
       const infoBlock = projectRow.querySelector('.project-info');
-      if (imageBlock) gsap.set(imageBlock, { clearProps: 'transform,opacity,y,x' });
+      // BIG.DK: Clear GSAP inline styles để CSS transition kiểm soát chuyển động
+      if (imageBlock) gsap.set(imageBlock, { clearProps: 'all' });
       const thumbScaleEl = projectRow?.querySelector('.big-project-velocity-scale');
-      if (thumbScaleEl) {
-        gsap.set(thumbScaleEl, { clearProps: 'transform' });
-      }
+      if (thumbScaleEl) gsap.set(thumbScaleEl, { clearProps: 'transform' });
       const velocityCard = projectRow.querySelector('.velocity-card');
-      if (velocityCard) {
-        gsap.set(velocityCard, { clearProps: 'transform' });
-      }
-      if (infoBlock) gsap.set(infoBlock, { clearProps: 'transform,opacity,y,x' });
+      if (velocityCard) gsap.set(velocityCard, { clearProps: 'transform' });
+      if (infoBlock) gsap.set(infoBlock, { clearProps: 'all' });
 
+      // Kill ScrollTrigger của row đang expand
       ScrollTrigger.getAll()
         .filter(trigger => trigger.trigger === projectRow || trigger.trigger === scrollTriggerTarget)
         .forEach(trigger => trigger.kill());
@@ -1004,6 +988,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
       if (window.__lenis) window.__lenis.start();
     }, 800);
 
+    // FLIP Step 2: Trigger React re-render → useLayoutEffect FLIP sẽ chạy sau
     setExpandedProjectIds(prev => {
       const next = new Set(prev);
       next.add(project._id);
@@ -1014,6 +999,13 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
 
   // Xóa project khỏi Set khi user click nút đóng (mobile / nút close inline)
   const handleCloseProject = useCallback((projectId) => {
+    const projectRow = document.getElementById(`project-${projectId}`);
+    if (projectRow) {
+      closingFlipRef.current = {
+        id: projectId,
+        fromHeight: projectRow.getBoundingClientRect().height,
+      };
+    }
     setExpandedProjectIds(prev => {
       const next = new Set(prev);
       next.delete(projectId);
@@ -1022,6 +1014,117 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
     window.history.pushState(null, '', '/');
   }, []);
 
+  // FLIP Step 3: Chạy sau khi React đã commit DOM changes nhưng TRƯỚC browser paint
+  // useLayoutEffect đảm bảo không có flash của trạng thái 75vh
+  useLayoutEffect(() => {
+    // --- Xử lý EXPAND ---
+    if (expandingFlipRef.current) {
+      const { id, fromHeight, thumbnailRect } = expandingFlipRef.current;
+      expandingFlipRef.current = null;
+
+      if (expandedProjectIds.has(id)) {
+        const rowEl = document.getElementById(`project-${id}`);
+        if (rowEl) {
+          // Tại đây React đã render rowStyle = { height: '75vh' } vào DOM.
+          // Đo targetH và imageRect TỪ ĐÂY để lấy giá trị chính xác TRƯỚC khi GSAP override.
+          const targetH = rowEl.getBoundingClientRect().height;
+          const imageEl = rowEl.querySelector('.big-project-image-box');
+          const imageRect = imageEl?.getBoundingClientRect();
+
+          // Đo tọa độ của parent .projects-scaler để hiệu chỉnh cho position: fixed / absolute
+          // do .projects-scaler có transform làm thay đổi điểm chứa (Containing Block)
+          const scalerEl = rowEl.closest('.projects-scaler');
+          const scalerRect = scalerEl ? scalerEl.getBoundingClientRect() : { left: 0, top: 0 };
+
+          // --- GSAP FLIP 1: Container height ---
+          // GSAP lập tử set height = fromHeight trước browser paint
+          gsap.fromTo(rowEl,
+            { height: fromHeight, overflow: 'hidden' },
+            {
+              height: targetH,
+              duration: 0.78,
+              ease: 'customBIG',
+              onComplete: () => {
+                gsap.set(rowEl, { clearProps: 'height,overflow' });
+              },
+            }
+          );
+
+          // --- GSAP FLIP 2: Image vị trí & kích thước ---
+          // Sử dụng kết hợp position: fixed (để độc lập khỏi chiều cao cha) và transform scale/translate
+          // Do .projects-scaler (cha) có transform và will-change: transform, nó hoạt động như Containing Block
+          // cho position: fixed. Vì vậy, ta trừ đi scalerRect.left/top để định vị chính xác so với .projects-scaler.
+          if (imageEl && imageRect && thumbnailRect) {
+            const dx = (thumbnailRect.left + thumbnailRect.width / 2) - (imageRect.left + imageRect.width / 2);
+            const dy = (thumbnailRect.top + thumbnailRect.height / 2) - (imageRect.top + imageRect.height / 2);
+            const scaleX = thumbnailRect.width / imageRect.width;
+            const scaleY = thumbnailRect.height / imageRect.height;
+
+            gsap.fromTo(imageEl,
+              {
+                position: 'fixed',
+                left: imageRect.left - scalerRect.left,
+                top: imageRect.top - scalerRect.top,
+                width: imageRect.width,
+                height: imageRect.height,
+                scaleX: scaleX,
+                scaleY: scaleY,
+                x: dx,
+                y: dy,
+                opacity: 1,
+                transformOrigin: 'center center',
+                zIndex: 100,
+              },
+              {
+                scaleX: 1,
+                scaleY: 1,
+                x: 0,
+                y: 0,
+                opacity: 1,
+                duration: 0.78,
+                ease: 'customBIG',
+                onComplete: () => gsap.set(imageEl, { clearProps: 'position,left,top,width,height,transform,opacity,zIndex' }),
+              }
+            );
+          } else if (imageEl) {
+            // Fallback: nếu không có thumbnailRect, chỉ fade in
+            gsap.fromTo(imageEl, { opacity: 0 }, { opacity: 1, duration: 0.5 });
+          }
+        }
+      }
+    }
+
+    // --- Xử lý CLOSE ---
+    if (closingFlipRef.current) {
+      const { id, fromHeight } = closingFlipRef.current;
+      closingFlipRef.current = null;
+
+      if (!expandedProjectIds.has(id)) {
+        const rowEl = document.getElementById(`project-${id}`);
+        if (rowEl) {
+          // React đã render rowStyle = { height: 'auto' }
+          // Đo chiều cao mới (sẽ là height:auto = thumbnail height)
+          const toHeight = rowEl.getBoundingClientRect().height;
+          gsap.fromTo(rowEl,
+            { height: fromHeight, overflow: 'hidden' },
+            {
+              height: toHeight,
+              duration: 0.78,
+              ease: 'customBIG',
+              onComplete: () => {
+                gsap.set(rowEl, { clearProps: 'height,overflow' });
+              },
+            }
+          );
+        }
+      }
+    }
+  }, [expandedProjectIds]);
+
+  // BIG.DK: Scroll-reveal animation chỉ chạy 1 lần khi init hoặc khi danh sách project thay đổi.
+  // QUAN TRỌNG: Không revert khi expandedProjectIds.size thay đổi — tránh jump y:150.
+  // Khi một project expand, các row khác đã giữ nguyên y:0 và sẽ trượt xuống
+  // mượt mà nhờ CSS transition trên rowStyle.
   useGSAP(() => {
     if (!isInitialized || projects.length === 0) return;
 
@@ -1032,9 +1135,9 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
 
       if (imageBlock) {
         gsap.fromTo(imageBlock,
-          { y: 150, opacity: 0 },
+          { y: 80, opacity: 0 },
           {
-            y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, scrollTrigger: {
+            y: 0, opacity: 1, duration: 0.78, ease: 'customBIG', force3D: true, scrollTrigger: {
               trigger: item,
               start: 'top 95%',
               toggleActions: 'play none none none',
@@ -1044,9 +1147,9 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
       }
       if (infoWrapper) {
         gsap.fromTo(infoWrapper,
-          { y: 100, opacity: 0 },
+          { y: 60, opacity: 0 },
           {
-            y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, delay: 0.1, scrollTrigger: {
+            y: 0, opacity: 1, duration: 0.78, ease: 'customBIG', force3D: true, delay: 0.08, scrollTrigger: {
               trigger: item,
               start: 'top 95%',
               toggleActions: 'play none none none',
@@ -1056,7 +1159,9 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
       }
     });
 
-  }, { scope: containerRef, dependencies: [isInitialized, projects.length, expandedProjectIds.size], revertOnUpdate: true });
+  // Chỉ dependency vào isInitialized và projects.length — KHÔNG expandedProjectIds.size
+  // để tránh re-trigger animation khi user click expand project
+  }, { scope: containerRef, dependencies: [isInitialized, projects.length] });
 
   useEffect(() => {
     if (!isInitialized || projects.length === 0) return undefined;
@@ -1304,6 +1409,13 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
           will-change: transform;
         }
 
+        /* BIG.DK: transition mượt mà cho ảnh và card khi layout thay đổi */
+        .project-image,
+        .velocity-card {
+          transition: transform 0.78s cubic-bezier(0.45, 0, 0.55, 1),
+                      opacity 0.78s cubic-bezier(0.45, 0, 0.55, 1);
+        }
+
         @media (min-width: 640px) {
           .big-project-thumb-shell {
             width: 350px;
@@ -1338,17 +1450,21 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
               .map((project, index) => {
                 const isExpanded = expandedProjectIds.has(project._id);
                 const isMobilePortal = isExpanded && isMobileView;
+                // rowStyle: không dùng CSS transition vì GSAP (FLIP) điều khiển animation height
                 const rowStyle = isMobilePortal
                   ? { height: 0, maxHeight: 0, overflow: 'visible' }
                   : isExpanded
                     ? {
-                        height: '75vh',
+                        height: '75vh',     // React's static target — GSAP animate TỚI ĐÂY
                         maxHeight: '75vh',
-                        overflow: 'hidden',
-                        transition: 'height 0.72s cubic-bezier(0.76, 0, 0.24, 1), max-height 0.72s cubic-bezier(0.76, 0, 0.24, 1)',
-                        willChange: 'height, max-height',
+                        overflow: 'hidden', // GSAP sẽ override inline rồi clear sau khi xong
+                        willChange: 'height',
                       }
-                    : { height: 'auto', maxHeight: 'none', overflow: 'visible' };
+                    : {
+                        height: 'auto',
+                        maxHeight: 'none',
+                        overflow: 'visible',
+                      };
                 // Desktop expanded: w-full của containerRef (không bị max-w/px constraint)
                 // Mobile expanded: placeholder vô hình (portal đảm nhận)
                 // Collapsed: max-w + px + mx-auto được áp dụng trực tiếp trên item
@@ -1357,10 +1473,10 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                     key={project._id || index}
                     id={`project-${project._id}`}
                     style={rowStyle}
-                    className={`${isExpanded ? '' : 'transition-all duration-500'} ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobilePortal
+                    className={`${isMobilePortal
                       ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
                       : isExpanded
-                        ? 'relative w-full z-50 my-[26px] lg:my-[38px]'  // w-full = 100% containerRef = 100vw
+                        ? 'relative w-full z-50 my-[6px] lg:my-[8px]'  // w-full = 100% containerRef = 100vw
                         : 'relative w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] flex justify-center items-center max-w-[1600px] h-auto mb-[26px] lg:mb-[29px]'
                       }`}
                   >
@@ -1371,13 +1487,9 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                           {/* 1. COVER IMAGE WRAPPER */}
                           <div className="big-project-thumb-shell shrink-0 project-image overflow-hidden relative">
                             <div className="big-project-velocity-scale h-full w-full">
-                              <motion.div
-                                layoutId={`img-container-${project._id}`}
+                              {/* Đã bỏ layoutId — tránh conflict với GSAP FLIP container animation. */}
+                              <div
                                 onClick={() => handleSelectProject(project)}
-                                transition={{
-                                  duration: 0.72,
-                                  ease: [0.76, 0, 0.24, 1],
-                                }}
                                 className="big-project-image-box relative w-full overflow-hidden cursor-pointer group"
                                 style={{ aspectRatio: '4 / 3', willChange: 'transform' }}
                               >
@@ -1391,7 +1503,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                                   className="object-cover"
                                 />
                                 <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                              </motion.div>
+                              </div>
                             </div>
                           </div>
 
