@@ -1006,6 +1006,13 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
         fromHeight: projectRow.getBoundingClientRect().height,
       };
     }
+    
+    // Tạm khóa scroll trong 800ms để hoạt ảnh đóng diễn ra mượt mà
+    if (window.__lenis) window.__lenis.stop();
+    window.setTimeout(() => {
+      if (window.__lenis) window.__lenis.start();
+    }, 800);
+
     setExpandedProjectIds(prev => {
       const next = new Set(prev);
       next.delete(projectId);
@@ -1211,11 +1218,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
         return;
       }
 
-      // 2. Không chạy khi có dự án đang mở rộng
-      if (expandedRef.current.size > 0) {
-        gsap.set(scalerTarget, { scale: 1 });
-        return;
-      }
+      // 2. Cho phép nhún lò xo khi cuộn kể cả khi dự án đang mở rộng (đồng bộ với big.dk)
 
       const absVelocity = Math.abs(velocity || 0);
       if (absVelocity < 0.2) return;
@@ -1476,7 +1479,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                     className={`${isMobilePortal
                       ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
                       : isExpanded
-                        ? 'relative w-full z-50 my-[6px] lg:my-[8px]'  // w-full = 100% containerRef = 100vw
+                        ? 'relative w-full z-50 mb-[26px] lg:mb-[29px]'  // Đồng bộ margin-bottom với collapsed, loại bỏ margin-top lệch
                         : 'relative w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] flex justify-center items-center max-w-[1600px] h-auto mb-[26px] lg:mb-[29px]'
                       }`}
                   >
