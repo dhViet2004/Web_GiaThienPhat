@@ -62,6 +62,29 @@ export function SmoothScroll({ children }) {
   }, []);
 
   useEffect(() => {
+    if (isAdminOrCredentials) return undefined;
+
+    let rafId;
+    const exposeLenis = () => {
+      const lenis = lenisRef.current?.lenis || lenisRef.current;
+      if (lenis && typeof lenis.start === 'function' && typeof lenis.stop === 'function') {
+        window.__lenis = lenis;
+        return;
+      }
+      rafId = requestAnimationFrame(exposeLenis);
+    };
+
+    exposeLenis();
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (window.__lenis === lenisRef.current?.lenis || window.__lenis === lenisRef.current) {
+        delete window.__lenis;
+      }
+    };
+  }, [isAdminOrCredentials]);
+
+  useEffect(() => {
     document.addEventListener('pointermove', handlePointerMove);
     document.addEventListener('pointerup', handlePointerUp);
     document.addEventListener('pointercancel', handlePointerCancel);
@@ -81,7 +104,14 @@ export function SmoothScroll({ children }) {
     <ReactLenis
       root
       ref={lenisRef}
-      options={{ lerp: 0.1 }}
+      options={{
+        lerp: 0.075,
+        wheelMultiplier: 0.9,
+        touchMultiplier: 1.35,
+        smoothWheel: true,
+        syncTouch: true,
+        syncTouchLerp: 0.075,
+      }}
       onPointerDown={handlePointerDown}
     >
       {children}

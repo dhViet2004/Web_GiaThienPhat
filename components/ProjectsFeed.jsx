@@ -592,21 +592,21 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               <motion.div
                 layoutId={layoutId}
                 transition={{
-                  duration: 0.78,
-                  ease: [0.45, 0, 0.55, 1],
+                  duration: 0.72,
+                  ease: [0.76, 0, 0.24, 1],
                 }}
-                className="big-project-image-box relative w-auto h-full flex items-center justify-center min-w-0 max-w-full"
+                className="big-project-image-box relative h-full aspect-[4/3] overflow-hidden flex items-center justify-center min-w-0 max-w-full"
+                style={{ willChange: 'transform' }}
               >
                 <Image
                   src={coverImageUrl}
                   alt="Cover"
-                  width={1920}
-                  height={1080}
-                  sizes="(max-width: 1024px) 85vw, 60vw"
+                  fill
+                  sizes="(max-width: 768px) 90vw, 64vh"
                   priority
                   draggable={false}
-                  className="object-contain select-none pointer-events-none w-auto h-full max-w-full max-h-full"
-                  style={{ width: 'auto', height: '100%', maxWidth: '100%' }}
+                  className="object-cover select-none pointer-events-none"
+                  style={{ objectFit: 'cover' }}
                 />
               </motion.div>
             </div>
@@ -828,6 +828,51 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
   }, [expandedProjectIds]);
 
   useEffect(() => {
+    if (!isInitialized || projects.length === 0) return undefined;
+
+    const revealVisibleRows = () => {
+      ScrollTrigger.refresh();
+
+      if (expandedRef.current.size === 0) return;
+
+      gsap.utils.toArray('.project-row').forEach((row) => {
+        const rect = row.getBoundingClientRect();
+        const isNearViewport = rect.top < window.innerHeight * 1.08 && rect.bottom > -window.innerHeight * 0.2;
+        if (!isNearViewport) return;
+
+        const imageBlock = row.querySelector('.project-image');
+        const infoBlock = row.querySelector('.project-info');
+        if (imageBlock) {
+          gsap.to(imageBlock, {
+            y: 0,
+            opacity: 1,
+            duration: 0.45,
+            ease: 'power3.out',
+            overwrite: 'auto',
+          });
+        }
+        if (infoBlock) {
+          gsap.to(infoBlock, {
+            y: 0,
+            opacity: 1,
+            duration: 0.45,
+            ease: 'power3.out',
+            overwrite: 'auto',
+          });
+        }
+      });
+    };
+
+    const rafId = requestAnimationFrame(revealVisibleRows);
+    const refreshTimer = window.setTimeout(revealVisibleRows, 780);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.clearTimeout(refreshTimer);
+    };
+  }, [expandedProjectIds.size, isInitialized, projects.length]);
+
+  useEffect(() => {
     const handlePopState = () => {
       const pathParts = window.location.pathname.split('/');
       const projectUrlId = pathParts[pathParts.length - 1];
@@ -850,6 +895,25 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
     window.history.pushState(null, '', `/projects/${project._id}`);
     gsap.killTweensOf(containerRef.current);
     gsap.killTweensOf('.big-project-thumb-shell');
+    gsap.set(containerRef.current, { '--project-velocity-scale': 1 });
+
+    const projectRow = document.getElementById(`project-${project._id}`);
+    if (projectRow) {
+      const scrollTriggerTarget = projectRow.querySelector('.project-row');
+      const imageBlock = projectRow.querySelector('.project-image');
+      const infoBlock = projectRow.querySelector('.project-info');
+      if (imageBlock) gsap.set(imageBlock, { clearProps: 'transform,opacity,y,x' });
+      if (infoBlock) gsap.set(infoBlock, { clearProps: 'transform,opacity,y,x' });
+
+      ScrollTrigger.getAll()
+        .filter(trigger => trigger.trigger === projectRow || trigger.trigger === scrollTriggerTarget)
+        .forEach(trigger => trigger.kill());
+    }
+
+    if (window.__lenis) window.__lenis.stop();
+    window.setTimeout(() => {
+      if (window.__lenis) window.__lenis.start();
+    }, 800);
 
     setExpandedProjectIds(prev => {
       const next = new Set(prev);
@@ -914,12 +978,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
             y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, scrollTrigger: {
               trigger: item,
               start: 'top 95%',
-              toggleActions: 'play none none reverse',
-              onLeaveBack: () => {
-                gsap.to(imageBlock, {
-                  y: 150, opacity: 0, duration: 1.4, ease: 'power2.inOut', force3D: true
-                });
-              }
+              toggleActions: 'play none none none',
             }
           }
         );
@@ -931,12 +990,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
             y: 0, opacity: 1, duration: 0.8, ease: 'customBIG', force3D: true, delay: 0.1, scrollTrigger: {
               trigger: item,
               start: 'top 95%',
-              toggleActions: 'play none none reverse',
-              onLeaveBack: () => {
-                gsap.to(infoWrapper, {
-                  y: 100, opacity: 0, duration: 1.2, ease: 'power2.inOut', force3D: true, delay: 0.05
-                });
-              }
+              toggleActions: 'play none none none',
             }
           }
         );
@@ -1049,15 +1103,8 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
           }
         }
 
-        .big-project-image-box {
-          transition:
-            width 0.78s cubic-bezier(0.45, 0, 0.55, 1),
-            height 0.78s cubic-bezier(0.45, 0, 0.55, 1),
-            max-height 0.78s cubic-bezier(0.45, 0, 0.55, 1);
-        }
-
         .big-project-thumb-shell {
-          width: calc(80vw * var(--project-velocity-scale, 1));
+          width: calc(90vw * var(--project-velocity-scale, 1));
           transition:
             width 0.78s cubic-bezier(0.45, 0, 0.55, 1),
             height 0.78s cubic-bezier(0.45, 0, 0.55, 1);
@@ -1065,20 +1112,20 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
 
         @media (min-width: 640px) {
           .big-project-thumb-shell {
-            width: calc(300px * var(--project-velocity-scale, 1));
+            width: calc(350px * var(--project-velocity-scale, 1));
           }
         }
 
         @media (min-width: 1024px) {
           .big-project-thumb-shell {
-            width: calc(56vh * var(--project-velocity-scale, 1));
+            width: calc(48vh * var(--project-velocity-scale, 1));
           }
         }
       `}</style>
 
       <div ref={containerRef} className="w-full bg-white relative pt-24 md:pt-[90px] pb-[20vh] overflow-hidden z-10">
         <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
-          <div className="flex flex-col items-center w-full transition-all duration-500 gap-1 lg:gap-1">
+          <div className="flex flex-col items-center w-full transition-all duration-500">
             {projects
               .filter(p => {
                 if (activeCategory && p.category !== activeCategory) return false;
@@ -1088,24 +1135,34 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
               .map((project, index) => {
                 const isExpanded = expandedProjectIds.has(project._id);
                 const isMobilePortal = isExpanded && isMobileView;
+                const rowStyle = isMobilePortal
+                  ? { height: 0, maxHeight: 0, overflow: 'visible' }
+                  : isExpanded
+                    ? {
+                        height: '75vh',
+                        maxHeight: '75vh',
+                        overflow: 'hidden',
+                        transition: 'height 0.72s cubic-bezier(0.76, 0, 0.24, 1), max-height 0.72s cubic-bezier(0.76, 0, 0.24, 1)',
+                        willChange: 'height, max-height',
+                      }
+                    : { height: 'auto', maxHeight: 'none', overflow: 'visible' };
                 // Desktop expanded: w-full của containerRef (không bị max-w/px constraint)
                 // Mobile expanded: placeholder vô hình (portal đảm nhận)
                 // Collapsed: max-w + px + mx-auto được áp dụng trực tiếp trên item
                 return (
-                  <motion.div
+                  <div
                     key={project._id || index}
                     id={`project-${project._id}`}
-                    layout={!isExpanded}  // Tắt layout animation khi expanded để tránh FLIP counteract w-full
+                    style={rowStyle}
                     className={`${isExpanded ? '' : 'transition-all duration-500'} ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobilePortal
                       ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
                       : isExpanded
-                        ? 'relative w-full h-[75vh] md:h-[75vh] z-50 my-0'  // w-full = 100% containerRef = 100vw
-                        : 'relative w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] flex justify-center items-center max-w-[1600px] h-auto my-2'
+                        ? 'relative w-full z-50 my-[26px] lg:my-[38px]'  // w-full = 100% containerRef = 100vw
+                        : 'relative w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] flex justify-center items-center max-w-[1600px] h-auto mb-[26px] lg:mb-[29px]'
                       }`}
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.8 }}
                   >
                     {!isExpanded ? (
-                      <div className="project-row w-full flex justify-center items-center group">
+                      <div className="project-row w-full flex justify-center items-start group">
                         <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
 
                           {/* 1. COVER IMAGE WRAPPER */}
@@ -1114,20 +1171,20 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                               layoutId={`img-container-${project._id}`}
                               onClick={() => handleSelectProject(project)}
                               transition={{
-                                duration: 0.78,
-                                ease: [0.45, 0, 0.55, 1],
+                                duration: 0.72,
+                                ease: [0.76, 0, 0.24, 1],
                               }}
-                              className="big-project-image-box relative w-full cursor-pointer group"
+                              className="big-project-image-box relative w-full overflow-hidden cursor-pointer group"
+                              style={{ aspectRatio: '4 / 3', willChange: 'transform' }}
                             >
                               <Image
                                 src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
                                 alt={project.general?.title || 'Preview'}
-                                width={800}
-                                height={0}
-                                style={{ width: '100%', height: 'auto' }}
+                                fill
+                                style={{ objectFit: 'cover' }}
                                 priority={index < 4}
                                 sizes="(max-width: 768px) 90vw, 64vh"
-                                className="object-cover transition-transform duration-700"
+                                className="object-cover"
                               />
                               <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                             </motion.div>
@@ -1137,7 +1194,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                           <div
                             onClick={(e) => { e.preventDefault(); handleSelectProject(project); }}
                             // Đổi thành items-start để text và icon bằng nhau ở mép trên
-                            className="project-info bottom-0 mt-[14px] flex items-start shrink-0 bg-white z-20 cursor-pointer w-[80vw] sm:w-auto md:absolute md:top-0 md:-left-[14px] md:mt-0 md:mr-[14px] md:max-w-[324px] md:-translate-x-full md:flex-col md:items-end md:text-right lg:-left-[20px] lg:mr-[20px]"
+                            className="project-info bottom-0 mt-[14px] flex items-start shrink-0 bg-white z-20 cursor-pointer w-[90vw] sm:w-auto md:absolute md:top-0 md:-left-[30px] md:mt-0 md:mr-[30px] md:max-w-[324px] md:-translate-x-full md:flex-col md:items-end md:text-right lg:-left-[44px] lg:mr-[44px]"
                           >
                             {/* Container chứa Tên và Địa điểm - Xóa bỏ justify-center */}
                             <div className="md:mt-[18px] md:ml-0 lg:mt-[24px]">
@@ -1165,7 +1222,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                         isLoading={false}
                       />
                     )}
-                  </motion.div>
+                  </div>
                 );
               })}
           </div>
