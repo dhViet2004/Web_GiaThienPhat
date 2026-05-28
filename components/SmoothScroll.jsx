@@ -14,6 +14,7 @@ export function SmoothScroll({ children }) {
 
   // Check if we should disable smooth scroll
   const isAdminOrCredentials = pathname && (pathname.startsWith('/admin') || pathname.startsWith('/credentials'));
+  const getLenis = useCallback(() => lenisRef.current?.lenis || lenisRef.current, []);
 
   const handlePointerDown = useCallback((e) => {
     if (pointerId.current !== null) return;
@@ -24,8 +25,9 @@ export function SmoothScroll({ children }) {
     startY.current = e.clientY;
     startScrollTop.current = window.scrollY;
 
-    if (lenisRef.current) {
-      lenisRef.current.stop();
+    const lenis = getLenis();
+    if (lenis && typeof lenis.stop === 'function') {
+      lenis.stop();
     }
     document.body.style.cursor = 'grabbing';
     document.body.style.userSelect = 'none';
@@ -44,10 +46,11 @@ export function SmoothScroll({ children }) {
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
 
-    if (lenisRef.current) {
-      lenisRef.current.start();
+    const lenis = getLenis();
+    if (lenis && typeof lenis.start === 'function') {
+      lenis.start();
     }
-  }, []);
+  }, [getLenis]);
 
   const handlePointerCancel = useCallback((e) => {
     if (e.pointerId !== pointerId.current) return;
@@ -56,17 +59,18 @@ export function SmoothScroll({ children }) {
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
 
-    if (lenisRef.current) {
-      lenisRef.current.start();
+    const lenis = getLenis();
+    if (lenis && typeof lenis.start === 'function') {
+      lenis.start();
     }
-  }, []);
+  }, [getLenis]);
 
   useEffect(() => {
     if (isAdminOrCredentials) return undefined;
 
     let rafId;
     const exposeLenis = () => {
-      const lenis = lenisRef.current?.lenis || lenisRef.current;
+      const lenis = getLenis();
       if (lenis && typeof lenis.start === 'function' && typeof lenis.stop === 'function') {
         window.__lenis = lenis;
         return;
@@ -78,11 +82,11 @@ export function SmoothScroll({ children }) {
 
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
-      if (window.__lenis === lenisRef.current?.lenis || window.__lenis === lenisRef.current) {
+      if (window.__lenis === getLenis()) {
         delete window.__lenis;
       }
     };
-  }, [isAdminOrCredentials]);
+  }, [getLenis, isAdminOrCredentials]);
 
   useEffect(() => {
     document.addEventListener('pointermove', handlePointerMove);
@@ -105,9 +109,9 @@ export function SmoothScroll({ children }) {
       root
       ref={lenisRef}
       options={{
-        lerp: 0.075,
-        wheelMultiplier: 0.9,
-        touchMultiplier: 1.35,
+        duration: 0.72,
+        wheelMultiplier: 2.6,
+        touchMultiplier: 2.6,
         smoothWheel: true,
         syncTouch: true,
         syncTouchLerp: 0.075,

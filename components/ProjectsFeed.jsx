@@ -893,9 +893,15 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
     if (!project) return;
 
     window.history.pushState(null, '', `/projects/${project._id}`);
-    gsap.killTweensOf(containerRef.current);
-    gsap.killTweensOf('.big-project-thumb-shell');
-    gsap.set(containerRef.current, { '--project-velocity-scale': 1 });
+    
+    // Đưa projects-scaler về scale 1 trong 1.8s giống big.dk khi mở chi tiết
+    gsap.killTweensOf('.projects-scaler');
+    gsap.to('.projects-scaler', {
+      scale: 1,
+      duration: 1.8,
+      ease: 'power2.out',
+      overwrite: 'auto',
+    });
 
     const projectRow = document.getElementById(`project-${project._id}`);
     if (projectRow) {
@@ -903,6 +909,14 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
       const imageBlock = projectRow.querySelector('.project-image');
       const infoBlock = projectRow.querySelector('.project-info');
       if (imageBlock) gsap.set(imageBlock, { clearProps: 'transform,opacity,y,x' });
+      const thumbScaleEl = projectRow?.querySelector('.big-project-velocity-scale');
+      if (thumbScaleEl) {
+        gsap.set(thumbScaleEl, { clearProps: 'transform' });
+      }
+      const velocityCard = projectRow.querySelector('.velocity-card');
+      if (velocityCard) {
+        gsap.set(velocityCard, { clearProps: 'transform' });
+      }
       if (infoBlock) gsap.set(infoBlock, { clearProps: 'transform,opacity,y,x' });
 
       ScrollTrigger.getAll()
@@ -936,36 +950,6 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
   useGSAP(() => {
     if (!isInitialized || projects.length === 0) return;
 
-    gsap.set(containerRef.current, { '--project-velocity-scale': 1 });
-
-    ScrollTrigger.create({
-      trigger: containerRef.current,
-      start: 'top bottom',
-      end: 'bottom top',
-      onUpdate: (self) => {
-        // Chỉ co giãn image block theo velocity khi KHÔNG có project nào được mở rộng
-        if (expandedRef.current.size > 0) return;
-
-        const rawVelocity = typeof self.getVelocity === 'function' ? self.getVelocity() : 0;
-        const velocity = Math.abs(rawVelocity);
-        const targetImageScale = Math.max(0.94, 1 - velocity / 12000);
-
-        gsap.to(containerRef.current, {
-          '--project-velocity-scale': targetImageScale,
-          duration: 0.2,
-          ease: 'power3.out',
-          overwrite: 'auto',
-        });
-        gsap.to(containerRef.current, {
-          '--project-velocity-scale': 1,
-          duration: 0.78,
-          delay: 0.12,
-          ease: 'power3.out',
-          overwrite: 'auto',
-        });
-      }
-    });
-
     const items = gsap.utils.toArray('.project-row');
     items.forEach((item) => {
       const imageBlock = item.querySelector('.project-image');
@@ -997,7 +981,139 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
       }
     });
 
-  }, { scope: containerRef, dependencies: [isInitialized, projects.length] });
+  }, { scope: containerRef, dependencies: [isInitialized, projects.length, expandedProjectIds.size], revertOnUpdate: true });
+
+  useEffect(() => {
+    if (!isInitialized || projects.length === 0) return undefined;
+
+    const container = containerRef.current;
+    if (!container) return undefined;
+
+    const scalerTarget = container.querySelector('.projects-scaler');
+    if (!scalerTarget) return undefined;
+
+    let restoreTimer = null;
+    let rafId = null;
+    let lastScrollY = window.scrollY;
+    let lastTime = performance.now();
+    let attachedLenis = null;
+    let nativeScrollAttached = false;
+
+    // Hàm tính toán phần trăm cuộn của trang để làm transformOrigin động (nhằm giữ tâm zoom luôn ở giữa màn hình hiện tại)
+    const getScrollProgress = () => {
+      const docH = document.documentElement.scrollHeight;
+      const winH = window.innerHeight;
+      if (docH <= winH) return 0;
+      return window.scrollY / (docH - winH);
+    };
+
+    // Thiết lập scale mặc định là 1 và transformOrigin theo tiến trình cuộn hiện tại
+    gsap.set(scalerTarget, {
+      scale: 1,
+      transformOrigin: `50% ${getScrollProgress() * 100}%`,
+      force3D: true,
+    });
+
+    const restoreScale = () => {
+      gsap.to(scalerTarget, {
+        scale: 1,
+        transformOrigin: `50% ${getScrollProgress() * 100}%`,
+        duration: 1.5, // Hồi phục cực kỳ chậm rãi và mượt mà
+        ease: 'power3.out', // power3.out tạo đường cong giảm tốc rất êm
+        overwrite: 'auto',
+      });
+    };
+
+    const applyVelocityScale = (velocity, isLenisVelocity = true) => {
+      // 1. Chỉ chạy trên desktop (innerWidth >= 1024) giống big.dk
+      if (window.innerWidth < 1024) {
+        gsap.set(scalerTarget, { scale: 1 });
+        return;
+      }
+
+      // 2. Không chạy khi có dự án đang mở rộng
+      if (expandedRef.current.size > 0) {
+        gsap.set(scalerTarget, { scale: 1 });
+        return;
+      }
+
+      const absVelocity = Math.abs(velocity || 0);
+      if (absVelocity < 0.2) return;
+
+      const progress = isLenisVelocity
+        ? gsap.utils.clamp(0, 1, absVelocity / 44)
+        : gsap.utils.clamp(0, 1, absVelocity / 6200);
+      
+      // Điều chỉnh lại độ nhúng tinh tế ở mức 12% để tránh giật đột ngột
+      const shrinkAmount = 0.12;
+      const targetScale = 1 - shrinkAmount * progress;
+
+      if (restoreTimer) window.clearTimeout(restoreTimer);
+
+      gsap.to(scalerTarget, {
+        scale: targetScale,
+        transformOrigin: `50% ${getScrollProgress() * 100}%`,
+        duration: 0.8, // Tăng duration lên 0.8s để việc thu nhỏ diễn ra êm hơn
+        ease: 'sine.out', // sine.out giúp chuyển đổi mượt mà, không bị gắt
+        overwrite: 'auto',
+      });
+
+      restoreTimer = window.setTimeout(restoreScale, 200); // Giảm debounce xuống 200ms để bắt đầu đàn hồi sớm hơn và hòa quyện tốt hơn
+    };
+
+    const fallbackOnScroll = () => {
+      const now = performance.now();
+      const currentScrollY = window.scrollY;
+      const dt = Math.max(16, now - lastTime);
+      const velocity = ((currentScrollY - lastScrollY) / dt) * 1000;
+      lastScrollY = currentScrollY;
+      lastTime = now;
+      applyVelocityScale(velocity, false);
+    };
+
+    const attachLenis = () => {
+      const lenis = window.__lenis;
+      if (lenis && typeof lenis.on === 'function') {
+        const onLenisScroll = ({ velocity = 0, userData } = {}) => {
+          if (userData?.projectOpened) {
+            restoreScale();
+            return;
+          }
+          applyVelocityScale(velocity, true);
+        };
+        lenis.on('scroll', onLenisScroll);
+        attachedLenis = { lenis, onLenisScroll };
+        return true;
+      }
+      return false;
+    };
+
+    if (!attachLenis()) {
+      const waitForLenis = () => {
+        if (attachLenis()) {
+          if (nativeScrollAttached) {
+            window.removeEventListener('scroll', fallbackOnScroll);
+            nativeScrollAttached = false;
+          }
+          return;
+        }
+        rafId = requestAnimationFrame(waitForLenis);
+      };
+      rafId = requestAnimationFrame(waitForLenis);
+      window.addEventListener('scroll', fallbackOnScroll, { passive: true });
+      nativeScrollAttached = true;
+    }
+
+    return () => {
+      if (restoreTimer) window.clearTimeout(restoreTimer);
+      if (rafId) cancelAnimationFrame(rafId);
+      if (nativeScrollAttached) window.removeEventListener('scroll', fallbackOnScroll);
+      if (attachedLenis?.lenis && typeof attachedLenis.lenis.off === 'function') {
+        attachedLenis.lenis.off('scroll', attachedLenis.onLenisScroll);
+      }
+      gsap.set(scalerTarget, { scale: 1 });
+    };
+  }, [isInitialized, projects.length, expandedProjectIds.size]);
 
   // FIX: Refresh GSAP ScrollTrigger khi resize để recalculate tọa độ trigger points
   useEffect(() => {
@@ -1023,10 +1139,9 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
       prevIsMobileRef.current = isMobileView;
       // Xóa sạch GSAP inline styles để Tailwind CSS classes hoạt động đúng sau resize
       gsap.set('.velocity-card', { clearProps: 'all' });
-      gsap.set(containerRef.current, { '--project-velocity-scale': 1 });
       gsap.set('.project-image', { clearProps: 'all' });
       gsap.set('.project-info', { clearProps: 'all' });
-      gsap.set('.projects-scaler', { clearProps: 'all' });
+      gsap.set('.big-project-velocity-scale', { clearProps: 'transform' });
       ScrollTrigger.refresh();
       if (expandedProjectIds.size > 0) {
         setExpandedProjectIds(new Set());
@@ -1104,27 +1219,40 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
         }
 
         .big-project-thumb-shell {
-          width: calc(90vw * var(--project-velocity-scale, 1));
-          transition:
-            width 0.78s cubic-bezier(0.45, 0, 0.55, 1),
-            height 0.78s cubic-bezier(0.45, 0, 0.55, 1);
+          width: 90vw;
+          will-change: transform;
+        }
+
+        .big-project-velocity-scale {
+          transform: scale(1);
+          transform-origin: center center;
+          will-change: transform;
         }
 
         @media (min-width: 640px) {
           .big-project-thumb-shell {
-            width: calc(350px * var(--project-velocity-scale, 1));
+            width: 350px;
           }
         }
 
         @media (min-width: 1024px) {
           .big-project-thumb-shell {
-            width: calc(48vh * var(--project-velocity-scale, 1));
+            width: 48vh;
           }
         }
       `}</style>
 
-      <div ref={containerRef} className="w-full bg-white relative pt-24 md:pt-[90px] pb-[20vh] overflow-hidden z-10">
-        <div className="projects-scaler origin-top will-change-transform" style={{ transformOrigin: '50% 0%', transform: 'translateZ(0)' }}>
+      <div
+        ref={containerRef}
+        className="w-full bg-white relative pt-24 md:pt-[90px] pb-[20vh] overflow-hidden z-10"
+      >
+        <div
+          className="projects-scaler origin-top will-change-transform"
+          style={{
+            transformOrigin: '50% 0%',
+            transform: 'translate3d(0, 0, 0)',
+          }}
+        >
           <div className="flex flex-col items-center w-full transition-all duration-500">
             {projects
               .filter(p => {
@@ -1167,27 +1295,29 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
 
                           {/* 1. COVER IMAGE WRAPPER */}
                           <div className="big-project-thumb-shell shrink-0 project-image overflow-hidden relative">
-                            <motion.div
-                              layoutId={`img-container-${project._id}`}
-                              onClick={() => handleSelectProject(project)}
-                              transition={{
-                                duration: 0.72,
-                                ease: [0.76, 0, 0.24, 1],
-                              }}
-                              className="big-project-image-box relative w-full overflow-hidden cursor-pointer group"
-                              style={{ aspectRatio: '4 / 3', willChange: 'transform' }}
-                            >
-                              <Image
-                                src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
-                                alt={project.general?.title || 'Preview'}
-                                fill
-                                style={{ objectFit: 'cover' }}
-                                priority={index < 4}
-                                sizes="(max-width: 768px) 90vw, 64vh"
-                                className="object-cover"
-                              />
-                              <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                            </motion.div>
+                            <div className="big-project-velocity-scale h-full w-full">
+                              <motion.div
+                                layoutId={`img-container-${project._id}`}
+                                onClick={() => handleSelectProject(project)}
+                                transition={{
+                                  duration: 0.72,
+                                  ease: [0.76, 0, 0.24, 1],
+                                }}
+                                className="big-project-image-box relative w-full overflow-hidden cursor-pointer group"
+                                style={{ aspectRatio: '4 / 3', willChange: 'transform' }}
+                              >
+                                <Image
+                                  src={project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070'}
+                                  alt={project.general?.title || 'Preview'}
+                                  fill
+                                  style={{ objectFit: 'cover' }}
+                                  priority={index < 4}
+                                  sizes="(max-width: 768px) 90vw, 64vh"
+                                  className="object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                              </motion.div>
+                            </div>
                           </div>
 
                           {/* 1. KHỐI THÔNG TIN (Info Block) */}
