@@ -310,7 +310,6 @@ function getSliderImages(project) {
   });
   return images;
 }
-
 function getProjectYear(project) {
   if (project.general?.year) return project.general.year;
   if (project.createdAt) {
@@ -318,6 +317,7 @@ function getProjectYear(project) {
   }
   return '2024';
 }
+
 
 // --- Inline Expanded Detail Component ---
 const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
@@ -328,6 +328,34 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   const [isDragging, setIsDragging] = useState(false);
   const dragState = useRef({ startX: 0, scrollLeft: 0, velocity: 0, lastX: 0, lastTime: 0 });
   const animationRef = useRef(null);
+
+  // Define helpers first so they are available in hooks
+  const description = getTextBlock(project);
+  const sliderImages = getSliderImages(project);
+  const projectYear = getProjectYear(project);
+
+  let allImageUrls = [];
+  if (project.blocks && Array.isArray(project.blocks)) {
+    project.blocks.forEach(block => {
+      if (block.type === 'image' && block.url) allImageUrls.push({ url: block.url, caption: block.caption });
+    });
+  }
+  if (project.sliderGallery && Array.isArray(project.sliderGallery)) {
+    project.sliderGallery.forEach(url => { if (url) allImageUrls.push({ url: url, caption: '' }); });
+  }
+
+  const seenUrls = new Set();
+  const galleryImageBlocks = allImageUrls.filter(img => {
+    if (seenUrls.has(img.url)) return false;
+    seenUrls.add(img.url);
+    return true;
+  });
+
+  const normalizeDescriptionText = (text) => String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
+  const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
+
+  const hasRightGalleryOrSlider =
+    galleryImageBlocks.length > 0 || sliderImages.length > 0;
 
   const stopInertia = useCallback(() => {
     if (animationRef.current) {
@@ -478,6 +506,11 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
         introEl.style.width = '';
         return;
       }
+      // NẾU KHÔNG CÓ DESCRIPTION, không set width cố định cho introEl để gallery trôi vào
+      if (!description) {
+        introEl.style.width = '';
+        return;
+      }
       const w = scrollEl.clientWidth;
       if (w > 0) introEl.style.width = `${w}px`;
     };
@@ -489,34 +522,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
       // Cleanup: xóa inline style khi component unmount
       if (introEl) introEl.style.width = '';
     };
-  }, [project?._id]);
+  }, [project?._id, description]);
 
-  const description = getTextBlock(project);
-  const sliderImages = getSliderImages(project);
-  const projectYear = getProjectYear(project);
-
-  let allImageUrls = [];
-  if (project.blocks && Array.isArray(project.blocks)) {
-    project.blocks.forEach(block => {
-      if (block.type === 'image' && block.url) allImageUrls.push({ url: block.url, caption: block.caption });
-    });
-  }
-  if (project.sliderGallery && Array.isArray(project.sliderGallery)) {
-    project.sliderGallery.forEach(url => { if (url) allImageUrls.push({ url: url, caption: '' }); });
-  }
-
-  const seenUrls = new Set();
-  const galleryImageBlocks = allImageUrls.filter(img => {
-    if (seenUrls.has(img.url)) return false;
-    seenUrls.add(img.url);
-    return true;
-  });
-
-  const normalizeDescriptionText = (text) => String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
-  const coverImageUrl = project.general?.coverImage || '/placeholder.jpg';
-
-  const hasRightGalleryOrSlider =
-    galleryImageBlocks.length > 0 || sliderImages.length > 0;
 
   return (
     <div className="relative w-full h-[100dvh] lg:h-full bg-white text-black font-sans flex flex-col overflow-hidden mobile-detail-layout">
@@ -558,7 +565,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
-              className="shrink-0 h-full flex flex-col justify-start w-[85vw] sm:w-[320px] lg:flex-1 lg:min-w-0 lg:max-w-[380px] order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6"
+              className="shrink-0 h-full flex flex-col justify-start w-[85vw] sm:w-[320px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6"
             >
               <h1 className="text-lg sm:text-xl lg:text-[18px] xl:text-[22px] font-normal text-black m-0 p-0 leading-[1.3] whitespace-normal w-full">
                 {project.general?.title || 'Untitled Project'}
@@ -611,20 +618,44 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               </motion.div>
             </div>
 
-            {/* ====== CARD 3: DESCRIPTION (Mobile: 85vw, Desktop: flex-1 cột phải) ====== */}
+            {/* ====== CARD 3: DESCRIPTION / GALLERY IMAGE (Mobile: 85vw, Desktop: flex-1 cột phải) ====== */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.4, duration: 0.6, ease: "easeOut" }}
-              className={`shrink-0 h-full flex flex-col justify-start w-[85vw] sm:w-[280px] lg:flex-1 lg:min-w-0 lg:max-w-[380px] order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:mr-[35px]' : ''}`}
+              className={`shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[280px] ${description ? 'lg:w-[calc((100vw-100vh)/2)]' : 'lg:w-auto'} lg:min-w-0 order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:mr-[35px]' : ''}`}
             >
-              {description && (
+              {description ? (
                 <div className="text-[13px] leading-[1.6] text-black tracking-tight opacity-80">
                   <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
                 </div>
+              ) : (
+                galleryImageBlocks.length > 0 && (
+                  <div
+                    className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none lg:max-w-none"
+                    style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                  >
+                    {galleryImageBlocks[0].url && (
+                      <Image
+                        src={galleryImageBlocks[0].url}
+                        alt={galleryImageBlocks[0].caption || "Gallery 1"}
+                        width={0}
+                        height={0}
+                        sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
+                        style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                        draggable={false}
+                        className="object-contain select-none pointer-events-none"
+                      />
+                    )}
+                    {galleryImageBlocks[0].caption && (
+                      <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">
+                        {galleryImageBlocks[0].caption}
+                      </div>
+                    )}
+                  </div>
+                )
               )}
             </motion.div>
-
           </div>
 
 
@@ -632,7 +663,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           {/* Mobile: clamp height cố định. Desktop: đồng bộ với ảnh chính qua CSS variable */}
 
           {/* Gallery Images */}
-          {galleryImageBlocks.slice(0, 6).map((block, idx) => (
+          {(description ? galleryImageBlocks.slice(0, 6) : galleryImageBlocks.slice(1, 6)).map((block, idx) => (
             <div
               key={`gallery-${idx}`}
               className="h-full shrink-0 min-w-0 overflow-hidden flex items-center justify-center relative z-0 w-[85vw] sm:w-auto lg:flex lg:items-center mr-[20px] lg:mr-[35px]"
@@ -821,6 +852,50 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
     init();
     return () => { mounted = false; };
   }, []);
+
+  // Preload các ảnh chi tiết của tất cả project dưới background để khi user click sẽ hiển thị ngay lập tức (instant)
+  useEffect(() => {
+    if (projects.length === 0) return undefined;
+
+    // Trì hoãn 2 giây để ưu tiên các animation và tài nguyên quan trọng của trang chủ trước
+    const timer = window.setTimeout(() => {
+      projects.forEach((project) => {
+        const urls = [];
+        // Lấy ảnh cover chính (đã được load làm thumbnail nhưng thêm cho chắc chắn)
+        if (project.general?.coverImage) urls.push(project.general.coverImage);
+        
+        // Lấy tất cả ảnh gallery tĩnh và ảnh slide trong blocks
+        if (project.blocks && Array.isArray(project.blocks)) {
+          project.blocks.forEach((block) => {
+            if (block.type === 'image' && block.url) urls.push(block.url);
+            if (block.type === 'slider' && Array.isArray(block.slides)) {
+              block.slides.forEach((slide) => {
+                if (slide.url) urls.push(slide.url);
+              });
+            }
+          });
+        }
+        
+        // Lấy tất cả ảnh sliderGallery dự phòng
+        if (project.sliderGallery && Array.isArray(project.sliderGallery)) {
+          project.sliderGallery.forEach((url) => {
+            if (url) urls.push(url);
+          });
+        }
+
+        // Lọc trùng lặp URL
+        const uniqueUrls = Array.from(new Set(urls));
+        
+        // Tạo đối tượng Image để trình duyệt tải trước và lưu vào HTTP cache
+        uniqueUrls.forEach((url) => {
+          const img = new window.Image();
+          img.src = url;
+        });
+      });
+    }, 2000);
+
+    return () => window.clearTimeout(timer);
+  }, [projects]);
 
   // Giữ ref đồng bộ với state để GSAP ScrollTrigger không bị stale closure
   useEffect(() => {
