@@ -71,7 +71,7 @@ function getProjectYear(project) {
 
 
 // --- Inline Expanded Detail Component ---
-const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileView }) => {
+const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileView, isStandalone }) => {
   const scrollRef = useRef(null);
   const introSlideRef = useRef(null);
   const mainImageRef = useRef(null);
@@ -283,8 +283,113 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
           </div>
         )}
 
-        {/* Horizontal Scroll Container */}
+        {isStandalone ? (
+          <div
+            /* Vertical Layout Container (matches the BIG.dk screenshot) */
+            className="w-full flex flex-col py-2 gap-8 overflow-y-auto min-h-max"
+          >
+            
+            {/* 1. Cover Image */}
+            <div ref={mainImageRef} className="w-full">
+              <div className="relative w-full" style={{ aspectRatio: '4 / 3' }}>
+                <Image
+                  src={coverImageUrl}
+                  alt="Cover"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 64vh"
+                  className="object-cover"
+                />
+              </div>
+            </div>
+
+            {/* 2. Header: Icon + Title + Location */}
+            <div className="w-full flex items-start cursor-pointer px-4" onClick={onClose}>
+              {renderIconBlock(project.general?.icon)}
+              <div className="ml-4 flex flex-col justify-center">
+                <h1 className="text-[18px] leading-[22px] sm:text-[20px] font-normal text-black m-0 p-0">
+                  {project.general?.title || 'Untitled Project'}
+                </h1>
+                <p className="mt-1 text-[11px] text-[#797979] uppercase tracking-widest font-medium">
+                  {project.general?.location || ''}
+                </p>
+              </div>
+            </div>
+
+            {/* 3. Metadata */}
+            <div className="w-full flex flex-col gap-4 px-4">
+              <div>
+                <h4 className="text-[10px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
+                <p className="text-[12px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
+              </div>
+              <div>
+                <h4 className="text-[10px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
+                <p className="text-[12px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
+              </div>
+              <div>
+                <h4 className="text-[10px] text-[#797979] uppercase tracking-widest mb-1">Status</h4>
+                <p className="text-[12px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
+              </div>
+              <div>
+                <h4 className="text-[10px] text-[#797979] uppercase tracking-widest mb-1">Year</h4>
+                <p className="text-[12px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
+              </div>
+            </div>
+
+            {/* 4. Description */}
+            {description && (
+              <div className="w-full text-[14px] leading-[1.6] text-black tracking-tight opacity-90 px-4">
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
+              </div>
+            )}
+
+            {/* 5. Gallery Images Stack */}
+            {galleryImageBlocks.length > 0 && (
+              <div className="w-full flex flex-col gap-6">
+                {galleryImageBlocks.map((block, idx) => (
+                  block.url && (
+                    <div key={`gallery-${idx}`} className="relative w-full flex flex-col items-start px-4">
+                      <div className="relative w-full">
+                        <img
+                          src={block.url}
+                          alt={block.caption || `Gallery ${idx + 1}`}
+                          className="w-full h-auto object-contain bg-[#f9f9f9]"
+                          loading="lazy"
+                        />
+                      </div>
+                      {block.caption && (
+                        <div className="mt-2 text-left text-[#797979] text-[10px] uppercase tracking-wider">
+                          {block.caption}
+                        </div>
+                      )}
+                    </div>
+                  )
+                ))}
+                
+                {/* Slider Images (stacked vertically on mobile) */}
+                {sliderImages.map((url, idx) => (
+                  url && (
+                    <div key={`slider-${idx}`} className="relative w-full flex flex-col items-start px-4">
+                      <div className="relative w-full">
+                        <img
+                          src={url}
+                          alt={`Slide ${idx + 1}`}
+                          className="w-full h-auto object-contain bg-[#f9f9f9]"
+                          loading="lazy"
+                        />
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
+            
+            {/* Spacer */}
+            <div className="h-[40px] shrink-0 w-full" />
+          </div>
+        ) : (
         <div
+          /* Horizontal Scroll Container */
           ref={scrollRef}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -465,6 +570,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
 
           </div>
         </div>
+        )}
       </div>
     );
   }
@@ -706,6 +812,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
   const [isInitialized, setIsInitialized] = useState(false);
   // Dùng Set để lưu danh sách các ID dự án đã được click mở rộng — giữ nguyên trạng thái khi cuộn dọc
   const [expandedProjectIds, setExpandedProjectIds] = useState(new Set());
+  const [standaloneProjectId, setStandaloneProjectId] = useState(null);
   // Lazy initializer: đọc window.innerWidth ngay từ đầu (SSR-safe)
   // Tránh hydration mismatch và flash layout sai khi load trên Mobile
   const [isMobileView, setIsMobileView] = useState(() => {
@@ -743,7 +850,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
   useEffect(() => {
     // Nếu có props từ BigHomepage, bỏ qua URL hash
     if (propActiveCategory !== undefined && propActiveCategory !== null) return;
-    
+
     const handleHashChange = () => {
       const hash = window.location.hash.toLowerCase();
       if (!hash || hash === '#all') {
@@ -790,14 +897,16 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
           setProjects(data);
           // Khởi tạo project từ URL nếu có
           const pathParts = window.location.pathname.split('/');
+          const isProjectsRoute = window.location.pathname.includes('/projects/');
           const projectUrlId = pathParts[pathParts.length - 1];
           const found = data.find(p => p._id === projectUrlId);
-          if (found) {
+          if (isProjectsRoute && found) {
             setExpandedProjectIds(prev => {
               const next = new Set(prev);
               next.add(found._id);
               return next;
             });
+            setStandaloneProjectId(found._id);
           }
         }
         setIsInitialized(true);
@@ -819,7 +928,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
         const urls = [];
         // Lấy ảnh cover chính (đã được load làm thumbnail nhưng thêm cho chắc chắn)
         if (project.general?.coverImage) urls.push(project.general.coverImage);
-        
+
         // Lấy tất cả ảnh gallery tĩnh và ảnh slide trong blocks
         if (project.blocks && Array.isArray(project.blocks)) {
           project.blocks.forEach((block) => {
@@ -831,7 +940,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
             }
           });
         }
-        
+
         // Lấy tất cả ảnh sliderGallery dự phòng
         if (project.sliderGallery && Array.isArray(project.sliderGallery)) {
           project.sliderGallery.forEach((url) => {
@@ -841,7 +950,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
 
         // Lọc trùng lặp URL
         const uniqueUrls = Array.from(new Set(urls));
-        
+
         // Tạo đối tượng Image để trình duyệt tải trước và lưu vào HTTP cache
         uniqueUrls.forEach((url) => {
           const img = new window.Image();
@@ -895,7 +1004,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
     if (!project) return;
 
     window.history.pushState(null, '', `/projects/${project._id}`);
-    
+
     // BIG.DK: Đưa projects-scaler về scale 1 mượt mà khi mở chi tiết
     gsap.killTweensOf('.projects-scaler');
     gsap.to('.projects-scaler', {
@@ -956,7 +1065,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
         fromHeight: projectRow.getBoundingClientRect().height,
       };
     }
-    
+
     // Tạm khóa scroll trong 800ms để hoạt ảnh đóng diễn ra mượt mà
     if (window.__lenis) window.__lenis.stop();
     window.setTimeout(() => {
@@ -1119,8 +1228,8 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
       }
     });
 
-  // Chỉ dependency vào isInitialized và projects.length — KHÔNG expandedProjectIds.size
-  // để tránh re-trigger animation khi user click expand project
+    // Chỉ dependency vào isInitialized và projects.length — KHÔNG expandedProjectIds.size
+    // để tránh re-trigger animation khi user click expand project
   }, { scope: containerRef, dependencies: [isInitialized, projects.length] });
 
   useEffect(() => {
@@ -1179,7 +1288,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
       const progress = isLenisVelocity
         ? gsap.utils.clamp(0, 1, absVelocity / 44)
         : gsap.utils.clamp(0, 1, absVelocity / 6200);
-      
+
       // Điều chỉnh lại độ nhúng tinh tế ở mức 12% để tránh giật đột ngột
       const shrinkAmount = 0.12;
       const targetScale = 1 - shrinkAmount * progress;
@@ -1400,17 +1509,17 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                 const isExpanded = expandedProjectIds.has(project._id);
                 // rowStyle: không dùng CSS transition vì GSAP (FLIP) điều khiển animation height
                 const rowStyle = isExpanded && !isMobileView
-                    ? {
-                        height: '75vh',     // React's static target — GSAP animate TỚI ĐÂY
-                        maxHeight: '75vh',
-                        overflow: 'hidden', // GSAP sẽ override inline rồi clear sau khi xong
-                        willChange: 'height',
-                      }
-                    : {
-                        height: 'auto',
-                        maxHeight: 'none',
-                        overflow: 'visible',
-                      };
+                  ? {
+                    height: '75vh',     // React's static target — GSAP animate TỚI ĐÂY
+                    maxHeight: '75vh',
+                    overflow: 'hidden', // GSAP sẽ override inline rồi clear sau khi xong
+                    willChange: 'height',
+                  }
+                  : {
+                    height: 'auto',
+                    maxHeight: 'none',
+                    overflow: 'visible',
+                  };
                 // Desktop expanded: w-full của containerRef (không bị max-w/px constraint)
                 // Collapsed & Mobile expanded: max-w + px + mx-auto được áp dụng trực tiếp trên item
                 return (
@@ -1419,13 +1528,13 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                     id={`project-${project._id}`}
                     style={rowStyle}
                     className={`${isExpanded && !isMobileView
-                        ? 'relative w-full z-50 mb-[26px] lg:mb-[29px]'  // Đồng bộ margin-bottom với collapsed, loại bỏ margin-top lệch
-                        : 'relative w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] flex justify-center items-center max-w-[1600px] h-auto mb-[26px] lg:mb-[29px]'
+                      ? 'relative w-full z-50 mb-[26px] lg:mb-[29px]'  // Đồng bộ margin-bottom với collapsed, loại bỏ margin-top lệch
+                      : 'relative w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] flex justify-center items-center max-w-[1600px] h-auto mb-[26px] lg:mb-[29px]'
                       }`}
                   >
                     {!isExpanded ? (
                       <div className="project-row w-full flex justify-center items-start group">
-                      <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
+                        <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
 
                           {/* 1. COVER IMAGE WRAPPER */}
                           <div className="big-project-thumb-shell shrink-0 project-image overflow-hidden relative">
@@ -1456,7 +1565,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                             className="project-info bottom-0 mt-[14px] flex items-start shrink-0 bg-white z-20 cursor-pointer w-[90vw] sm:w-auto md:absolute md:top-0 md:-left-[30px] md:mt-0 md:mr-[30px] md:max-w-[324px] md:-translate-x-full md:flex-col md:items-end md:text-right lg:-left-[44px] lg:mr-[44px]"
                           >
                             {renderIconBlock(project.general?.icon)}
-                            
+
                             {/* Container chứa Tên và Địa điểm */}
                             <div className="ml-[14px] md:mt-[18px] md:ml-0 lg:mt-[24px]">
 
@@ -1478,10 +1587,14 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                       // Desktop & Mobile: inline trong feed, w-full = 100% containerRef = full viewport width
                       <InlineProjectDetail
                         project={project}
-                        onClose={() => handleCloseProject(project._id)}
+                        onClose={() => {
+                          if (standaloneProjectId === project._id) setStandaloneProjectId(null);
+                          handleCloseProject(project._id);
+                        }}
                         layoutId={`img-container-${project._id}`}
                         isLoading={false}
                         isMobileView={isMobileView}
+                        isStandalone={standaloneProjectId === project._id}
                       />
                     )}
                   </div>

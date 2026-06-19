@@ -80,6 +80,36 @@ export default function ProjectDetailPage({ params }) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [error, setError] = useState(null);
   
+  const [isMobileView, setIsMobileView] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 1024;
+  });
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobileView(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  // Disable Lenis globally when viewing the standalone detail page
+  // This ensures native scrolling (e.g. overflow-y-auto on mobile) works properly.
+  useEffect(() => {
+    let rafId;
+    const disableLenis = () => {
+      if (window.__lenis) {
+        window.__lenis.stop();
+      } else {
+        rafId = requestAnimationFrame(disableLenis);
+      }
+    };
+    disableLenis();
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (window.__lenis) window.__lenis.start();
+    };
+  }, []);
+  
   // Mouse drag state
   const [isDragging, setIsDragging] = useState(false);
   const [isVerticalSwipe, setIsVerticalSwipe] = useState(false);
@@ -415,7 +445,10 @@ export default function ProjectDetailPage({ params }) {
   const ProjectIcon = {};
 
   return (
-    <div className="fixed inset-0 z-[100] bg-white text-black overflow-hidden font-sans">
+    <div 
+      className="fixed inset-0 z-[100] bg-white text-black overflow-hidden font-sans"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       
       {/* Close button */}
       <Link href="/" className="fixed top-8 right-8 z-[200] cursor-pointer text-black hover:opacity-50 transition-opacity p-2">
@@ -425,8 +458,116 @@ export default function ProjectDetailPage({ params }) {
         </svg>
       </Link>
 
-      {/* Horizontal scroll container */}
+      {isMobileView ? (
+        <div 
+          className="absolute inset-0 h-screen w-screen overflow-y-auto overflow-x-hidden bg-white mobile-detail-layout-vertical pb-[10vh]"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+          data-lenis-prevent="true"
+        >
+          <div className="w-full flex flex-col py-2 gap-8 min-h-max">
+            
+            {/* 1. Cover Image */}
+            <div ref={mainImageCardRef} className="w-full">
+              <div className="relative w-full" style={{ aspectRatio: '4 / 3' }}>
+                <Image
+                  src={projectData.general?.coverImage || '/placeholder.jpg'}
+                  alt="Cover"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 64vh"
+                  className="object-cover"
+                />
+              </div>
+            </div>
+
+            {/* 2. Header: Icon + Title + Location */}
+            <div className="w-full flex items-start px-4 mt-4">
+              {renderIconBlock(projectData.general?.icon)}
+              <div className="ml-4 flex flex-col justify-center">
+                <h1 className="text-[18px] leading-[22px] sm:text-[20px] font-normal text-black m-0 p-0 break-words">
+                  {projectData.general?.title || 'Untitled Project'}
+                </h1>
+                <p className="mt-1 text-[11px] text-[#797979] uppercase tracking-widest font-medium">
+                  {projectData.general?.location || ''}
+                </p>
+              </div>
+            </div>
+
+            {/* 3. Metadata */}
+            <div className="w-full flex flex-col gap-4 px-4">
+              <div>
+                <h4 className="text-[10px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
+                <p className="text-[12px] text-black uppercase font-bold tracking-wider">{projectData.general?.client || 'N/A'}</p>
+              </div>
+              <div>
+                <h4 className="text-[10px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
+                <p className="text-[12px] text-black uppercase font-bold tracking-wider">{projectData.general?.typology || 'N/A'}</p>
+              </div>
+              <div>
+                <h4 className="text-[10px] text-[#797979] uppercase tracking-widest mb-1">Status</h4>
+                <p className="text-[12px] text-black uppercase font-bold tracking-wider">{projectData.general?.status || 'Completed'}</p>
+              </div>
+              <div>
+                <h4 className="text-[10px] text-[#797979] uppercase tracking-widest mb-1">Year</h4>
+                <p className="text-[12px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
+              </div>
+            </div>
+
+            {/* 4. Description */}
+            {description && (
+              <div className="w-full text-[14px] leading-[1.6] text-black tracking-tight opacity-90 px-4">
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
+              </div>
+            )}
+
+            {/* 5. Gallery Images Stack */}
+            {hasRightGalleryOrSlider && (
+              <div className="w-full flex flex-col gap-6 mt-4">
+                {galleryImageBlocks.map((block, idx) => (
+                  block.url && (
+                    <div key={`gallery-${idx}`} className="relative w-full flex flex-col items-start px-4">
+                      <div className="relative w-full">
+                        <img
+                          src={block.url}
+                          alt={block.caption || `Gallery ${idx + 1}`}
+                          className="w-full h-auto object-contain bg-[#f9f9f9]"
+                          loading="lazy"
+                        />
+                      </div>
+                      {block.caption && (
+                        <div className="mt-2 text-left text-[#797979] text-[10px] uppercase tracking-wider">
+                          {block.caption}
+                        </div>
+                      )}
+                    </div>
+                  )
+                ))}
+                
+                {/* Slider Images (stacked vertically on mobile) */}
+                {sliderImages.map((url, idx) => (
+                  url && (
+                    <div key={`slider-${idx}`} className="relative w-full flex flex-col items-start px-4">
+                      <div className="relative w-full">
+                        <img
+                          src={url}
+                          alt={`Slide ${idx + 1}`}
+                          className="w-full h-auto object-contain bg-[#f9f9f9]"
+                          loading="lazy"
+                        />
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
+            
+            {/* Spacer */}
+            <div className="h-[40px] shrink-0 w-full" />
+          </div>
+        </div>
+      ) : (
       <div 
+        /* Horizontal scroll container */
         ref={scrollRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -441,6 +582,7 @@ export default function ProjectDetailPage({ params }) {
           scrollBehavior: 'auto',
           WebkitOverflowScrolling: 'touch'
         }}
+        data-lenis-prevent="true"
       >
         <div className="h-full flex flex-nowrap items-center gap-[20px] lg:gap-[30px] pl-[20px] lg:pl-[35px] pr-[20px] lg:pr-[35px]">
 
@@ -590,6 +732,8 @@ export default function ProjectDetailPage({ params }) {
           <div className="shrink-0 w-[5vw]" />
         </div>
       </div>
+
+      )}
 
       {/* Drag indicator */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[150] pointer-events-none opacity-40">
