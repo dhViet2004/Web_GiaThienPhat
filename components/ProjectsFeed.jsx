@@ -288,7 +288,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
             /* Vertical Layout Container (matches the BIG.dk screenshot) */
             className="w-full flex flex-col py-2 gap-8 overflow-y-auto min-h-max"
           >
-            
+
             {/* 1. Cover Image */}
             <div ref={mainImageRef} className="w-full">
               <div className="relative w-full" style={{ aspectRatio: '4 / 3' }}>
@@ -365,7 +365,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
                     </div>
                   )
                 ))}
-                
+
                 {/* Slider Images (stacked vertically on mobile) */}
                 {sliderImages.map((url, idx) => (
                   url && (
@@ -383,172 +383,134 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
                 ))}
               </div>
             )}
-            
+
             {/* Spacer */}
             <div className="h-[40px] shrink-0 w-full" />
           </div>
         ) : (
-        <div
-          /* Horizontal Scroll Container */
-          ref={scrollRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden gallery-scroll-area"
-          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-        >
-          <div className="h-full flex flex-nowrap items-start">
+          <div
+            /* Horizontal Scroll Container */
+            ref={scrollRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden gallery-scroll-area"
+            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          >
+            <div className="h-full flex flex-nowrap items-start">
 
-            {/* ===== SLIDE 1: COVER IMAGE & INFO (GIỐNG LAYOUT HOME) ===== */}
-            <div className="shrink-0 h-full flex flex-col justify-start items-center w-[90vw] sm:w-[350px] select-none">
-              {/* Image box matching collapsed structure */}
-              <div ref={mainImageRef} className="w-full flex justify-center items-center">
-                <div
-                  className="big-project-image-box relative w-full overflow-hidden cursor-pointer group"
-                  style={{ aspectRatio: '4 / 3', willChange: 'transform' }}
-                >
-                  <Image
-                    src={coverImageUrl}
-                    alt="Cover"
-                    fill
-                    sizes="(max-width: 768px) 90vw, 64vh"
-                    priority
-                    draggable={false}
-                    className="object-cover select-none pointer-events-none"
-                    style={{ objectFit: 'cover' }}
-                  />
-                </div>
-              </div>
-
-              {/* Info block matching collapsed structure */}
-              <div
-                className="w-full flex items-start mt-[14px] bg-white cursor-pointer pointer-events-auto"
-                onClick={onClose}
-              >
-                {renderIconBlock(project.general?.icon)}
-                <div className="ml-[14px] text-left">
-                  <h3 className="text-[15px] leading-[15px] font-normal text-black m-0 p-0 transition-opacity hover:opacity-70">
-                    {project.general?.title}
-                  </h3>
-                  <p className="mt-[4px] text-[11px] text-[#797979] uppercase tracking-wider font-medium">
-                    {project.general?.location}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* ===== SLIDE 2: METADATA & DESCRIPTION ===== */}
-            <div className={`shrink-0 h-full flex items-start select-none mr-[20px] ${description ? 'px-4 w-[90vw] sm:w-auto' : 'pl-4 pr-0 w-auto'}`}>
-              <div className="flex flex-row gap-6 items-start h-full">
-                {/* Metadata Column */}
-                <div className="flex flex-col gap-3 min-w-[120px] shrink-0 text-left">
-                  <div>
-                    <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
-                    <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
-                    <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Status</h4>
-                    <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Year</h4>
-                    <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
-                  </div>
-                </div>
-                {/* Description Column (or first gallery image if no description exists) */}
-                {description ? (
-                  <div className="text-[13px] leading-[1.6] text-black tracking-tight opacity-80 text-left max-w-[320px] pr-4">
-                    <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
-                  </div>
-                ) : (
-                  galleryImageBlocks.length > 0 && (
-                    <div
-                      className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-none"
-                      style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
-                      data-gallery-card
-                    >
-                      {galleryImageBlocks[0].url && (
-                        <Image
-                          src={galleryImageBlocks[0].url}
-                          alt={galleryImageBlocks[0].caption || "Gallery 1"}
-                          width={0}
-                          height={0}
-                          sizes="(max-width: 1024px) 90vw, var(--gallery-img-h, 50vh)"
-                          style={{ width: 'auto', height: '100%', maxWidth: 'none', maxHeight: 'var(--gallery-img-h, 45vh)' }}
-                          draggable={false}
-                          className="object-contain select-none pointer-events-none"
-                        />
-                      )}
-                      {galleryImageBlocks[0].caption && (
-                        <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">{galleryImageBlocks[0].caption}</div>
-                      )}
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-
-            {/* ===== PHẦN 3: GALLERY IMAGES SLIDES ===== */}
-            {(description ? galleryImageBlocks : galleryImageBlocks.slice(1)).map((block, idx) => (
-              <div
-                key={`gallery-${idx}`}
-                className="h-full shrink-0 min-w-0 overflow-hidden flex items-start justify-center relative z-0 w-[90vw] sm:w-auto mr-[20px]"
-              >
-                <div
-                  className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-none"
-                  style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
-                  data-gallery-card
-                >
-                  {block.url && (
+              {/* ===== SLIDE 1: COVER IMAGE & INFO (GIỐNG LAYOUT HOME) ===== */}
+              <div className="shrink-0 h-full flex flex-col justify-start items-center w-[90vw] sm:w-[350px] select-none">
+                {/* Image box matching collapsed structure */}
+                <div ref={mainImageRef} className="w-full flex justify-center items-center">
+                  <div
+                    className="big-project-image-box relative w-full overflow-hidden cursor-pointer group"
+                    style={{ aspectRatio: '4 / 3', willChange: 'transform' }}
+                  >
                     <Image
-                      src={block.url}
-                      alt={block.caption || `Gallery ${idx + 1}`}
-                      width={0}
-                      height={0}
-                      sizes="(max-width: 1024px) 90vw, var(--gallery-img-h, 50vh)"
-                      style={{ width: 'auto', height: '100%', maxWidth: 'none', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                      src={coverImageUrl}
+                      alt="Cover"
+                      fill
+                      sizes="(max-width: 768px) 90vw, 64vh"
+                      priority
                       draggable={false}
-                      className="object-contain select-none pointer-events-none"
+                      className="object-cover select-none pointer-events-none"
+                      style={{ objectFit: 'cover' }}
                     />
-                  )}
-                  {block.caption && (
-                    <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">{block.caption}</div>
+                  </div>
+                </div>
+
+                {/* Info block matching collapsed structure */}
+                <div
+                  className="w-full flex items-start mt-[14px] bg-white cursor-pointer pointer-events-auto"
+                  onClick={onClose}
+                >
+                  {renderIconBlock(project.general?.icon)}
+                  <div className="ml-[14px] text-left">
+                    <h3 className="text-[15px] leading-[15px] font-normal text-black m-0 p-0 transition-opacity hover:opacity-70">
+                      {project.general?.title}
+                    </h3>
+                    <p className="mt-[4px] text-[11px] text-[#797979] uppercase tracking-wider font-medium">
+                      {project.general?.location}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ===== SLIDE 2: METADATA & DESCRIPTION ===== */}
+              <div className={`shrink-0 h-full flex items-start select-none mr-[20px] ${description ? 'px-4 w-[90vw] sm:w-auto' : 'pl-4 pr-0 w-auto'}`}>
+                <div className="flex flex-row gap-6 items-start h-full">
+                  {/* Metadata Column */}
+                  <div className="flex flex-col gap-3 min-w-[120px] shrink-0 text-left">
+                    <div>
+                      <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
+                      <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
+                      <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Status</h4>
+                      <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Year</h4>
+                      <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
+                    </div>
+                  </div>
+                  {/* Description Column (or first gallery image if no description exists) */}
+                  {description ? (
+                    <div className="text-[13px] leading-[1.6] text-black tracking-tight opacity-80 text-left max-w-[320px] pr-4">
+                      <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
+                    </div>
+                  ) : (
+                    galleryImageBlocks.length > 0 && (
+                      <div
+                        className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-none"
+                        style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                        data-gallery-card
+                      >
+                        {galleryImageBlocks[0].url && (
+                          <Image
+                            src={galleryImageBlocks[0].url}
+                            alt={galleryImageBlocks[0].caption || "Gallery 1"}
+                            width={0}
+                            height={0}
+                            sizes="(max-width: 1024px) 90vw, var(--gallery-img-h, 50vh)"
+                            style={{ width: 'auto', height: '100%', maxWidth: 'none', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                            draggable={false}
+                            className="object-contain select-none pointer-events-none"
+                          />
+                        )}
+                        {galleryImageBlocks[0].caption && (
+                          <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">{galleryImageBlocks[0].caption}</div>
+                        )}
+                      </div>
+                    )
                   )}
                 </div>
               </div>
-            ))}
 
-            {/* Slider Images */}
-            {sliderImages.length > 0 && (
-              <div
-                className="h-full shrink-0 min-w-0 overflow-hidden pointer-events-auto cursor-pointer pr-[20px] relative z-0 w-[90vw] sm:w-auto flex items-start justify-center"
-                onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
-              >
+              {/* ===== PHẦN 3: GALLERY IMAGES SLIDES ===== */}
+              {(description ? galleryImageBlocks : galleryImageBlocks.slice(1)).map((block, idx) => (
                 <div
-                  className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-none"
-                  style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
-                  data-gallery-card
+                  key={`gallery-${idx}`}
+                  className="h-full shrink-0 min-w-0 overflow-hidden flex items-start justify-center relative z-0 w-[90vw] sm:w-auto mr-[20px]"
                 >
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={activeSlide}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.6 }}
-                      className="relative w-auto h-auto flex items-center justify-center"
-                    >
+                  <div
+                    className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-none"
+                    style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                    data-gallery-card
+                  >
+                    {block.url && (
                       <Image
-                        src={sliderImages[activeSlide]}
-                        alt={`Slide ${activeSlide + 1}`}
+                        src={block.url}
+                        alt={block.caption || `Gallery ${idx + 1}`}
                         width={0}
                         height={0}
                         sizes="(max-width: 1024px) 90vw, var(--gallery-img-h, 50vh)"
@@ -556,20 +518,58 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
                         draggable={false}
                         className="object-contain select-none pointer-events-none"
                       />
-                    </motion.div>
-                  </AnimatePresence>
-                  <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase">
-                    {activeSlide + 1} / {sliderImages.length}
+                    )}
+                    {block.caption && (
+                      <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">{block.caption}</div>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              ))}
 
-            {/* Spacer at the end */}
-            <div className="shrink-0 w-[5vw]" />
+              {/* Slider Images */}
+              {sliderImages.length > 0 && (
+                <div
+                  className="h-full shrink-0 min-w-0 overflow-hidden pointer-events-auto cursor-pointer pr-[20px] relative z-0 w-[90vw] sm:w-auto flex items-start justify-center"
+                  onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
+                >
+                  <div
+                    className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-none"
+                    style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                    data-gallery-card
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeSlide}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className="relative w-auto h-auto flex items-center justify-center"
+                      >
+                        <Image
+                          src={sliderImages[activeSlide]}
+                          alt={`Slide ${activeSlide + 1}`}
+                          width={0}
+                          height={0}
+                          sizes="(max-width: 1024px) 90vw, var(--gallery-img-h, 50vh)"
+                          style={{ width: 'auto', height: '100%', maxWidth: 'none', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                          draggable={false}
+                          className="object-contain select-none pointer-events-none"
+                        />
+                      </motion.div>
+                    </AnimatePresence>
+                    <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase">
+                      {activeSlide + 1} / {sliderImages.length}
+                    </div>
+                  </div>
+                </div>
+              )}
 
+              {/* Spacer at the end */}
+              <div className="shrink-0 w-[5vw]" />
+
+            </div>
           </div>
-        </div>
         )}
       </div>
     );
@@ -1124,18 +1124,25 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
           // --- GSAP FLIP 2: Image vị trí & kích thước ---
           // Sử dụng position: absolute để cùng hệ tọa độ và bộ rasterize với relative, tránh lệch 2px.
           if (imageEl && imageRect && thumbnailRect) {
-            const dx = (thumbnailRect.left + thumbnailRect.width / 2) - (imageRect.left + imageRect.width / 2);
-            const dy = (thumbnailRect.top + thumbnailRect.height / 2) - (imageRect.top + imageRect.height / 2);
-            const scaleX = thumbnailRect.width / imageRect.width;
-            const scaleY = thumbnailRect.height / imageRect.height;
+            // FIX: Sử dụng Math.round để làm tròn tọa độ và kích thước,
+            // tránh sai số sub-pixel (số thập phân) gây giật pixel khi gỡ bỏ position: absolute
+            const targetLeft = Math.round(imageRect.left - parentRect.left);
+            const targetTop = Math.round(imageRect.top - parentRect.top);
+            const targetWidth = Math.round(imageRect.width);
+            const targetHeight = Math.round(imageRect.height);
+
+            const dx = (thumbnailRect.left + thumbnailRect.width / 2) - (targetLeft + parentRect.left + targetWidth / 2);
+            const dy = (thumbnailRect.top + thumbnailRect.height / 2) - (targetTop + parentRect.top + targetHeight / 2);
+            const scaleX = thumbnailRect.width / targetWidth;
+            const scaleY = thumbnailRect.height / targetHeight;
 
             gsap.fromTo(imageEl,
               {
                 position: 'absolute', // Sử dụng absolute thay vì fixed để tránh giật sub-pixel khi chuyển đổi layer compositor
-                left: imageRect.left - parentRect.left,
-                top: imageRect.top - parentRect.top,
-                width: imageRect.width,
-                height: imageRect.height,
+                left: targetLeft,
+                top: targetTop,
+                width: targetWidth,
+                height: targetHeight,
                 scaleX: scaleX,
                 scaleY: scaleY,
                 x: dx,
