@@ -37,278 +37,7 @@ const renderIconBlock = (icon) => {
   );
 };
 
-// --- Mobile Project Detail (Không có animation phóng to ảnh) ---
-const MobileProjectDetail = ({ project, onClose }) => {
-  const [activeSlide, setActiveSlide] = useState(0);
-  const scrollRef = useRef(null);
-  const mainImageRef = useRef(null);
-  const [galleryHeight, setGalleryHeight] = useState('clamp(200px, 45vh, 380px)');
-  const [isDragging, setIsDragging] = useState(false);
-  const dragState = useRef({ startX: 0, scrollLeft: 0, velocity: 0, lastX: 0, lastTime: 0 });
-  const animationRef = useRef(null);
 
-  const stopInertia = useCallback(() => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-  }, []);
-
-  const applyInertia = useCallback(() => {
-    const container = scrollRef.current;
-    if (!container || Math.abs(dragState.current.velocity) < 0.5) {
-      dragState.current.velocity = 0;
-      return;
-    }
-    container.scrollLeft -= dragState.current.velocity;
-    dragState.current.velocity *= 0.95;
-    animationRef.current = requestAnimationFrame(applyInertia);
-  }, []);
-
-  const handleTouchStart = useCallback((e) => {
-    if (e.touches.length !== 1) return;
-    const container = scrollRef.current;
-    if (!container) return;
-    stopInertia();
-    setIsDragging(true);
-    const touch = e.touches[0];
-    dragState.current = {
-      startX: touch.clientX,
-      scrollLeft: container.scrollLeft,
-      velocity: 0,
-      lastX: touch.clientX,
-      lastTime: Date.now()
-    };
-  }, [stopInertia]);
-
-  const handleTouchMove = useCallback((e) => {
-    if (!isDragging || e.touches.length !== 1) return;
-    const container = scrollRef.current;
-    if (!container) return;
-    const touch = e.touches[0];
-    const walk = (touch.clientX - dragState.current.startX) * 1.5;
-    container.scrollLeft = dragState.current.scrollLeft - walk;
-    const now = Date.now();
-    const dt = now - dragState.current.lastTime;
-    if (dt > 0) {
-      const dx = touch.clientX - dragState.current.lastX;
-      dragState.current.velocity = dx / dt * 16;
-    }
-    dragState.current.lastX = touch.clientX;
-    dragState.current.lastTime = now;
-  }, [isDragging]);
-
-  const handleTouchEnd = useCallback(() => {
-    if (!isDragging) return;
-    const container = scrollRef.current;
-    if (container) {
-      container.style.cursor = 'grab';
-      container.style.userSelect = '';
-    }
-    setIsDragging(false);
-    if (Math.abs(dragState.current.velocity) > 1) applyInertia();
-  }, [isDragging, applyInertia]);
-
-  useEffect(() => { return () => stopInertia(); }, [stopInertia]);
-
-  // Đồng bộ chiều cao gallery/slider với ảnh chính — ref phải bao quanh khối có kích thước đúng của ảnh (không dùng h-full của cột viewport)
-  useLayoutEffect(() => {
-    const el = mainImageRef.current;
-    if (!el) return;
-
-    const applyHeight = () => {
-      const h = el.getBoundingClientRect().height;
-      if (h > 0) {
-        setGalleryHeight(`${Math.round(h)}px`);
-      }
-    };
-
-    applyHeight();
-
-    const ro = new ResizeObserver(() => {
-      requestAnimationFrame(applyHeight);
-    });
-    ro.observe(el);
-
-    return () => ro.disconnect();
-  }, [project?._id, project?.general?.coverImage]);
-
-  const description = getTextBlock(project);
-  const sliderImages = getSliderImages(project);
-  const projectYear = getProjectYear(project);
-
-  let allImageUrls = [];
-  if (project.blocks && Array.isArray(project.blocks)) {
-    project.blocks.forEach(block => {
-      if (block.type === 'image' && block.url) allImageUrls.push({ url: block.url, caption: block.caption });
-    });
-  }
-  if (project.sliderGallery && Array.isArray(project.sliderGallery)) {
-    project.sliderGallery.forEach(url => { if (url) allImageUrls.push({ url: url, caption: '' }); });
-  }
-
-  const seenUrls = new Set();
-  const galleryImageBlocks = allImageUrls.filter(img => {
-    if (seenUrls.has(img.url)) return false;
-    seenUrls.add(img.url);
-    return true;
-  });
-
-  const normalizeDescriptionText = (text) => String(text || '').replace(/\bDESCRITION\b/gi, 'DESCRIPTION');
-  const coverImageUrl = project.general?.coverImage || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070';
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-white flex flex-col overflow-hidden">
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 z-50 w-10 h-10 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full shadow-md"
-      >
-        <X className="w-5 h-5" />
-      </button>
-
-      {/* Horizontal scroll container - lướt ngang để xem chi tiết */}
-      <div
-        ref={scrollRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden"
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-      >
-        <div className="h-full flex flex-nowrap items-center">
-
-          {/* ===== PHẦN 1: THÔNG TIN PROJECT ===== */}
-          <div className="shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[320px] min-w-0 px-4">
-            <h1 className="text-lg sm:text-xl font-bold tracking-tighter leading-none break-words mb-1">
-              {project.general?.title || 'Untitled Project'}
-            </h1>
-            <p className="text-[10px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-6">
-              {project.general?.location || ''}
-            </p>
-            <div className="flex flex-col gap-3 items-start">
-              <div>
-                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
-                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
-              </div>
-              <div>
-                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
-                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
-              </div>
-              <div>
-                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Status</h4>
-                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
-              </div>
-              <div>
-                <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Year</h4>
-                <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
-              </div>
-            </div>
-            {description && (
-              <div className="mt-6 text-[13px] leading-[1.6] text-black uppercase tracking-tight opacity-80">
-                <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#797979] mb-2">DESCRIPTION</h3>
-                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
-              </div>
-            )}
-          </div>
-
-          {/* ===== PHẦN 2: ẢNH CHÍNH ===== */}
-          <div className="shrink-0 h-full flex items-center justify-center min-w-0 w-[85vw] sm:w-auto">
-            <div
-              ref={mainImageRef}
-              className="relative inline-flex w-fit max-w-full items-center justify-center shadow-sm overflow-hidden"
-              style={{ maxHeight: 'min(85dvh, 80vh)' }}
-            >
-              <Image
-                src={coverImageUrl}
-                alt="Cover"
-                width={1920}
-                height={1080}
-                sizes="85vw"
-                priority
-                draggable={false}
-                className="object-contain select-none pointer-events-none block h-auto w-auto max-w-full"
-                style={{ maxHeight: 'min(85dvh, 80vh)', width: 'auto', height: 'auto' }}
-              />
-            </div>
-          </div>
-
-          {/* ===== PHẦN 3: GALLERY IMAGES ===== */}
-          {galleryImageBlocks.slice(0, 6).map((block, idx) => (
-            <div
-              key={`gallery-${idx}`}
-              className="shrink-0 h-full flex items-center justify-center min-w-0 mr-[20px]"
-            >
-              <div
-                className="relative inline-flex w-fit max-w-[85vw] items-center justify-center shadow-sm overflow-hidden"
-                style={{ height: galleryHeight }}
-              >
-                {block.url && (
-                  <Image
-                    src={block.url}
-                    alt={block.caption || `Gallery ${idx + 1}`}
-                    width={0}
-                    height={0}
-                    sizes="85vw"
-                    className="block object-contain select-none pointer-events-none h-full w-auto max-w-[85vw]"
-                    style={{ height: galleryHeight, width: 'auto', maxWidth: '85vw' }}
-                    draggable={false}
-                  />
-                )}
-                {block.caption && (
-                  <div className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">
-                    {block.caption}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {/* ===== PHẦN 4: SLIDER IMAGES ===== */}
-          {sliderImages.length > 0 && (
-            <div
-              className="shrink-0 h-full flex items-center justify-center min-w-0 mr-[20px]"
-              onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
-            >
-              <div
-                className="relative inline-flex w-fit max-w-[85vw] items-center justify-center shadow-sm overflow-hidden"
-                style={{ height: galleryHeight }}
-              >
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeSlide}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="relative inline-flex h-full w-fit max-w-[85vw] items-center justify-center"
-                  >
-                    <Image
-                      src={sliderImages[activeSlide]}
-                      alt={`Slide ${activeSlide + 1}`}
-                      width={0}
-                      height={0}
-                      sizes="85vw"
-                      className="block object-contain select-none pointer-events-none h-full w-auto max-w-[85vw]"
-                      style={{ height: galleryHeight, width: 'auto', maxWidth: '85vw' }}
-                      draggable={false}
-                    />
-                  </motion.div>
-                </AnimatePresence>
-                <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase shadow-sm">
-                  {activeSlide + 1} / {sliderImages.length}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Spacer */}
-          <div className="shrink-0 w-[5vw]" />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // --- Helpers ---
 function getTextBlock(project) {
@@ -342,7 +71,7 @@ function getProjectYear(project) {
 
 
 // --- Inline Expanded Detail Component ---
-const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
+const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileView }) => {
   const scrollRef = useRef(null);
   const introSlideRef = useRef(null);
   const mainImageRef = useRef(null);
@@ -491,11 +220,6 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
     if (!scrollEl || !mainImg) return;
 
     const applyMainImageHeight = () => {
-      // Khi về mobile: xóa CSS var để CSS fallback của stylesheet có hiệu lực
-      if (window.innerWidth < 1024) {
-        scrollEl.style.removeProperty('--gallery-img-h');
-        return;
-      }
       const h = mainImg.getBoundingClientRect().height;
       if (h > 0) {
         scrollEl.style.setProperty('--gallery-img-h', `${h}px`);
@@ -547,6 +271,204 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
   }, [project?._id, description]);
 
 
+  if (isMobileView) {
+    return (
+      <div className="relative w-full h-full bg-white text-black font-sans flex flex-col overflow-hidden mobile-detail-layout">
+        {isLoading && (
+          <div className="absolute inset-0 z-[200] bg-white flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-10 h-10 animate-spin text-black" />
+              <span className="text-xs uppercase tracking-[0.2em] text-gray-500">Loading details...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Horizontal Scroll Container */}
+        <div
+          ref={scrollRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="w-full h-full overflow-x-auto overflow-y-hidden scrollbar-hidden gallery-scroll-area"
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        >
+          <div className="h-full flex flex-nowrap items-start">
+
+            {/* ===== SLIDE 1: COVER IMAGE & INFO (GIỐNG LAYOUT HOME) ===== */}
+            <div className="shrink-0 h-full flex flex-col justify-start items-center w-[90vw] sm:w-[350px] select-none">
+              {/* Image box matching collapsed structure */}
+              <div ref={mainImageRef} className="w-full flex justify-center items-center">
+                <div
+                  className="big-project-image-box relative w-full overflow-hidden cursor-pointer group"
+                  style={{ aspectRatio: '4 / 3', willChange: 'transform' }}
+                >
+                  <Image
+                    src={coverImageUrl}
+                    alt="Cover"
+                    fill
+                    sizes="(max-width: 768px) 90vw, 64vh"
+                    priority
+                    draggable={false}
+                    className="object-cover select-none pointer-events-none"
+                    style={{ objectFit: 'cover' }}
+                  />
+                </div>
+              </div>
+
+              {/* Info block matching collapsed structure */}
+              <div
+                className="w-full flex items-start mt-[14px] bg-white cursor-pointer pointer-events-auto"
+                onClick={onClose}
+              >
+                {renderIconBlock(project.general?.icon)}
+                <div className="ml-[14px] text-left">
+                  <h3 className="text-[15px] leading-[15px] font-normal text-black m-0 p-0 transition-opacity hover:opacity-70">
+                    {project.general?.title}
+                  </h3>
+                  <p className="mt-[4px] text-[11px] text-[#797979] uppercase tracking-wider font-medium">
+                    {project.general?.location}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* ===== SLIDE 2: METADATA & DESCRIPTION ===== */}
+            <div className={`shrink-0 h-full flex items-start select-none mr-[20px] ${description ? 'px-4 w-[85vw] sm:w-auto' : 'pl-4 pr-0 w-auto'}`}>
+              <div className="flex flex-row gap-6 items-start h-full">
+                {/* Metadata Column */}
+                <div className="flex flex-col gap-3 min-w-[120px] shrink-0 text-left">
+                  <div>
+                    <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Client</h4>
+                    <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.client || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Typology</h4>
+                    <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.typology || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Status</h4>
+                    <p className="text-[11px] text-black uppercase font-bold tracking-wider">{project.general?.status || 'Completed'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-[9px] text-[#797979] uppercase tracking-widest mb-1">Year</h4>
+                    <p className="text-[11px] text-black uppercase font-bold tracking-wider">{projectYear}</p>
+                  </div>
+                </div>
+                {/* Description Column (or first gallery image if no description exists) */}
+                {description ? (
+                  <div className="text-[13px] leading-[1.6] text-black tracking-tight opacity-80 text-left max-w-[320px] pr-4">
+                    <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{normalizeDescriptionText(description)}</p>
+                  </div>
+                ) : (
+                  galleryImageBlocks.length > 0 && (
+                    <div
+                      className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none"
+                      style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                      data-gallery-card
+                    >
+                      {galleryImageBlocks[0].url && (
+                        <Image
+                          src={galleryImageBlocks[0].url}
+                          alt={galleryImageBlocks[0].caption || "Gallery 1"}
+                          width={0}
+                          height={0}
+                          sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
+                          style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                          draggable={false}
+                          className="object-contain select-none pointer-events-none"
+                        />
+                      )}
+                      {galleryImageBlocks[0].caption && (
+                        <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">{galleryImageBlocks[0].caption}</div>
+                      )}
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+
+            {/* ===== PHẦN 3: GALLERY IMAGES SLIDES ===== */}
+            {(description ? galleryImageBlocks : galleryImageBlocks.slice(1)).map((block, idx) => (
+              <div
+                key={`gallery-${idx}`}
+                className="h-full shrink-0 min-w-0 overflow-hidden flex items-start justify-center relative z-0 w-[85vw] sm:w-auto mr-[20px]"
+              >
+                <div
+                  className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none"
+                  style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                  data-gallery-card
+                >
+                  {block.url && (
+                    <Image
+                      src={block.url}
+                      alt={block.caption || `Gallery ${idx + 1}`}
+                      width={0}
+                      height={0}
+                      sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
+                      style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                      draggable={false}
+                      className="object-contain select-none pointer-events-none"
+                    />
+                  )}
+                  {block.caption && (
+                    <div className="absolute bottom-4 left-4 bg-black/70 text-white text-[10px] px-2 py-1 uppercase tracking-wider">{block.caption}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Slider Images */}
+            {sliderImages.length > 0 && (
+              <div
+                className="h-full shrink-0 min-w-0 overflow-hidden pointer-events-auto cursor-pointer pr-[20px] relative z-0 w-[85vw] sm:w-auto flex items-start justify-center"
+                onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
+              >
+                <div
+                  className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none"
+                  style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                  data-gallery-card
+                >
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeSlide}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.6 }}
+                      className="relative w-auto h-auto flex items-center justify-center"
+                    >
+                      <Image
+                        src={sliderImages[activeSlide]}
+                        alt={`Slide ${activeSlide + 1}`}
+                        width={0}
+                        height={0}
+                        sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
+                        style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                        draggable={false}
+                        className="object-contain select-none pointer-events-none"
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                  <div className="absolute bottom-6 right-6 text-[10px] font-bold tracking-widest bg-white px-3 py-1.5 uppercase">
+                    {activeSlide + 1} / {sliderImages.length}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Spacer at the end */}
+            <div className="shrink-0 w-[5vw]" />
+
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-[100dvh] lg:h-full bg-white text-black font-sans flex flex-col overflow-hidden mobile-detail-layout">
       {isLoading && (
@@ -557,6 +479,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
           </div>
         </div>
       )}
+
 
       {/* Horizontal Scroll Container */}
       <div
@@ -589,13 +512,13 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }}
-              className="self-stretch shrink-0 flex flex-col justify-start w-[85vw] sm:w-[320px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-2 lg:order-1 text-center lg:text-right select-none pointer-events-none pl-4 lg:pl-8 pr-4 lg:pr-6 pt-[min(10vh,60px)] lg:pt-0"
+              className="self-stretch shrink-0 flex flex-col justify-start w-[85vw] sm:w-[320px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-2 lg:order-1 text-center lg:text-right select-none pl-4 lg:pl-8 pr-4 lg:pr-6 pt-[min(10vh,60px)] lg:pt-0"
             >
-              <div className="mb-4 flex justify-center lg:justify-end">
+              <div className="mb-4 flex justify-center lg:justify-end cursor-pointer pointer-events-auto hover:opacity-75 transition-opacity" onClick={onClose}>
                 {renderIconBlock(project.general?.icon)}
               </div>
 
-              <h1 className="text-lg sm:text-xl lg:text-[18px] xl:text-[22px] font-normal text-black m-0 p-0 leading-[1.3] whitespace-normal w-full">
+              <h1 className="text-lg sm:text-xl lg:text-[18px] xl:text-[22px] font-normal text-black m-0 p-0 leading-[1.3] whitespace-normal w-full cursor-pointer pointer-events-auto hover:opacity-75 transition-opacity" onClick={onClose}>
                 {project.general?.title || 'Untitled Project'}
               </h1>
               <p className="mt-2 text-[10px] lg:text-[11px] text-[#797979] uppercase tracking-[0.3em] font-medium mb-8 lg:mb-12">
@@ -1048,9 +971,13 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
     window.history.pushState(null, '', '/');
   }, []);
 
-  // FLIP Step 3: Chạy sau khi React đã commit DOM changes nhưng TRƯỚC browser paint
-  // useLayoutEffect đảm bảo không có flash của trạng thái 75vh
   useLayoutEffect(() => {
+    if (isMobileView) {
+      expandingFlipRef.current = null;
+      closingFlipRef.current = null;
+      return;
+    }
+
     // --- Xử lý EXPAND ---
     if (expandingFlipRef.current) {
       const { id, fromHeight, thumbnailRect } = expandingFlipRef.current;
@@ -1059,7 +986,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
       if (expandedProjectIds.has(id)) {
         const rowEl = document.getElementById(`project-${id}`);
         if (rowEl) {
-          // Tại đây React đã render rowStyle = { height: '75vh' } vào DOM.
+          // Tại đây React đã render rowStyle vào DOM.
           // Đo targetH và imageRect TỪ ĐÂY để lấy giá trị chính xác TRƯỚC khi GSAP override.
           const targetH = rowEl.getBoundingClientRect().height;
           const imageEl = rowEl.querySelector('.big-project-image-box');
@@ -1067,7 +994,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
 
           // Đo tọa độ của phần tử cha định vị gần nhất (Containing Block) của imageEl
           // để định vị position: absolute một cách chính xác tuyệt đối.
-          const offsetParent = imageEl.offsetParent || rowEl;
+          const offsetParent = imageEl ? (imageEl.offsetParent || rowEl) : rowEl;
           const parentRect = offsetParent.getBoundingClientRect();
 
           // --- GSAP FLIP 1: Container height ---
@@ -1079,8 +1006,8 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
               duration: 0.78,
               ease: 'customBIG',
               onComplete: () => {
-                // Trả lại chiều cao 75vh responsive ban đầu thay vì xóa hoàn toàn làm sập height thành auto
-                gsap.set(rowEl, { height: '75vh', clearProps: 'overflow' });
+                // Trả lại chiều cao responsive ban đầu thay vì xóa hoàn toàn làm sập height thành auto
+                gsap.set(rowEl, { height: isMobileView ? '65vh' : '75vh', clearProps: 'overflow' });
               },
             }
           );
@@ -1152,7 +1079,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
         }
       }
     }
-  }, [expandedProjectIds]);
+  }, [expandedProjectIds, isMobileView]);
 
   // BIG.DK: Scroll-reveal animation chỉ chạy 1 lần khi init hoặc khi danh sách project thay đổi.
   // QUAN TRỌNG: Không revert khi expandedProjectIds.size thay đổi — tránh jump y:150.
@@ -1361,54 +1288,47 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
 
   if (!isInitialized) return <div className="w-full bg-white relative pt-36 pb-[30vh] overflow-hidden z-10" />;
 
-  // Mobile: lấy project đầu tiên trong Set để hiển thị portal
-  const mobileExpandedId = Array.from(expandedProjectIds)[0] || null;
-  const mobileProject = mobileExpandedId ? projects.find(p => p._id === mobileExpandedId) : null;
-
-  const mobileDetailPortal =
-    typeof document !== 'undefined' &&
-    mobileProject &&
-    isMobileView &&
-    createPortal(
-      <MobileProjectDetail
-        project={mobileProject}
-        onClose={() => handleCloseProject(mobileProject._id)}
-      />,
-      document.body
-    );
-
   return (
     <>
-      {mobileDetailPortal}
       <style jsx global>{`
-        .scrollbar-hidden::-webkit-scrollbar { display: none; }
-        .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-hidden::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+        }
+        .scrollbar-hidden {
+          -ms-overflow-style: none !important;
+          scrollbar-width: none !important;
+        }
 
         /* Mobile detail layout - BIG.DK style horizontal scroll */
         @media (max-width: 1023px) {
           .mobile-detail-layout {
-            position: fixed !important;
-            inset: 0 !important;
-            height: 100dvh !important;
-            width: 100vw !important;
-            z-index: 100 !important;
+            position: relative !important;
+            height: auto !important;
+            width: 100% !important;
           }
           .mobile-detail-layout .gallery-scroll-area {
-            height: 100dvh !important;
+            height: auto !important;
             overflow-x: auto !important;
             overflow-y: hidden !important;
           }
           .mobile-detail-layout [data-intro-slide] {
             display: flex !important;
             flex-wrap: nowrap !important;
-            height: 100% !important;
+            height: auto !important;
           }
-          /* Ensure images maintain aspect ratio on mobile */
-          .mobile-detail-layout img {
+          /* Ensure gallery images match cover image height on mobile */
+          .mobile-detail-layout [data-gallery-card] {
+            height: var(--gallery-img-h) !important;
+            max-height: var(--gallery-img-h) !important;
+          }
+          .mobile-detail-layout [data-gallery-card] img {
             object-fit: contain !important;
             max-width: 85vw !important;
-            height: auto !important;
-            max-height: 50vh !important;
+            height: var(--gallery-img-h) !important;
+            max-height: var(--gallery-img-h) !important;
+            width: auto !important;
           }
         }
 
@@ -1478,11 +1398,8 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
               })
               .map((project, index) => {
                 const isExpanded = expandedProjectIds.has(project._id);
-                const isMobilePortal = isExpanded && isMobileView;
                 // rowStyle: không dùng CSS transition vì GSAP (FLIP) điều khiển animation height
-                const rowStyle = isMobilePortal
-                  ? { height: 0, maxHeight: 0, overflow: 'visible' }
-                  : isExpanded
+                const rowStyle = isExpanded && !isMobileView
                     ? {
                         height: '75vh',     // React's static target — GSAP animate TỚI ĐÂY
                         maxHeight: '75vh',
@@ -1495,23 +1412,20 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
                         overflow: 'visible',
                       };
                 // Desktop expanded: w-full của containerRef (không bị max-w/px constraint)
-                // Mobile expanded: placeholder vô hình (portal đảm nhận)
-                // Collapsed: max-w + px + mx-auto được áp dụng trực tiếp trên item
+                // Collapsed & Mobile expanded: max-w + px + mx-auto được áp dụng trực tiếp trên item
                 return (
                   <div
                     key={project._id || index}
                     id={`project-${project._id}`}
                     style={rowStyle}
-                    className={`${isMobilePortal
-                      ? 'relative w-full h-0 min-h-0 z-50 my-0 overflow-visible pointer-events-none'
-                      : isExpanded
+                    className={`${isExpanded && !isMobileView
                         ? 'relative w-full z-50 mb-[26px] lg:mb-[29px]'  // Đồng bộ margin-bottom với collapsed, loại bỏ margin-top lệch
                         : 'relative w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 max-w-[1800px] flex justify-center items-center max-w-[1600px] h-auto mb-[26px] lg:mb-[29px]'
                       }`}
                   >
                     {!isExpanded ? (
                       <div className="project-row w-full flex justify-center items-start group">
-                        <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
+                      <div className="velocity-card relative flex flex-col md:inline-flex md:flex-row items-center">
 
                           {/* 1. COVER IMAGE WRAPPER */}
                           <div className="big-project-thumb-shell shrink-0 project-image overflow-hidden relative">
@@ -1560,13 +1474,14 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
 
                         </div>
                       </div>
-                    ) : isMobileView ? null : (
-                      // Desktop: inline trong feed, w-full = 100% containerRef = full viewport width
+                    ) : (
+                      // Desktop & Mobile: inline trong feed, w-full = 100% containerRef = full viewport width
                       <InlineProjectDetail
                         project={project}
                         onClose={() => handleCloseProject(project._id)}
                         layoutId={`img-container-${project._id}`}
                         isLoading={false}
+                        isMobileView={isMobileView}
                       />
                     )}
                   </div>
