@@ -337,7 +337,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
             </div>
 
             {/* ===== SLIDE 2: METADATA & DESCRIPTION ===== */}
-            <div className={`shrink-0 h-full flex items-start select-none mr-[20px] ${description ? 'px-4 w-[85vw] sm:w-auto' : 'pl-4 pr-0 w-auto'}`}>
+            <div className={`shrink-0 h-full flex items-start select-none mr-[20px] ${description ? 'px-4 w-[90vw] sm:w-auto' : 'pl-4 pr-0 w-auto'}`}>
               <div className="flex flex-row gap-6 items-start h-full">
                 {/* Metadata Column */}
                 <div className="flex flex-col gap-3 min-w-[120px] shrink-0 text-left">
@@ -366,7 +366,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
                 ) : (
                   galleryImageBlocks.length > 0 && (
                     <div
-                      className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none"
+                      className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-none"
                       style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                       data-gallery-card
                     >
@@ -376,8 +376,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
                           alt={galleryImageBlocks[0].caption || "Gallery 1"}
                           width={0}
                           height={0}
-                          sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
-                          style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                          sizes="(max-width: 1024px) 90vw, var(--gallery-img-h, 50vh)"
+                          style={{ width: 'auto', height: '100%', maxWidth: 'none', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                           draggable={false}
                           className="object-contain select-none pointer-events-none"
                         />
@@ -395,10 +395,10 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
             {(description ? galleryImageBlocks : galleryImageBlocks.slice(1)).map((block, idx) => (
               <div
                 key={`gallery-${idx}`}
-                className="h-full shrink-0 min-w-0 overflow-hidden flex items-start justify-center relative z-0 w-[85vw] sm:w-auto mr-[20px]"
+                className="h-full shrink-0 min-w-0 overflow-hidden flex items-start justify-center relative z-0 w-[90vw] sm:w-auto mr-[20px]"
               >
                 <div
-                  className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none"
+                  className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-none"
                   style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                   data-gallery-card
                 >
@@ -408,8 +408,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
                       alt={block.caption || `Gallery ${idx + 1}`}
                       width={0}
                       height={0}
-                      sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
-                      style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                      sizes="(max-width: 1024px) 90vw, var(--gallery-img-h, 50vh)"
+                      style={{ width: 'auto', height: '100%', maxWidth: 'none', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                       draggable={false}
                       className="object-contain select-none pointer-events-none"
                     />
@@ -424,11 +424,11 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
             {/* Slider Images */}
             {sliderImages.length > 0 && (
               <div
-                className="h-full shrink-0 min-w-0 overflow-hidden pointer-events-auto cursor-pointer pr-[20px] relative z-0 w-[85vw] sm:w-auto flex items-start justify-center"
+                className="h-full shrink-0 min-w-0 overflow-hidden pointer-events-auto cursor-pointer pr-[20px] relative z-0 w-[90vw] sm:w-auto flex items-start justify-center"
                 onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
               >
                 <div
-                  className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none"
+                  className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-none"
                   style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                   data-gallery-card
                 >
@@ -446,8 +446,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
                         alt={`Slide ${activeSlide + 1}`}
                         width={0}
                         height={0}
-                        sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
-                        style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                        sizes="(max-width: 1024px) 90vw, var(--gallery-img-h, 50vh)"
+                        style={{ width: 'auto', height: '100%', maxWidth: 'none', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                         draggable={false}
                         className="object-contain select-none pointer-events-none"
                       />
@@ -505,14 +505,14 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
             className="shrink-0 h-full flex flex-nowrap items-center justify-center min-w-0"
           >
             {/* ====== CARD 1: PROJECT INFO ====== */}
-            {/* Mobile: card 85vw riêng | Desktop: flex-1 cột trái, text-right, nở theo chiều sâu */}
+            {/* Mobile: card 90vw riêng | Desktop: flex-1 cột trái, text-right, nở theo chiều sâu */}
             {/* self-stretch: override items-center của parent — buộc CARD 1 luôn stretch full height */}
             {/* nếu không có self-stretch, items-center sẽ center CARD 1 theo content height */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }}
-              className="self-stretch shrink-0 flex flex-col justify-start w-[85vw] sm:w-[320px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-2 lg:order-1 text-center lg:text-right select-none pl-4 lg:pl-8 pr-4 lg:pr-6 pt-[min(10vh,60px)] lg:pt-0"
+              className="self-stretch shrink-0 flex flex-col justify-start w-[90vw] sm:w-[320px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-2 lg:order-1 text-center lg:text-right select-none pl-4 lg:pl-8 pr-4 lg:pr-6 pt-[min(10vh,60px)] lg:pt-0"
             >
               <div className="mb-4 flex justify-center lg:justify-end cursor-pointer pointer-events-auto hover:opacity-75 transition-opacity" onClick={onClose}>
                 {renderIconBlock(project.general?.icon)}
@@ -545,12 +545,12 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
             </motion.div>
 
             {/* ====== CARD 2: ẢNH CHÍNH ====== */}
-            {/* Mobile: 85vw | Desktop: auto (ảnh tự co theo tỷ lệ, căn giữa bởi flex-1 hai bên) */}
-            <div ref={mainImageRef} className="shrink-0 h-full order-1 lg:order-2 flex min-w-0 justify-center items-center w-[85vw] lg:w-[100vh]">
+            {/* Mobile: 90vw | Desktop: auto (ảnh tự co theo tỷ lệ, căn giữa bởi flex-1 hai bên) */}
+            <div ref={mainImageRef} className="shrink-0 h-full order-1 lg:order-2 flex min-w-0 justify-center items-center w-[90vw] lg:w-[100vh]">
               {/* GSAP FLIP (trong useLayoutEffect) sẽ animate ảnh này từ vị trí thumbnail.
                   Không cần Framer Motion initial/animate — GSAP kiểm soát toàn bộ. */}
               <div
-                className="big-project-image-box relative w-[85vw] h-auto aspect-[4/3] lg:w-[100vh] lg:h-[75vh] overflow-hidden flex items-center justify-center min-w-0 max-w-full"
+                className="big-project-image-box relative w-[90vw] h-auto aspect-[4/3] lg:w-[100vh] lg:h-[75vh] overflow-hidden flex items-center justify-center min-w-0 max-w-full"
                 style={{ willChange: 'transform' }}
               >
                 <Image
@@ -566,15 +566,15 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
               </div>
             </div>
 
-            {/* ====== CARD 3: DESCRIPTION / GALLERY IMAGE (Mobile: 85vw, Desktop: flex-1 cột phải) ====== */}
+            {/* ====== CARD 3: DESCRIPTION / GALLERY IMAGE (Mobile: 90vw, Desktop: flex-1 cột phải) ====== */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4, duration: 0.6, ease: "easeOut" }}
               className={
                 description
-                  ? `shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-[280px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:mr-[35px]' : ''}`
-                  : `shrink-0 h-full flex flex-col justify-center w-[85vw] sm:w-auto lg:w-auto lg:min-w-0 order-3 select-none pointer-events-none pl-[20px] lg:pl-[35px] pr-0 pt-0 lg:pt-0${hasRightGalleryOrSlider ? ' mr-[20px] lg:mr-[35px]' : ''}`
+                  ? `shrink-0 h-full flex flex-col justify-center w-[90vw] sm:w-[280px] lg:w-[calc((100vw-100vh)/2)] lg:min-w-0 order-3 text-center lg:text-left select-none pointer-events-none pl-4 lg:pl-6 pr-4 lg:pr-8${hasRightGalleryOrSlider ? ' lg:mr-[35px]' : ''}`
+                  : `shrink-0 h-full flex flex-col justify-center w-[90vw] sm:w-auto lg:w-auto lg:min-w-0 order-3 select-none pointer-events-none pl-[20px] lg:pl-[35px] pr-0 pt-0 lg:pt-0${hasRightGalleryOrSlider ? ' mr-[20px] lg:mr-[35px]' : ''}`
               }
             >
               {description ? (
@@ -584,7 +584,7 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
               ) : (
                 galleryImageBlocks.length > 0 && (
                   <div
-                    className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none lg:max-w-none"
+                    className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[90vw] sm:max-w-none lg:max-w-none"
                     style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                   >
                     {galleryImageBlocks[0].url && (
@@ -593,8 +593,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
                         alt={galleryImageBlocks[0].caption || "Gallery 1"}
                         width={0}
                         height={0}
-                        sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
-                        style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                        sizes="(max-width: 1024px) 90vw, var(--gallery-img-h, 50vh)"
+                        style={{ width: 'auto', height: '100%', maxWidth: '90vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                         draggable={false}
                         className="object-contain select-none pointer-events-none"
                       />
@@ -618,13 +618,13 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
           {(description ? galleryImageBlocks.slice(0, 6) : galleryImageBlocks.slice(1, 6)).map((block, idx) => (
             <div
               key={`gallery-${idx}`}
-              className="h-full shrink-0 min-w-0 overflow-hidden flex items-center justify-center relative z-0 w-[85vw] sm:w-auto lg:flex lg:items-center mr-[20px] lg:mr-[35px]"
+              className="h-full shrink-0 min-w-0 overflow-hidden flex items-center justify-center relative z-0 w-[90vw] sm:w-auto lg:flex lg:items-center mr-[20px] lg:mr-[35px]"
             >
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 + idx * 0.1 }}
-                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none lg:max-w-none"
+                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[90vw] sm:max-w-none lg:max-w-none"
                 style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                 data-gallery-card
               >
@@ -634,8 +634,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
                     alt={block.caption || `Gallery ${idx + 1}`}
                     width={0}
                     height={0}
-                    sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
-                    style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                    sizes="(max-width: 1024px) 90vw, var(--gallery-img-h, 50vh)"
+                    style={{ width: 'auto', height: '100%', maxWidth: '90vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                     draggable={false}
                     className="object-contain select-none pointer-events-none"
                   />
@@ -650,14 +650,14 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
           {/* Slider Images */}
           {sliderImages.length > 0 && (
             <div
-              className="h-full shrink-0 min-w-0 overflow-hidden pointer-events-auto cursor-pointer pr-[20px] lg:pr-[35px] relative z-0 w-[85vw] sm:w-auto lg:flex lg:items-center"
+              className="h-full shrink-0 min-w-0 overflow-hidden pointer-events-auto cursor-pointer pr-[20px] lg:pr-[35px] relative z-0 w-[90vw] sm:w-auto lg:flex lg:items-center"
               onClick={() => setActiveSlide((prev) => (prev + 1) % sliderImages.length)}
             >
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[85vw] sm:max-w-none lg:max-w-none"
+                className="relative z-0 shrink-0 w-auto shadow-sm overflow-hidden flex items-center justify-center max-w-[90vw] sm:max-w-none lg:max-w-none"
                 style={{ height: 'var(--gallery-img-h, clamp(200px, 45vh, 380px))', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                 data-gallery-card
               >
@@ -675,8 +675,8 @@ const InlineProjectDetail = ({ project, onClose, isLoading, layoutId, isMobileVi
                       alt={`Slide ${activeSlide + 1}`}
                       width={0}
                       height={0}
-                      sizes="(max-width: 1024px) 85vw, var(--gallery-img-h, 50vh)"
-                      style={{ width: 'auto', height: '100%', maxWidth: '85vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
+                      sizes="(max-width: 1024px) 90vw, var(--gallery-img-h, 50vh)"
+                      style={{ width: 'auto', height: '100%', maxWidth: '90vw', maxHeight: 'var(--gallery-img-h, 45vh)' }}
                       draggable={false}
                       className="object-contain select-none pointer-events-none"
                     />
@@ -1325,7 +1325,7 @@ export default function ProjectsFeed({ activeCategory: propActiveCategory, activ
           }
           .mobile-detail-layout [data-gallery-card] img {
             object-fit: contain !important;
-            max-width: 85vw !important;
+            max-width: none !important;
             height: var(--gallery-img-h) !important;
             max-height: var(--gallery-img-h) !important;
             width: auto !important;
